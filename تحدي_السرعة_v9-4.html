@@ -1,0 +1,2470 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>⚡ تحدي السرعة</title>
+<meta name="description" content="لعبة ثقافية تنافسية للعائلة والأصدقاء">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="تحدي السرعة">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22%E2%9A%A1%20%D8%AA%D8%AD%D8%AF%D9%8A%20%D8%A7%D9%84%D8%B3%D8%B1%D8%B9%D8%A9%22%2C%22short_name%22%3A%22%D8%AA%D8%AD%D8%AF%D9%8A%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%236c63ff%22%2C%22orientation%22%3A%22portrait%22%7D">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --green: #00e676;
+    --orange: #ff9800;
+    --red: #f44336;
+    --text: #e8e8ff;
+    --muted: #888aaa;
+    --gold: #ffd700;
+    --transition-speed: 0.35s;
+  }
+
+  /* ── LIGHT THEME ── */
+  body.light {
+    --bg: #f0f2ff;
+    --surface: #ffffff;
+    --card: #ffffff;
+    --border: #d0d4f0;
+    --text: #1a1a2e;
+    --muted: #6b6e8a;
+  }
+  body.light::before {
+    background: radial-gradient(ellipse at 20% 20%, rgba(108,99,255,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(255,101,132,0.04) 0%, transparent 60%);
+  }
+
+  /* ── THEME TOGGLE BUTTON ── */
+  .theme-btn {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 100;
+    background: var(--surface); border: 1.5px solid var(--border);
+    color: var(--muted); border-radius: 20px; padding: 6px 14px;
+    font-family: 'Cairo', sans-serif; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SCREEN TRANSITIONS ── */
+  .screen {
+    display: none; min-height: 100vh; padding: 20px; position: relative; z-index: 1;
+    opacity: 0; transform: translateY(18px);
+    transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+  }
+  .screen.active {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 1; transform: translateY(0);
+  }
+  .screen.slide-out {
+    opacity: 0; transform: translateY(-18px);
+    pointer-events: none;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 20% 20%, rgba(108,99,255,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(255,101,132,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SETUP SCREEN ── */
+  .logo {
+    font-family: 'Tajawal', sans-serif;
+    font-size: clamp(2rem, 8vw, 4rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-align: center; margin-bottom: 8px;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
+  .subtitle { color: var(--muted); text-align: center; margin-bottom: 40px; font-size: 1rem; }
+
+  /* ── TIME SELECTOR ── */
+  .time-selector { margin-bottom: 20px; }
+  .time-selector label { display: block; margin-bottom: 10px; font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+  .time-options { display: flex; gap: 10px; }
+  .time-opt { flex: 1; background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+    padding: 12px 8px; color: var(--muted); font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .time-opt:hover { border-color: var(--accent); color: var(--text); }
+  .time-opt.selected { border-color: var(--accent); background: rgba(108,99,255,0.15); color: var(--accent); box-shadow: 0 0 16px rgba(108,99,255,0.25); }
+  .time-opt .t-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+  .time-opt .t-label { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .time-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(108,99,255,0.12);
+    border: 1px solid rgba(108,99,255,0.3); border-radius: 20px; padding: 6px 14px;
+    font-size: 0.85rem; color: var(--accent); margin-bottom: 10px; font-weight: 700; }
+
+  .setup-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%; max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .input-group { margin-bottom: 20px; }
+  .input-group label {
+    display: block; margin-bottom: 8px;
+    font-size: 0.9rem; color: var(--muted); font-weight: 600;
+  }
+  .input-group input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus { border-color: var(--accent); }
+  .input-group input::placeholder { color: var(--muted); }
+
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none; border-radius: 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.1rem; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #8b7fff);
+    color: #fff;
+    box-shadow: 0 6px 24px rgba(108,99,255,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(108,99,255,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── CATEGORY SCREEN ── */
+  .round-header {
+    font-size: 1.1rem; color: var(--muted);
+    text-align: center; margin-bottom: 8px;
+  }
+  .player-turn {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.8rem; font-weight: 900;
+    text-align: center; margin-bottom: 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .categories-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    width: 100%; max-width: 480px;
+  }
+  .cat-btn {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 12px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .cat-btn:hover {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.1);
+    transform: translateY(-2px);
+  }
+  .cat-btn span { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .cat-league {
+    border-color: rgba(255,215,0,0.3);
+    background: rgba(255,215,0,0.04);
+  }
+  .cat-league:hover { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+
+  /* ── SCOREBOARD ── */
+  .scoreboard {
+    display: flex; gap: 12px; width: 100%; max-width: 500px;
+    margin-bottom: 20px;
+  }
+  .score-card {
+    flex: 1;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .score-card.active { border-color: var(--accent); box-shadow: 0 0 20px rgba(108,99,255,0.2); }
+  .score-card .p-name { font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+  .score-card .p-score {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 2rem; font-weight: 900;
+    color: var(--accent);
+  }
+
+  /* ── GAME SCREEN ── */
+  .game-container { width: 100%; max-width: 500px; }
+
+  .timer-wrap {
+    position: relative; width: 120px; height: 120px;
+    margin: 0 auto 24px;
+  }
+  .timer-svg { transform: rotate(-90deg); }
+  .timer-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+  .timer-arc { fill: none; stroke-width: 8; stroke-linecap: round;
+    stroke-dasharray: 314; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s;
+  }
+  .timer-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 2.2rem; font-weight: 900;
+  }
+
+  .q-progress { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 16px; }
+  .q-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    min-height: 120px;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .q-text {
+    font-size: clamp(1rem, 4vw, 1.3rem);
+    font-weight: 700; line-height: 1.6;
+  }
+  .a-card {
+    background: rgba(108,99,255,0.08);
+    border: 1.5px dashed var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem; color: var(--muted);
+    user-select: none;
+  }
+  .a-card.revealed {
+    background: rgba(0,230,118,0.08);
+    border-color: var(--green);
+    color: var(--green);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .a-card:not(.revealed):hover { border-color: var(--accent); color: var(--text); }
+
+  .action-btns { display: flex; gap: 10px; }
+  .btn-correct {
+    flex: 2;
+    background: linear-gradient(135deg, #00c853, #00e676);
+    color: #000; font-weight: 800;
+    box-shadow: 0 4px 18px rgba(0,230,118,0.3);
+    border: none; border-radius: 14px;
+    padding: 16px; font-family: 'Cairo', sans-serif;
+    font-size: 1.05rem; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-correct:hover { transform: translateY(-2px); }
+  .btn-wrong {
+    flex: 2;
+    background: linear-gradient(135deg, #d32f2f, #f44336);
+    color: #fff; font-weight: 800;
+    box-shadow: 0 4px 18px rgba(244,67,54,0.3);
+    border: none; border-radius: 14px;
+    padding: 16px; font-family: 'Cairo', sans-serif;
+    font-size: 1.05rem; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-wrong:hover { transform: translateY(-2px); }
+  .btn-skip {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--muted); border-radius: 14px;
+    padding: 16px; font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-skip:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── RESULT SCREEN ── */
+  .result-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px;
+    width: 100%; max-width: 440px;
+    text-align: center;
+  }
+  .result-title {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.4rem; font-weight: 900;
+    margin-bottom: 20px;
+  }
+  .result-scores { display: flex; gap: 16px; margin-bottom: 24px; }
+  .rs-card {
+    flex: 1; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px;
+  }
+  .rs-card .name { font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+  .rs-card .score { font-family: 'Tajawal', sans-serif; font-size: 2rem; font-weight: 900; }
+  .rs-card.leading { border-color: var(--gold); }
+  .rs-card.leading .score { color: var(--gold); }
+
+  /* ── GAME OVER ── */
+  .winner-badge {
+    font-size: 4rem; margin-bottom: 16px;
+    animation: bounce 1s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .winner-name {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), #ffb300);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .winner-sub { color: var(--muted); margin-bottom: 28px; }
+
+  .final-scores { display: flex; gap: 12px; margin-bottom: 28px; width: 100%; }
+  .fs-card {
+    flex: 1; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center;
+  }
+  .fs-card.winner-card { border-color: var(--gold); }
+  .fs-card .fname { font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+  .fs-card .fscore { font-family: 'Tajawal', sans-serif; font-size: 1.8rem; font-weight: 900; }
+  .fs-card .fstats { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── ANIMATIONS ── */
+  .flash-correct { animation: flashGreen 0.4s ease; }
+  .flash-wrong { animation: flashRed 0.4s ease; }
+  @keyframes flashGreen {
+    0%{background: rgba(0,230,118,0.3)} 100%{background: transparent}
+  }
+  @keyframes flashRed {
+    0%{background: rgba(244,67,54,0.3)} 100%{background: transparent}
+  }
+
+  .section-title {
+    font-size: 0.8rem; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--muted);
+    margin-bottom: 16px; text-align: center;
+  }
+
+  /* ── SETTINGS BUTTON ── */
+  .settings-btn {
+    position: fixed; top: 14px; right: 14px; z-index: 100;
+    background: var(--surface); border: 1.5px solid var(--border);
+    color: var(--muted); border-radius: 10px; padding: 8px 14px;
+    font-family: 'Cairo', sans-serif; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SETTINGS SCREEN ── */
+  .settings-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 28px; width: 100%; max-width: 440px;
+  }
+  .settings-back {
+    background: var(--surface); border: 1.5px solid var(--border);
+    color: var(--muted); border-radius: 10px; padding: 8px 14px;
+    font-family: 'Cairo', sans-serif; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .settings-back:hover { border-color: var(--accent); color: var(--accent); }
+  .settings-title {
+    font-family: 'Tajawal', sans-serif; font-size: 1.5rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .settings-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px; width: 100%; max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .settings-section {
+    margin-bottom: 28px;
+  }
+  .settings-section:last-child { margin-bottom: 0; }
+  .settings-section-title {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--muted); margin-bottom: 14px; font-weight: 700;
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .settings-row:last-child { margin-bottom: 0; }
+  .settings-row:hover { border-color: var(--border); }
+  .settings-row-info { display: flex; align-items: center; gap: 10px; }
+  .settings-row-icon { font-size: 1.3rem; }
+  .settings-row-label { font-size: 0.95rem; font-weight: 600; }
+  .settings-row-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .settings-row-action { flex-shrink: 0; }
+
+  /* Toggle Switch */
+  .toggle-wrap { position: relative; width: 48px; height: 26px; }
+  .toggle-wrap input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--border);
+    border-radius: 26px; cursor: pointer; transition: 0.3s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    width: 20px; height: 20px; left: 3px; top: 3px;
+    background: white; border-radius: 50%; transition: 0.3s;
+  }
+  .toggle-wrap input:checked + .toggle-slider { background: var(--accent); }
+  .toggle-wrap input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+  /* Rounds selector */
+  .rounds-opts { display: flex; gap: 8px; }
+  .round-opt {
+    flex: 1; background: var(--surface); border: 2px solid var(--border);
+    border-radius: 10px; padding: 8px 4px; color: var(--muted);
+    font-family: 'Cairo', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .round-opt.selected { border-color: var(--accent); background: rgba(108,99,255,0.15); color: var(--accent); }
+
+  .settings-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .btn-danger {
+    width: 100%; padding: 12px; border: 1.5px solid var(--red);
+    border-radius: 12px; background: transparent; color: var(--red);
+    font-family: 'Cairo', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(244,67,54,0.1); }
+
+  /* ── EXIT BUTTON ── */
+  .exit-btn {
+    position: fixed; top: 14px; left: 14px; z-index: 100;
+    background: var(--surface); border: 1.5px solid var(--border);
+    color: var(--muted); border-radius: 10px; padding: 8px 14px;
+    font-family: 'Cairo', sans-serif; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .exit-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── CONFIRM MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px 28px; max-width: 320px;
+    width: 90%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: popIn 0.2s ease;
+  }
+  @keyframes popIn { 0%{transform:scale(0.85);opacity:0} 100%{transform:scale(1);opacity:1} }
+  .modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .modal-title { font-family: 'Tajawal', sans-serif; font-size: 1.3rem; font-weight: 900; margin-bottom: 8px; }
+  .modal-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn-yes {
+    flex: 1; background: linear-gradient(135deg,#d32f2f,#f44336);
+    color: #fff; font-weight: 700; border: none; border-radius: 12px;
+    padding: 12px; font-family: 'Cairo', sans-serif; font-size: 1rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .modal-btn-yes:hover { transform: translateY(-1px); }
+  .modal-btn-no {
+    flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+    color: var(--text); font-weight: 700; border-radius: 12px;
+    padding: 12px; font-family: 'Cairo', sans-serif; font-size: 1rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .modal-btn-no:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SAFE AREA (iPhone notch) ── */
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+
+  /* ── LOGIN SCREEN ── */
+  .login-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 36px 32px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+  }
+  .login-title {
+    font-family: 'Tajawal', sans-serif; font-size: 1.6rem; font-weight: 900;
+    text-align: center; margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .login-sub { color: var(--muted); text-align: center; font-size: 0.88rem; margin-bottom: 28px; }
+  .login-tabs { display: flex; gap: 8px; margin-bottom: 24px; background: var(--surface); border-radius: 12px; padding: 4px; }
+  .login-tab {
+    flex: 1; padding: 9px; border: none; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; background: transparent; color: var(--muted); transition: all 0.2s;
+  }
+  .login-tab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(108,99,255,0.4); }
+  .login-form { display: flex; flex-direction: column; gap: 14px; }
+  .login-error {
+    background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3);
+    border-radius: 10px; padding: 10px 14px; color: var(--red);
+    font-size: 0.85rem; text-align: center; display: none;
+  }
+  .login-success {
+    background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3);
+    border-radius: 10px; padding: 10px 14px; color: var(--green);
+    font-size: 0.85rem; text-align: center; display: none;
+  }
+  .avatar-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 4px 0 8px; }
+  .avatar-opt {
+    width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border);
+    background: var(--surface); font-size: 1.4rem; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .avatar-opt.selected { border-color: var(--accent); background: rgba(108,99,255,0.15); transform: scale(1.15); }
+  .avatar-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+
+  /* ── USER PROFILE BADGE ── */
+  .user-badge {
+    position: fixed; top: 14px; left: 14px; z-index: 100;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 6px 12px 6px 8px;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: all 0.2s; max-width: 160px;
+  }
+  .user-badge:hover { border-color: var(--accent); }
+  .user-badge-avatar { font-size: 1.2rem; line-height: 1; }
+  .user-badge-info { overflow: hidden; }
+  .user-badge-name { font-size: 0.8rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-badge-xp { font-size: 0.7rem; color: var(--accent); font-weight: 600; }
+
+  /* ── PROFILE SCREEN ── */
+  .profile-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 28px 24px;
+    width: 100%; max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .profile-header { text-align: center; margin-bottom: 24px; }
+  .profile-avatar { font-size: 4rem; margin-bottom: 8px; }
+  .profile-username {
+    font-family: 'Tajawal', sans-serif; font-size: 1.6rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .profile-joined { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+  .xp-bar-wrap { margin: 16px 0 24px; }
+  .xp-bar-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; }
+  .xp-bar-bg { background: var(--surface); border-radius: 10px; height: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .xp-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.6s ease; }
+  .profile-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
+  .pstat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; text-align: center; }
+  .pstat-num { font-family: 'Tajawal', sans-serif; font-size: 1.5rem; font-weight: 900; color: var(--accent); }
+  .pstat-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .profile-history-title {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); margin-bottom: 12px; font-weight: 700;
+  }
+  .profile-history-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.82rem;
+  }
+  .phi-left { color: var(--text); font-weight: 600; }
+  .phi-right { color: var(--muted); font-size: 0.75rem; }
+  .phi-result { font-size: 1rem; margin-left: 8px; }
+  .profile-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-logout {
+    flex: 1; background: transparent; border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 12px; color: var(--red);
+    font-family: 'Cairo', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-logout:hover { border-color: var(--red); background: rgba(244,67,54,0.08); }
+  .btn-back-profile {
+    flex: 2; background: linear-gradient(135deg, var(--accent), #8b7fff);
+    border: none; border-radius: 12px; padding: 12px; color: #fff;
+    font-family: 'Cairo', sans-serif; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(108,99,255,0.35);
+  }
+  .btn-back-profile:hover { transform: translateY(-1px); }
+  .level-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;
+    color: var(--gold); font-weight: 700; margin-top: 6px;
+  }
+
+  /* ── CONFETTI ── */
+  .confetti-container {
+    position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute; width: 10px; height: 10px; top: -20px;
+    animation: confettiFall linear forwards;
+    border-radius: 2px;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ── HISTORY SCREEN ── */
+  .history-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px; width: 100%; max-width: 440px;
+    max-height: 70vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .history-title {
+    font-family: 'Tajawal', sans-serif; font-size: 1.4rem; font-weight: 900;
+    margin-bottom: 16px; text-align: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .history-item:last-child { margin-bottom: 0; }
+  .history-rank { font-size: 1.4rem; width: 32px; text-align: center; flex-shrink: 0; }
+  .history-info { flex: 1; }
+  .history-winner { font-weight: 700; font-size: 0.95rem; }
+  .history-detail { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .history-score { font-family: 'Tajawal', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--gold); }
+  .history-empty { text-align: center; color: var(--muted); padding: 30px 0; font-size: 0.9rem; }
+
+  /* ── SOLO MODE ── */
+  .mode-select { display: flex; gap: 12px; margin-bottom: 20px; }
+  .mode-btn {
+    flex: 1; background: var(--surface); border: 2px solid var(--border);
+    border-radius: 14px; padding: 14px 10px; color: var(--muted);
+    font-family: 'Cairo', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+  .mode-btn.selected { border-color: var(--accent); background: rgba(108,99,255,0.15); color: var(--accent); }
+  .mode-btn span { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+
+  /* ── ANSWER CONFIRM ── */
+  .confirm-answer-hint {
+    font-size: 0.78rem; color: var(--muted); text-align: center;
+    margin-bottom: 8px; transition: opacity 0.3s;
+  }
+
+</style>
+<!-- ══ FIREBASE SDK (compat - global scope) ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBmBfsXMYPy4yqVRQCZhValMcvED96F8o0",
+  authDomain: "ahmed-6e607.firebaseapp.com",
+  projectId: "ahmed-6e607",
+  storageBucket: "ahmed-6e607.firebasestorage.app",
+  messagingSenderId: "808220028213",
+  appId: "1:808220028213:web:3ddd9e09bc2f8e3e7c4f21"
+};
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDb   = firebase.firestore();
+
+// ── مراقبة حالة تسجيل الدخول ──
+fbAuth.onAuthStateChanged(async (user) => {
+  if (user) {
+    try {
+      const snap = await fbDb.collection('users').doc(user.uid).get();
+      if (snap.exists) {
+        currentUser = snap.data();
+        currentUser.uid = user.uid;
+      } else {
+        currentUser = { uid: user.uid, username: user.email.split('@')[0], avatar: '🦁', xp: 0, games: 0, wins: 0, correct: 0, wrong: 0, joined: new Date().toLocaleDateString('ar-IQ'), history: [] };
+      }
+    } catch(e) {
+      currentUser = { uid: user.uid, username: user.email.split('@')[0], avatar: '🦁', xp: 0, games: 0, wins: 0, correct: 0, wrong: 0, joined: new Date().toLocaleDateString('ar-IQ'), history: [] };
+    }
+    if (typeof afterLogin === 'function') afterLogin();
+  } else {
+    currentUser = null;
+    if (typeof showScreen === 'function') showScreen('screen-login');
+    const badge = document.getElementById('user-badge');
+    if (badge) badge.style.display = 'none';
+  }
+});
+</script>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="screen-login" class="screen active">
+  <div class="logo">⚡ تحدي السرعة</div>
+  <p class="subtitle">سجّل دخولك لتتبع تقدمك وإحصائياتك</p>
+  <div class="login-card">
+    <div class="login-tabs">
+      <button class="login-tab active" id="tab-login" onclick="switchLoginTab('login')">تسجيل دخول</button>
+      <button class="login-tab" id="tab-register" onclick="switchLoginTab('register')">حساب جديد</button>
+    </div>
+    <!-- تسجيل دخول -->
+    <div id="form-login" class="login-form">
+      <div class="input-group" style="margin-bottom:0">
+        <label>📧 الإيميل</label>
+        <input type="email" id="login-username" placeholder="example@gmail.com" oninput="clearLoginMsg()">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label>🔑 كلمة المرور</label>
+        <input type="password" id="login-password" placeholder="••••••" maxlength="30" oninput="clearLoginMsg()" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button class="btn btn-primary" onclick="doLogin()">🚀 دخول</button>
+      <button onclick="guestLogin()" style="width:100%;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:2px;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">👻 دخول كضيف</button>
+    </div>
+    <!-- تسجيل حساب -->
+    <div id="form-register" class="login-form" style="display:none">
+      <div class="input-group" style="margin-bottom:0">
+        <label>👤 اسم العرض</label>
+        <input type="text" id="reg-username" placeholder="اسمك باللعبة" maxlength="20" oninput="clearLoginMsg()">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label>📧 الإيميل</label>
+        <input type="email" id="reg-email" placeholder="example@gmail.com" oninput="clearLoginMsg()">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label>🔑 كلمة المرور</label>
+        <input type="password" id="reg-password" placeholder="6 أحرف على الأقل" maxlength="30" oninput="clearLoginMsg()">
+      </div>
+      <div>
+        <div class="avatar-label">🎭 اختار أفاتار</div>
+        <div class="avatar-row" id="avatar-row">
+          <div class="avatar-opt selected" onclick="selectAvatar(this,'🦁')">🦁</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🐯')">🐯</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🦊')">🦊</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🐺')">🐺</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🦅')">🦅</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🐲')">🐲</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'⚡')">⚡</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🔥')">🔥</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'💎')">💎</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🚀')">🚀</div>
+        </div>
+      </div>
+      <div class="login-error" id="reg-error"></div>
+      <div class="login-success" id="reg-success"></div>
+      <button class="btn btn-primary" onclick="doRegister()">✨ إنشاء الحساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFILE SCREEN ══ -->
+<div id="screen-profile" class="screen">
+  <div class="settings-header">
+    <button class="settings-back" onclick="closeProfile()">← رجوع</button>
+    <div class="settings-title">👤 حسابي</div>
+  </div>
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar" id="prof-avatar">🦁</div>
+      <div class="profile-username" id="prof-username">-</div>
+      <div class="level-badge" id="prof-level">🏅 مستوى 1</div>
+      <div class="profile-joined" id="prof-joined"></div>
+    </div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-label">
+        <span id="xp-label">XP: 0</span>
+        <span id="xp-next">حتى المستوى التالي: 100</span>
+      </div>
+      <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+    </div>
+    <div class="profile-stats">
+      <div class="pstat"><div class="pstat-num" id="prof-games">0</div><div class="pstat-lbl">مباريات</div></div>
+      <div class="pstat"><div class="pstat-num" id="prof-wins">0</div><div class="pstat-lbl">انتصارات</div></div>
+      <div class="pstat"><div class="pstat-num" id="prof-correct">0</div><div class="pstat-lbl">إجابة صح</div></div>
+    </div>
+    <div class="profile-history-title">📋 آخر المباريات</div>
+    <div id="prof-history-list"></div>
+    <div class="profile-actions">
+      <button class="btn-logout" onclick="doLogout()">🚪 تسجيل خروج</button>
+      <button class="btn-back-profile" onclick="closeProfile()">🎮 العب الحين</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ USER BADGE ══ -->
+<div class="user-badge" id="user-badge" onclick="openProfile()" style="display:none">
+  <span class="user-badge-avatar" id="badge-avatar">🦁</span>
+  <div class="user-badge-info">
+    <div class="user-badge-name" id="badge-name">-</div>
+    <div class="user-badge-xp" id="badge-xp">⭐ 0 XP</div>
+  </div>
+</div>
+
+<!-- ══ CONFETTI CONTAINER ══ -->
+<div class="confetti-container" id="confetti-container"></div>
+
+<!-- ══ HISTORY SCREEN ══ -->
+<div id="screen-history" class="screen">
+  <div class="settings-header">
+    <button class="settings-back" onclick="closeHistory()">← رجوع</button>
+    <div class="settings-title">🏅 سجل الفائزين</div>
+  </div>
+  <div class="history-card" id="history-list"></div>
+</div>
+
+<!-- ══ EXIT BUTTON ══ -->
+<button class="exit-btn" id="exit-btn" onclick="askExit()" style="display:none">🚪 خروج</button>
+
+<!-- ══ THEME BUTTON ══ -->
+<button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙 غامق</button>
+
+<!-- ══ SETTINGS BUTTON ══ -->
+<button class="settings-btn" id="settings-btn" onclick="openSettings()">⚙️ الإعدادات</button>
+
+<!-- ══ CONFIRM MODAL ══ -->
+<div class="modal-overlay" id="exit-modal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">هل أنت متأكد؟</div>
+    <div class="modal-sub">إذا خرجت الحين راح تضيع نقاطك وتبدأ من أول!</div>
+    <div class="modal-btns">
+      <button class="modal-btn-yes" onclick="confirmExit()">نعم، اخرج</button>
+      <button class="modal-btn-no" onclick="cancelExit()">لا، ارجع</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS SCREEN ══ -->
+<div id="screen-settings" class="screen">
+  <div class="settings-header">
+    <button class="settings-back" onclick="closeSettings()">← رجوع</button>
+    <div class="settings-title">⚙️ الإعدادات</div>
+  </div>
+  <div class="settings-card">
+
+    <!-- الوقت -->
+    <div class="settings-section">
+      <div class="settings-section-title">🎨 المظهر</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <span class="settings-row-icon">🌗</span>
+          <div>
+            <div class="settings-row-label">الوضع الفاتح</div>
+            <div class="settings-row-sub">تبديل بين الثيم الغامق والفاتح</div>
+          </div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="theme-toggle" onchange="toggleThemeFromSettings(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- الوقت -->
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <span class="settings-row-icon">⏱</span>
+          <div>
+            <div class="settings-row-label">مدة كل جولة</div>
+            <div class="settings-row-sub">اختر كم ثانية لكل جولة</div>
+          </div>
+        </div>
+        <div class="rounds-opts" style="width:160px">
+          <button class="round-opt" id="t30" onclick="setTimeFromSettings(30)">30ث</button>
+          <button class="round-opt" id="t45" onclick="setTimeFromSettings(45)">45ث</button>
+          <button class="round-opt" id="t60" onclick="setTimeFromSettings(60)">60ث</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- عدد الجولات -->
+    <div class="settings-section">
+      <div class="settings-section-title">🎮 عدد الجولات</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <span class="settings-row-icon">🔄</span>
+          <div>
+            <div class="settings-row-label">جولات اللعبة</div>
+            <div class="settings-row-sub">كم جولة تلعبون في كل مباراة</div>
+          </div>
+        </div>
+        <div class="rounds-opts" style="width:180px">
+          <button class="round-opt" id="r2" onclick="setRoundsFromSettings(2)">2</button>
+          <button class="round-opt" id="r4" onclick="setRoundsFromSettings(4)">4</button>
+          <button class="round-opt" id="r6" onclick="setRoundsFromSettings(6)">6</button>
+          <button class="round-opt" id="r8" onclick="setRoundsFromSettings(8)">8</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- الأسئلة في الجولة -->
+    <div class="settings-section">
+      <div class="settings-section-title">❓ أسئلة الجولة</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <span class="settings-row-icon">📝</span>
+          <div>
+            <div class="settings-row-label">أسئلة في كل جولة</div>
+            <div class="settings-row-sub">عدد الأسئلة لكل لاعب في جولته</div>
+          </div>
+        </div>
+        <div class="rounds-opts" style="width:180px">
+          <button class="round-opt" id="q3" onclick="setQsFromSettings(3)">3</button>
+          <button class="round-opt" id="q5" onclick="setQsFromSettings(5)">5</button>
+          <button class="round-opt" id="q7" onclick="setQsFromSettings(7)">7</button>
+          <button class="round-opt" id="q10" onclick="setQsFromSettings(10)">10</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- الصوت -->
+    <div class="settings-section">
+      <div class="settings-section-title">🔊 الصوت</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <span class="settings-row-icon">🔔</span>
+          <div>
+            <div class="settings-row-label">صوت انتهاء الوقت</div>
+            <div class="settings-row-sub">تنبيه عند انتهاء الجولة</div>
+          </div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="sound-toggle" checked onchange="saveSoundSetting(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <span class="settings-row-icon">⚠️</span>
+          <div>
+            <div class="settings-row-label">تنبيه آخر 10 ثواني</div>
+            <div class="settings-row-sub">إشعار بصري عند اقتراب الوقت</div>
+          </div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="warn-toggle" checked onchange="saveWarnSetting(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <!-- مسح البيانات -->
+    <div class="settings-section">
+      <div class="settings-section-title">🗑️ البيانات</div>
+      <button class="btn-danger" onclick="resetHistoryFromSettings()">🔁 مسح سجل الأسئلة المستخدمة</button>
+      <button class="btn-danger" style="margin-top:10px" onclick="clearGameHistory()">🏅 مسح سجل الفائزين</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="screen-setup" class="screen">
+  <div class="logo">⚡ تحدي السرعة</div>
+  <p class="subtitle">لعبة ثقافية تنافسية للعائلة والأصدقاء</p>
+  <div class="setup-card">
+    <!-- وضع اللعب -->
+    <div class="input-group">
+      <label>🎮 وضع اللعب</label>
+      <div class="mode-select">
+        <button class="mode-btn selected" id="mode-two" onclick="selectMode('two')">
+          <span>👥</span>لاعبان
+        </button>
+        <button class="mode-btn" id="mode-solo" onclick="selectMode('solo')">
+          <span>🧑</span>لاعب واحد
+        </button>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>👤 اسم اللاعب الأول</label>
+      <input type="text" id="p1-name" placeholder="مثال: أحمد" maxlength="20">
+    </div>
+    <div class="input-group" id="p2-group">
+      <label>👤 اسم اللاعب الثاني</label>
+      <input type="text" id="p2-name" placeholder="مثال: محمد" maxlength="20">
+    </div>
+    <div class="input-group" id="ref-group">
+      <label>⚖️ اسم الحكم</label>
+      <input type="text" id="ref-name" placeholder="مثال: علي (الحكم)" maxlength="20">
+    </div>
+    <div class="time-selector">
+      <label>⏱ اختر وقت كل جولة</label>
+      <div class="time-options">
+        <button class="time-opt selected" onclick="selectTime(30,this)">
+          <span class="t-icon">⚡</span>30 ثانية<div class="t-label">سريع</div>
+        </button>
+        <button class="time-opt" onclick="selectTime(45,this)">
+          <span class="t-icon">🎯</span>45 ثانية<div class="t-label">متوسط</div>
+        </button>
+        <button class="time-opt" onclick="selectTime(60,this)">
+          <span class="t-icon">🧠</span>دقيقة<div class="t-label">مريح</div>
+        </button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">🚀 ابدأ اللعبة</button>
+    <button onclick="openHistory()" style="margin-top:12px;width:100%;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🏅 سجل الفائزين</button>
+  </div>
+</div>
+
+<!-- ══ CATEGORY SCREEN ══ -->
+<div id="screen-category" class="screen">
+  <div id="cat-round" class="round-header"></div>
+  <div id="cat-player" class="player-turn"></div>
+  <div class="time-badge">⏱ <span id="time-badge-text">30 ثانية</span></div>
+  <div id="referee-info" class="referee-badge">⚖️ <span id="ref-display"></span></div>
+  <p class="section-title">اختر تصنيف الجولة</p>
+  <div class="categories-grid">
+    <button class="cat-btn" onclick="selectCategory('FOOTBALL')"><span>⚽</span>كرة القدم عامة</button>
+    <button class="cat-btn cat-league" onclick="selectCategory('ENGLISH_LEAGUE')"><span>🏴</span>الدوري الإنجليزي</button>
+    <button class="cat-btn cat-league" onclick="selectCategory('SPANISH_LEAGUE')"><span>🇪🇸</span>الدوري الإسباني</button>
+    <button class="cat-btn cat-league" onclick="selectCategory('ITALIAN_LEAGUE')"><span>🇮🇹</span>الدوري الإيطالي</button>
+    <button class="cat-btn cat-league" onclick="selectCategory('GERMAN_LEAGUE')"><span>🇩🇪</span>الدوري الألماني</button>
+    <button class="cat-btn" onclick="selectCategory('SPORTS')"><span>🏆</span>الرياضة</button>
+    <button class="cat-btn" onclick="selectCategory('MOVIES')"><span>🎬</span>الأفلام</button>
+    <button class="cat-btn" onclick="selectCategory('ANIME')"><span>🎌</span>أنمي</button>
+    <button class="cat-btn" onclick="selectCategory('GEOGRAPHY')"><span>🌍</span>جغرافيا</button>
+    <button class="cat-btn" onclick="selectCategory('HISTORY')"><span>📜</span>تاريخ</button>
+    <button class="cat-btn" onclick="selectCategory('SCIENCE')"><span>🔬</span>علوم</button>
+    <button class="cat-btn" onclick="selectCategory('GENERAL')"><span>🎯</span>معلومات عامة</button>
+    <button class="cat-btn" onclick="selectCategory('TECH')"><span>💻</span>تكنولوجيا</button>
+    <button class="cat-btn" onclick="selectCategory('ARABIC_CULTURE')"><span>🕌</span>ثقافة عربية</button>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══ -->
+<div id="screen-game" class="screen">
+  <div class="scoreboard">
+    <div class="score-card" id="sc1">
+      <div class="p-name" id="sc1-name">-</div>
+      <div class="p-score" id="sc1-score">0</div>
+    </div>
+    <div class="score-card" id="sc2">
+      <div class="p-name" id="sc2-name">-</div>
+      <div class="p-score" id="sc2-score">0</div>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <div class="timer-wrap">
+      <svg class="timer-svg" width="120" height="120" viewBox="0 0 120 120">
+        <circle class="timer-bg" cx="60" cy="60" r="50"/>
+        <circle class="timer-arc" id="timer-arc" cx="60" cy="60" r="50"/>
+      </svg>
+      <div class="timer-text" id="timer-text">30</div>
+    </div>
+
+    <div class="q-progress" id="q-progress">سؤال 1 من 5</div>
+
+    <div class="q-card" id="q-card">
+      <div class="q-text" id="q-text">...</div>
+    </div>
+
+    <div class="a-card" id="a-card" onclick="toggleAnswer()">
+      👁 اضغط لإظهار الجواب
+    </div>
+
+    <div class="confirm-answer-hint" id="answer-hint">👆 أظهر الجواب أولاً قبل الحكم</div>
+    <div class="action-btns">
+      <button class="btn-correct" id="btn-correct" onclick="answerCorrect()" disabled style="opacity:0.45;cursor:not-allowed">✅ صح<br><small style="font-weight:400;font-size:0.75rem">+10 نقاط</small></button>
+      <button class="btn-skip" onclick="skipQuestion()">⏭<br><small>تخطي</small></button>
+      <button class="btn-wrong" id="btn-wrong" onclick="answerWrong()" disabled style="opacity:0.45;cursor:not-allowed">❌ خطأ<br><small style="font-weight:400;font-size:0.75rem">-3 نقاط</small></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ROUND RESULT SCREEN ══ -->
+<div id="screen-result" class="screen">
+  <div class="result-card">
+    <div class="result-title" id="result-title">نهاية الجولة</div>
+    <div class="result-scores">
+      <div class="rs-card" id="rs1">
+        <div class="name" id="rs1-name">-</div>
+        <div class="score" id="rs1-score">0</div>
+      </div>
+      <div class="rs-card" id="rs2">
+        <div class="name" id="rs2-name">-</div>
+        <div class="score" id="rs2-score">0</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="nextRound()">➡ الجولة التالية</button>
+    <button onclick="askExit()" style="margin-top:12px;width:100%;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🚪 إنهاء اللعبة</button>
+  </div>
+</div>
+
+<!-- ══ GAME OVER SCREEN ══ -->
+<div id="screen-gameover" class="screen">
+  <div class="winner-badge">🏆</div>
+  <div class="winner-name" id="winner-name">الفائز</div>
+  <div class="winner-sub" id="winner-sub">بالتهاني!</div>
+  <div class="final-scores">
+    <div class="fs-card" id="fs1">
+      <div class="fname" id="fs1-name">-</div>
+      <div class="fscore" id="fs1-score">0</div>
+      <div class="fstats" id="fs1-stats">-</div>
+    </div>
+    <div class="fs-card" id="fs2">
+      <div class="fname" id="fs2-name">-</div>
+      <div class="fscore" id="fs2-score">0</div>
+      <div class="fstats" id="fs2-stats">-</div>
+    </div>
+  </div>
+  <button class="btn btn-primary" style="max-width:440px;width:100%" onclick="resetGame()">🔄 لعبة جديدة</button>
+</div>
+
+<script>
+// ═══════════════ DATA ═══════════════
+const QUESTIONS = {
+  FOOTBALL: [
+    {q:"من هو الهداف التاريخي لكأس العالم؟",a:"ميروسلاف كلوزه (16 هدف)"},
+    {q:"كم مرة فاز البرازيل بكأس العالم؟",a:"5 مرات"},
+    {q:"من هو أول لاعب يفوز بجائزة البالون دور 5 مرات؟",a:"ليونيل ميسي"},
+    {q:"في أي مدينة يقع ملعب سانتياغو برنابيو؟",a:"مدريد"},
+    {q:"من هو مدرب برشلونة الأسطوري اللي اخترع التيكي تاكا؟",a:"بيب غوارديولا"},
+    {q:"كم لاعب بالملعب من الفريقين بكرة القدم؟",a:"22 لاعب"},
+    {q:"أي منتخب فاز بأول كأس عالم سنة 1930؟",a:"أوروغواي"},
+    {q:"شنو رقم قميص رونالدو المشهور؟",a:"7"},
+    {q:"بأي بلد انعقد كأس العالم 2022؟",a:"قطر"},
+    {q:"مين سجل هدف 'يد الله' المشهور؟",a:"دييغو مارادونا"},
+    {q:"شنو اسم الدوري الإيطالي؟",a:"السيريا آ"},
+    {q:"كم دقيقة مباراة كرة القدم الرسمية؟",a:"90 دقيقة"},
+    {q:"مين أغلى لاعب بالتاريخ بالانتقالات؟",a:"نيمار (222 مليون يورو)"},
+    {q:"شنو لقب ليفربول؟",a:"الريدز"},
+    {q:"كم مرة فاز ريال مدريد بدوري الأبطال؟",a:"15 مرة"},
+    {q:"مين هداف ريال مدريد التاريخي؟",a:"كريستيانو رونالدو"},
+    {q:"وين يقع ملعب أنفيلد؟",a:"ليفربول، إنجلترا"},
+    {q:"مين سجل أكثر أهداف بتاريخ كرة القدم؟",a:"كريستيانو رونالدو (900+ هدف)"},
+    {q:"شنو اسم الدوري الإنجليزي الممتاز بالإنجليزي؟",a:"Premier League"},
+    {q:"بأي سنة تأسس نادي ريال مدريد؟",a:"1902"},
+  ],
+  ENGLISH_LEAGUE: [
+    // ── سهلة ──
+    {q:"مين فاز بالدوري الإنجليزي أكثر مرة بالتاريخ؟",a:"مانشستر يونايتد (20 لقب)"},
+    {q:"شنو لقب مانشستر سيتي؟",a:"السيتيزنز"},
+    {q:"شنو لقب أرسنال؟",a:"الغانرز"},
+    {q:"وين يلعب تشيلسي؟",a:"ملعب ستامفورد بريدج"},
+    {q:"شنو لقب توتنهام؟",a:"الديكة (Spurs)"},
+    {q:"مين المدرب الأسطوري لمانشستر يونايتد؟",a:"السير أليكس فيرغسون"},
+    {q:"شنو اسم ملعب مانشستر يونايتد؟",a:"أولد ترافورد"},
+    {q:"كم فريق بالدوري الإنجليزي الممتاز؟",a:"20 فريق"},
+    {q:"مين هداف الدوري الإنجليزي التاريخي؟",a:"آلان شيرر (260 هدف)"},
+    {q:"شنو لقب نيوكاسل يونايتد؟",a:"المغازلون (Magpies)"},
+    // ── متوسطة ──
+    {q:"بأي موسم فاز ليستر سيتي بالدوري الإنجليزي بطريقة مفاجئة؟",a:"موسم 2015-2016"},
+    {q:"مين سجل أكثر أهداف بموسم واحد بالدوري الإنجليزي؟",a:"محمد صلاح وإيرلينغ هالاند (36 هدف)"},
+    {q:"كم مرة فاز أرسنال بالدوري بدون خسارة؟",a:"مرة وحدة - موسم 2003-2004 (الإنفينسيبلز)"},
+    {q:"مين مدرب ليفربول اللي فازوا بدوري الأبطال 2019؟",a:"يورغن كلوب"},
+    {q:"شنو اسم الملعب الجديد لتوتنهام؟",a:"توتنهام هوتسبير ستاديوم"},
+    {q:"بأي سنة تأسس الدوري الإنجليزي الممتاز؟",a:"1992"},
+    {q:"مين أصغر لاعب يسجل هدف بالدوري الإنجليزي؟",a:"جيمس فورجسون (16 سنة و197 يوم)"},
+    {q:"شنو اسم المدرب اللي خذ مانشستر سيتي لأول لقب بالتاريخ الحديث؟",a:"روبرتو مانشيني (2012)"},
+    {q:"كم هدف سجل محمد صلاح بأول موسم ليه بليفربول؟",a:"32 هدف بالدوري"},
+    {q:"مين اللاعب اللي سمّوه 'الملك' بالدوري الإنجليزي؟",a:"إريك كانتونا"},
+    {q:"شنو اسم ملعب أرسنال الحالي؟",a:"ملعب الإمارات"},
+    {q:"بأي موسم فاز ليفربول بالدوري الإنجليزي بعد 30 سنة انتظار؟",a:"موسم 2019-2020"},
+    {q:"مين أكثر مدرب فاز بالدوري الإنجليزي؟",a:"السير أليكس فيرغسون (13 مرة)"},
+    {q:"شنو لقب مباراة مانشستر يونايتد ومانشستر سيتي؟",a:"ديربي مانشستر"},
+    {q:"مين اشترى نيوكاسل يونايتد سنة 2021؟",a:"صندوق الاستثمارات السعودية"},
+    // ── صعبة نسبياً ──
+    {q:"كم هدف سجل أندرو كول بموسم 1993-1994 بالدوري الإنجليزي؟",a:"34 هدف (رقم قياسي قديم)"},
+    {q:"مين أول لاعب يفوز بجائزة لاعب الشهر 6 مرات بالدوري الإنجليزي؟",a:"ستيفن جيرارد"},
+    {q:"شنو اسم أول مدرب يفوز بالدوري الإنجليزي مع فريقين مختلفين؟",a:"كيني دالغليش"},
+    {q:"بأي سنة هبط نادي ليدز يونايتد آخر مرة للدرجة الأولى؟",a:"2004"},
+    {q:"كم مرة فاز إيفرتون بالدوري الإنجليزي؟",a:"9 مرات"},
+    {q:"مين اللاعب اللي سجل أسرع هاتريك بالدوري الإنجليزي؟",a:"ساديو ماني (2 دقيقة و56 ثانية)"},
+    {q:"شنو اسم الملعب اللي كان يلعب فيه مانشستر سيتي قبل الاتحاد؟",a:"ملعب ماين رود"},
+    {q:"كم مرة هبط مانشستر يونايتد من الدوري الإنجليزي الممتاز؟",a:"ما هبط أبداً من تأسيس البريميرليغ"},
+    {q:"مين أكثر لاعب يلعب بالدوري الإنجليزي بالتاريخ؟",a:"جيمس ميلنر"},
+    {q:"شنو جنسية إريك كانتونا؟",a:"فرنسي"},
+    {q:"بأي موسم فاز ليدز يونايتد بآخر لقب ليه بالدوري الإنجليزي؟",a:"1991-1992"},
+    {q:"مين مدرب آستون فيلا اللي رجّعهم للدوري الأوروبي؟",a:"أونآي إيميري"},
+    {q:"شنو اسم الملاعب اللي يسمّونه 'مقبرة العمالقة' بالدوري الإنجليزي؟",a:"ملعب فيكاريج رود (واتفورد) تاريخياً"},
+    {q:"كم هدف سجل واين روني بمسيرته مع مانشستر يونايتد؟",a:"253 هدف"},
+    {q:"مين اللاعب اللي يلقّبونه بـ'الله' بأنفيلد؟",a:"محمد صلاح"},
+    {q:"شنو اسم أول فريق يفوز بالدوري الإنجليزي الممتاز بعد تأسيسه؟",a:"مانشستر يونايتد (1993)"},
+    {q:"كم مرة فاز تشيلسي بدوري الأبطال؟",a:"مرتين (2012 و2021)"},
+    {q:"مين اللاعب اللي انتقل من ليفربول لمانشستر يونايتد وصار مكروه؟",a:"مايكل أوين (انتقل 2009)"},
+    {q:"شنو رقم قميص ستيفن جيرارد بليفربول طول مسيرته؟",a:"8"},
+    {q:"بأي عام فاز أرسنال بآخر لقب بالدوري الإنجليزي؟",a:"2004"},
+    {q:"مين المدير الفني الحالي لمانشستر يونايتد (2024-2025)؟",a:"روبن أموريم"},
+    {q:"شنو اسم الديربي بين أرسنال وتوتنهام؟",a:"ديربي شمال لندن"},
+    {q:"مين أكثر لاعب يفوز بجائزة أفضل لاعب بالدوري الإنجليزي؟",a:"تييري هنري (4 مرات)"},
+    {q:"شنو اسم ملعب ليستر سيتي؟",a:"ملعب كينغ باور"},
+    {q:"كم هدف سجل أيرلينغ هالاند بأول موسم ليه بمانشستر سيتي؟",a:"36 هدف بالدوري"},
+    {q:"مين اللاعب اللي انتقل من تشيلسي لليفربول وصار نجم؟",a:"رحيم ستيرلينغ (انتقل من مانشستر سيتي لتشيلسي 2022)"},
+    {q:"شنو لقب مباراة أرسنال وتشيلسي؟",a:"ديربي لندن"},
+    {q:"بأي موسم خسر آرسنال بالنهائي وفقد اللقب آخر لحظة؟",a:"2012 (أمام مانشستر سيتي بهدف أغويرو)"},
+    {q:"مين صاحب هدف أغويرو الشهير اللي منح سيتي اللقب 2012؟",a:"سيرخيو أغويرو"},
+    {q:"كم هدف سجل فرانك لامبارد بمسيرته مع تشيلسي؟",a:"211 هدف"},
+    {q:"شنو اسم الملعب اللي هدموه وبنوا مكانه ملعب توتنهام الجديد؟",a:"ملعب وايت هارت لين"},
+  ],
+  SPANISH_LEAGUE: [
+    // ── سهلة ──
+    {q:"مين أكثر فريق يفوز بالدوري الإسباني بالتاريخ؟",a:"ريال مدريد (35+ لقب)"},
+    {q:"شنو لقب برشلونة؟",a:"البلاوغرانا"},
+    {q:"شنو اسم الملعب الجديد لبرشلونة؟",a:"ملعب سبوتيفاي كامب نو (بعد التجديد)"},
+    {q:"مين هداف الدوري الإسباني التاريخي؟",a:"ليونيل ميسي"},
+    {q:"شنو لقب مباراة ريال مدريد وبرشلونة؟",a:"الكلاسيكو"},
+    {q:"شنو اسم الدوري الإسباني؟",a:"لاليغا"},
+    {q:"وين يلعب أتلتيكو مدريد؟",a:"ملعب سيفيداد ميتروبوليتانو"},
+    {q:"مين أول لاعب يفوز ببالون دور وهو بالدوري الإسباني؟",a:"ألفريدو دي ستيفانو"},
+    {q:"كم مرة فاز برشلونة بدوري الأبطال؟",a:"5 مرات"},
+    {q:"شنو لقب نادي إشبيلية؟",a:"البنفاحيون"},
+    // ── متوسطة ──
+    {q:"مين المدرب اللي خذ أتلتيكو مدريد للقب الدوري الإسباني 2021؟",a:"دييغو سيميوني"},
+    {q:"كم هدف سجل ميسي بموسم 2011-2012 بالدوري الإسباني؟",a:"50 هدف (رقم قياسي)"},
+    {q:"مين اللاعب اللي سمّوه 'صاروخ مدريد'؟",a:"راؤول غونزاليس"},
+    {q:"بأي موسم فاز ريال مدريد بالكلاسيكو 5-0 الشهير؟",a:"موسم 2010-2011"},
+    {q:"مين أكثر لاعب يفوز ببطولة الدوري الإسباني؟",a:"فرانشيسكو خينتو وباكو خنتو (11 مرة مع ريال)"},
+    {q:"شنو اسم الثالوث الشهير ببرشلونة MSN؟",a:"ميسي، سواريز، نيمار"},
+    {q:"مين أول مدرب يفوز بلاليغا مع فريق غير ريال وبرشلونة بالعصر الحديث؟",a:"دييغو سيميوني مع أتلتيكو 2014"},
+    {q:"شنو اسم الملعب اللي كان يلعب فيه أتلتيكو مدريد قبل؟",a:"ملعب فيسنتي كالديرون"},
+    {q:"مين سجل أكثر هاتريك بتاريخ الدوري الإسباني؟",a:"ليونيل ميسي"},
+    {q:"كم مرة فاز ريال مدريد بلاليغا متتالية؟",a:"5 مرات (1961-1965)"},
+    {q:"مين اللاعب اللي انتقل من برشلونة لريال مدريد وصار مكروه ببرشلونة؟",a:"لويس فيغو (2000)"},
+    {q:"شنو اسم ملعب فالنسيا؟",a:"ملعب ميستايا"},
+    {q:"مين مدرب ريال مدريد اللي فازوا بدوري الأبطال 3 مرات متتالية؟",a:"زين الدين زيدان"},
+    {q:"كم لاعب عراقي لعب بالدوري الإسباني؟",a:"أيمن حسين لعب بإشبيلية"},
+    {q:"شنو اسم الثالوث الشهير بريال مدريد BBC؟",a:"بنزيمة، بيل، كريستيانو"},
+    // ── صعبة نسبياً ──
+    {q:"بأي سنة تأسس نادي برشلونة؟",a:"1899"},
+    {q:"مين أول مدرب يفوز بلاليغا مع ريال مدريد من خارج إسبانيا؟",a:"جوسيب غوارديولا كان ببرشلونة، بس فابيو كابيلو مع ريال"},
+    {q:"شنو اسم اللاعب اللي يلقّبونه 'الغرينا' ببرشلونة؟",a:"أندريس إنييستا"},
+    {q:"كم هدف سجل كريستيانو رونالدو بمسيرته كلها مع ريال مدريد؟",a:"450 هدف"},
+    {q:"مين أكثر لاعب يلعب بالكلاسيكو بالتاريخ؟",a:"سيرخيو راموس"},
+    {q:"شنو اسم الديربي بين أتلتيكو مدريد وريال مدريد؟",a:"ديربي مدريد"},
+    {q:"بأي موسم حقق برشلونة الثلاثية الأولى؟",a:"موسم 2008-2009 تحت غوارديولا"},
+    {q:"مين اللاعب اللي سمّوه 'البرغي' بالدوري الإسباني؟",a:"أندريس إنييستا"},
+    {q:"كم مرة فاز أتلتيك بيلباو بالدوري الإسباني؟",a:"8 مرات"},
+    {q:"شنو قاعدة أتلتيك بيلباو المشهورة بخصوص اللاعبين؟",a:"يلعبون بس لاعبين باسكيين"},
+    {q:"مين أول لاعب يسجل 100 هدف بالكلاسيكو؟",a:"ليونيل ميسي"},
+    {q:"بأي سنة هبط ريال مدريد للدرجة الثانية؟",a:"ما هبط أبداً"},
+    {q:"شنو اسم مدرب ريال مدريد الحالي (2024-2025)؟",a:"كارلو أنشيلوتي"},
+    {q:"مين اللاعب الإسباني اللي يلقّبونه 'الفرعون'؟",a:"سيرخيو راموس"},
+    {q:"كم مرة حقق ريال مدريد الثلاثية؟",a:"مرة وحدة رسمياً (2016)"},
+    {q:"شنو اسم المنافسة بين إشبيلية وريال بيتيس؟",a:"ديربي إشبيلية (El Gran Derbi)"},
+    {q:"مين أصغر لاعب يسجل هدف بالكلاسيكو؟",a:"أنسو فاتي (17 سنة)"},
+    {q:"كم هدف سجل راؤول بمسيرته مع ريال مدريد؟",a:"323 هدف"},
+    {q:"شنو اسم الملعب اللي كان اسمه 'نو كامب' قبل التغيير؟",a:"كامب نو، وهسة سبوتيفاي كامب نو"},
+    {q:"مين أكثر لاعب يلعب بلاليغا بالتاريخ؟",a:"أندريس إنييستا (674 مباراة مع برشلونة)"},
+    {q:"بأي موسم فاز ديبورتيفو لاكورونيا بلاليغا؟",a:"موسم 1999-2000"},
+    {q:"مين مدرب برشلونة الحالي (2024-2025)؟",a:"هانسي فليك"},
+    {q:"شنو اسم اللاعب اللي يلقّبونه 'الأسد' بأتلتيكو؟",a:"دييغو فورلان"},
+    {q:"كم مرة فاز برشلونة بلاليغا متتالية؟",a:"3 مرات (2008-2011 مع غوارديولا)"},
+    {q:"مين اللاعب الإسباني اللي يلقّبونه 'سيرخيو الملك'؟",a:"سيرخيو بوسكيتس"},
+  ],
+  ITALIAN_LEAGUE: [
+    // ── سهلة ──
+    {q:"مين أكثر فريق يفوز بالدوري الإيطالي؟",a:"يوفنتوس (36 لقب)"},
+    {q:"شنو اسم الدوري الإيطالي؟",a:"السيريا آ"},
+    {q:"شنو لقب نادي إنتر ميلان؟",a:"النيراتزوري (الأسود والأزرق)"},
+    {q:"شنو لقب نادي ميلان؟",a:"الروسونيري (الأحمر والأسود)"},
+    {q:"وين يلعب يوفنتوس؟",a:"ملعب يوفنتوس ستاديوم (أليانز ستاديوم)"},
+    {q:"شنو لقب نابولي؟",a:"الباتشيدوني"},
+    {q:"مين هداف الدوري الإيطالي التاريخي؟",a:"سيلفيو بيروسكاندولو أو فرانشيسكو توتي"},
+    {q:"كم مرة فاز ميلان بدوري الأبطال؟",a:"7 مرات"},
+    {q:"شنو لقب روما؟",a:"الجيالوروسي (الأصفر والأحمر)"},
+    {q:"مين أشهر لاعب بتاريخ يوفنتوس؟",a:"أليساندرو ديل بييرو"},
+    // ── متوسطة ──
+    {q:"شنو اسم الديربي بين إنتر وميلان؟",a:"ديربي ميلان (ديربي ديلا ماندونينا)"},
+    {q:"مين اللاعب اللي انتقل من يوفنتوس لريال مدريد بأكبر صفقة إيطالية؟",a:"كريستيانو رونالدو (العكس) أو زين الدين زيدان (2001)"},
+    {q:"بأي موسم حقق يوفنتوس 9 ألقاب متتالية بالسيريا آ؟",a:"من 2012 لـ 2020"},
+    {q:"مين اللاعب اللي سمّوه 'توتي إله روما'؟",a:"فرانشيسكو توتي"},
+    {q:"شنو اسم الملعب الشهير لنادي إنتر ميلان وميلان سوية؟",a:"ملعب جوزيبي مياتسا (سان سيرو)"},
+    {q:"مين مدرب إنتر ميلان اللي فاز بالثلاثية 2010؟",a:"جوزيه مورينيو"},
+    {q:"كم مرة فاز إنتر ميلان بدوري الأبطال؟",a:"3 مرات"},
+    {q:"شنو اسم الثالوث الشهير بميلان التسعينيات؟",a:"باجيو، ماريو، ساوندرز أو الثلاثي الهولندي: غوليت، ريكارد، فان باستن"},
+    {q:"مين اللاعب الأرجنتيني اللي لعب بنابولي وصار أسطورة؟",a:"دييغو مارادونا"},
+    {q:"بأي سنة شُطب يوفنتوس وهبط للسيريا بي بسبب قضية توتوبولي؟",a:"2006"},
+    {q:"شنو اسم الديربي بين روما ولاتسيو؟",a:"ديربي روما (ديربي ديلا كابيتال)"},
+    {q:"مين اللاعب اللي يلقّبونه 'الظاهرة الإيطالية'؟",a:"روبيرتو باجيو"},
+    {q:"كم هدف سجل فرانشيسكو توتي بمسيرته مع روما؟",a:"307 هدف"},
+    {q:"شنو اسم مدرب نابولي اللي فاز بأول لقب ليهم بالعصر الحديث؟",a:"لوتشيانو سباليتي (2023)"},
+    {q:"مين اللاعب اللي يلقّبونه 'الأبيض' بيوفنتوس؟",a:"أليساندرو ديل بييرو"},
+    // ── صعبة نسبياً ──
+    {q:"بأي سنة تأسس نادي إنتر ميلان؟",a:"1908"},
+    {q:"مين أول مدرب يفوز بالسيريا آ مع فريقين مختلفين؟",a:"أرييغو ساكي مع ميلان وكابيلو"},
+    {q:"شنو اسم اللاعب اللي يلقّبونه 'الكاتب' ببيرلو؟",a:"أندريا بيرلو نفسه يلقّبونه 'الكاتب (El Architetto)'"},
+    {q:"كم مرة فاز نابولي بالسيريا آ بالتاريخ؟",a:"3 مرات (1987، 1990، 2023)"},
+    {q:"مين اللاعب الذي يُعدّ أعظم لاعب بتاريخ إنتر؟",a:"روناندو البرازيلي أو ساندرو ماتزولا"},
+    {q:"شنو اسم الثلاثية اللي حققها إنتر 2010؟",a:"السيريا آ، كأس إيطاليا، دوري الأبطال"},
+    {q:"مين اللاعب الإيطالي اللي يلقّبونه 'الجنرال'؟",a:"أندريا بيرلو"},
+    {q:"بأي موسم رجع نابولي للسيريا آ بعد الهبوط؟",a:"موسم 2007-2008"},
+    {q:"كم مرة فاز لاتسيو بالسيريا آ؟",a:"مرتين (1974 و2000)"},
+    {q:"شنو اسم المدرب اللي حقق مع يوفنتوس 9 ألقاب متتالية؟",a:"ماسيميليانو ألليغري وأنتونيو كونتي"},
+    {q:"مين اللاعب اللي انتقل من يوفنتوس لبرشلونة ووصف نفسه بالخيانة؟",a:"ما صار هيج، لكن كارلوس تيفيز من إنتر ليوفنتوس"},
+    {q:"شنو اسم الملعب اللي يلعب فيه نابولي؟",a:"ملعب دييغو أرماندو مارادونا"},
+    {q:"مين أول مدرب أجنبي يفوز بالسيريا آ؟",a:"هيرار هوليه مع يوفنتوس 1952"},
+    {q:"كم هدف سجل غونزالو هيغواين بموسم 2015-2016 (رقم قياسي آنذاك)؟",a:"36 هدف"},
+    {q:"مين اللاعب اللي يلقّبونه 'الشيطان الأبيض' بميلان؟",a:"زلاتان إبراهيموفيتش"},
+    {q:"بأي سنة هبط ميلان للسيريا بي؟",a:"ما هبط ميلان الكبير، لكن مونزا وفياورنتينا هبطوا"},
+    {q:"شنو اسم اللاعب النيجيري اللي لعب بميلان وصار أسطورة؟",a:"جورج ويا"},
+    {q:"مين اللاعب اللي يلقّبونه 'القلب الكبير' بروما؟",a:"فرانشيسكو توتي"},
+    {q:"كم مرة فاز فيورنتينا بالسيريا آ؟",a:"مرتين (1956 و1969)"},
+    {q:"شنو اسم المدرب اللي خذ نابولي للقب 2023؟",a:"لوتشيانو سباليتي"},
+  ],
+  GERMAN_LEAGUE: [
+    // ── سهلة ──
+    {q:"مين أكثر فريق يفوز بالدوري الألماني؟",a:"بايرن ميونخ (34+ لقب)"},
+    {q:"شنو اسم الدوري الألماني؟",a:"البوندسليغا"},
+    {q:"شنو لقب بايرن ميونخ؟",a:"البافاريين"},
+    {q:"شنو لقب بروسيا دورتموند؟",a:"الأصفر والأسود (Die Borussen)"},
+    {q:"وين يلعب بايرن ميونخ؟",a:"ملعب أليانز أرينا"},
+    {q:"مين هداف البوندسليغا التاريخي؟",a:"غيرد مولر (365 هدف)"},
+    {q:"شنو اسم الديربي بين بايرن ودورتموند؟",a:"ديربي دير كلاسيكر"},
+    {q:"كم مرة فاز بايرن ميونخ بدوري الأبطال؟",a:"6 مرات"},
+    {q:"مين أشهر لاعب بتاريخ بايرن ميونخ؟",a:"فرانز بيكنباور أو غيرد مولر"},
+    {q:"شنو لقب بايير ليفركوزن؟",a:"نيفركوزن (لأنهم يخسرون النهائيات) لكن الرسمي هو 'الفارما'"},
+    // ── متوسطة ──
+    {q:"مين اللاعب اللي يلقّبونه 'الفأر الدائر' ببايرن؟",a:"فرانك ريبيري"},
+    {q:"بأي موسم فاز دورتموند بالبوندسليغا مرتين متتاليتين؟",a:"2011 و2012 تحت كلوب"},
+    {q:"مين مدرب دورتموند اللي خذهم للقب ورحل لليفربول؟",a:"يورغن كلوب"},
+    {q:"شنو اسم الثالوث الشهير ببايرن ميونخ بالثمانينيات؟",a:"رومينيغه، مولر، هوينيس"},
+    {q:"كم مرة فاز بايرن ميونخ بالبوندسليغا متتاليين؟",a:"11 مرة (2013-2023)"},
+    {q:"مين اللاعب اللي يلقّبونه 'الرصاصة' بالبوندسليغا؟",a:"روبرت ليفاندوفسكي"},
+    {q:"شنو اسم ملعب دورتموند؟",a:"ملعب زيغنال إيدونا بارك"},
+    {q:"مين اللاعب اللي انتقل من دورتموند لبايرن وصار مكروه بدورتموند؟",a:"روبرت ليفاندوفسكي (2014)"},
+    {q:"كم هدف سجل روبرت ليفاندوفسكي بموسم 2020-2021 (رقم قياسي)؟",a:"41 هدف بالبوندسليغا"},
+    {q:"شنو اسم الملعب اللي يلعب فيه لايبزيغ؟",a:"ملعب ريد بول أرينا"},
+    // ── صعبة نسبياً ──
+    {q:"مين أول مدرب يفوز بالبوندسليغا مع فريق غير بايرن بالعصر الحديث؟",a:"يورغن كلوب مع دورتموند 2011"},
+    {q:"بأي سنة تأسس البوندسليغا؟",a:"1963"},
+    {q:"مين اللاعب اللي يلقّبونه 'القيصر'؟",a:"فرانز بيكنباور"},
+    {q:"شنو اسم مدرب بايرن ميونخ الحالي (2024-2025)؟",a:"فينسنت كومباني"},
+    {q:"كم مرة فاز بوروسيا مونشنغلادباخ بالبوندسليغا؟",a:"5 مرات"},
+    {q:"مين اللاعب الألماني اللي يلقّبونه 'شاشة الدار'؟",a:"أوليفر كان"},
+    {q:"شنو اسم الديربي بين هامبورغ وبريمن؟",a:"ديربي شمال ألمانيا"},
+    {q:"بأي موسم فاز بايرن ميونخ بالثلاثية؟",a:"موسم 2012-2013 و2019-2020"},
+    {q:"مين اللاعب اللي يلقّبونه 'الطارد' لأنه يطرد المنافسين؟",a:"يوب هاينكس (مدرب، مو لاعب)"},
+    {q:"كم هدف سجل غيرد مولر بمسيرته مع بايرن؟",a:"365 هدف بالبوندسليغا فقط"},
+    {q:"شنو اسم لاعب بايرن اللي يلقّبونه 'البازوكا'؟",a:"أرين روبن"},
+    {q:"مين أكثر لاعب يلعب بالبوندسليغا بالتاريخ؟",a:"كارل هاينز كوربرشمانو"},
+    {q:"بأي سنة هبط هامبورغ لأول مرة بتاريخه؟",a:"2018 (بعد 55 سنة بالبوندسليغا)"},
+    {q:"شنو اسم الملعب اللي يلعب فيه شالكه؟",a:"ملعب فيلتنس أرينا"},
+    {q:"مين اللاعب الألماني اللي يلقّبونه 'نمر'؟",a:"غيرد مولر يلقّبونه Der Bomber"},
+    {q:"كم مرة فاز شالكه بالبوندسليغا؟",a:"7 مرات (آخرها 1958 قبل البوندسليغا)"},
+    {q:"شنو اسم مدرب بايرن اللي فاز بكل شيء موسم 2019-2020؟",a:"هانسي فليك"},
+    {q:"مين اللاعب اللي يلقّبونه 'الدبة' بهرثا برلين؟",a:"اللقب رسمي للنادي وليس للاعب"},
+    {q:"بأي موسم فاز بايير ليفركوزن بأول لقب ليه بالبوندسليغا؟",a:"موسم 2023-2024"},
+    {q:"مين مدرب ليفركوزن اللي حقق اللقب الأول؟",a:"شابي ألونسو"},
+    {q:"شنو اسم الثلاثي الشهير بدورتموند 2011؟",a:"ليفاندوفسكي، روس، غروتسكروتس"},
+  ],
+  MOVIES: [
+    {q:"من هو مخرج فيلم Inception؟",a:"كريستوفر نولان"},
+    {q:"ما اسم الفيلم الأكثر إيراداً في تاريخ السينما؟",a:"Avatar (2009)"},
+    {q:"من قدّم دور جوكر في فيلم 2019؟",a:"خواكين فينيكس"},
+    {q:"ما اسم الفيلم الذي جمع توم هانكس على جزيرة منعزلة مع كرة؟",a:"Cast Away"},
+    {q:"من قدم دور الجوكر في فيلم The Dark Knight؟",a:"هيث ليدجر"},
+    {q:"كم مرة فاز فيلم Titanic بجائزة أوسكار؟",a:"11 جائزة"},
+    {q:"من هو مخرج فيلم Schindler's List؟",a:"ستيفن سبيلبرغ"},
+    {q:"ما اسم الفيلم الأول في سلسلة Marvel MCU؟",a:"Iron Man (2008)"},
+    {q:"ما اسم الفيلم الكوري الذي فاز بأوسكار أفضل فيلم 2020؟",a:"Parasite"},
+    {q:"من هو مخرج Lord of the Rings؟",a:"بيتر جاكسون"},
+    {q:"من صوّت شخصية Woody في فيلم Toy Story؟",a:"توم هانكس"},
+    {q:"ما اسم أشهر فيلم رعب للمخرج ستانلي كوبريك؟",a:"The Shining"},
+    {q:"من هو ممثل Spider-Man في سلسلة Marvel الحديثة؟",a:"توم هولاند"},
+    {q:"ما اسم فيلم ليوناردو دي كابريو الذي فاز بأوسكار أفضل ممثل؟",a:"The Revenant"},
+    {q:"في أي مدينة تقام حفلة توزيع جوائز الأوسكار؟",a:"لوس أنجلوس"},
+  ],
+  ANIME: [
+    {q:"ما اسم أنمي الصبي الذي يريد أن يصبح ملك القراصنة؟",a:"ون بيس (One Piece)"},
+    {q:"ما اسم شخصية ناروتو الكاملة؟",a:"ناروتو أوزوماكي"},
+    {q:"من هو مؤلف أنمي Attack on Titan؟",a:"هاجيمي إيسياما"},
+    {q:"ما اسم الأنمي الذي بطله إيزوكو ميدوريا؟",a:"My Hero Academia"},
+    {q:"من هو خصم غوكو الأبدي في Dragon Ball؟",a:"فيغيتا (Vegeta)"},
+    {q:"أي أنمي يحتوي على Death Note وشخصية L؟",a:"Death Note"},
+    {q:"ما اسم الشخصية الرئيسية في Fullmetal Alchemist؟",a:"إدوارد إيلريك"},
+    {q:"من رسم أنمي Dragon Ball؟",a:"أكيرا تورياما"},
+    {q:"في أي أنمي توجد شخصية Itachi Uchiha؟",a:"ناروتو"},
+    {q:"ما اسم بطل أنمي Hunter x Hunter؟",a:"غون فريكس"},
+    {q:"ما هو الأنمي الذي صنعه Studio Ghibli عن طفلة تدخل عالم الأرواح؟",a:"Spirited Away (مبهوت)"},
+    {q:"كم عدد حلقات ناروتو الأصلي؟",a:"220 حلقة"},
+    {q:"في أي أنمي تظهر شخصية Levi Ackerman؟",a:"هجوم العمالقة"},
+    {q:"من هو المخرج الياباني المشهور بأفلام Ghibli؟",a:"هاياو ميازاكي"},
+    {q:"ما اسم شيطان الثمار الذي أكله لوفي في ون بيس؟",a:"ثمرة غوم غوم (Gum-Gum)"},
+    {q:"ما اسم بطل أنمي Demon Slayer؟",a:"تانجيرو كاميادو"},
+    {q:"في أي أنمي تظهر شخصية Gojo Satoru؟",a:"Jujutsu Kaisen"},
+    {q:"ما اسم الأنمي اللي فيه بطل يموت ويرجع بقوى جديدة كل مرة؟",a:"Re:Zero"},
+    {q:"من هو بطل أنمي Bleach؟",a:"إيتشيغو كوروساكي"},
+    {q:"ما اسم الأنمي اللي فيه أطفال بملجأ يهربون من عالم مظلم؟",a:"The Promised Neverland"},
+    {q:"كم عدد أفراد مجموعة القراصنة قبعة القش في ون بيس؟",a:"10 أفراد"},
+    {q:"ما اسم السيف الأسود لزورو في ون بيس؟",a:"إينا أوراشي"},
+    {q:"في أي أنمي تظهر شخصية Light Yagami؟",a:"Death Note"},
+    {q:"ما اسم التحول الأقوى لغوكو في Dragon Ball؟",a:"Ultra Instinct (الغريزة المطلقة)"},
+    {q:"من هو صانع أنمي Cowboy Bebop؟",a:"شينيتشيرو واتانابي"},
+    {q:"ما اسم المدرسة في My Hero Academia؟",a:"UA High School"},
+    {q:"في أي أنمي توجد أقنعة الديمون سلاير الشهيرة؟",a:"Demon Slayer (Kimetsu no Yaiba)"},
+    {q:"ما اسم بطل أنمي Sword Art Online؟",a:"كيريتو (كازوتو كيريغايا)"},
+    {q:"من هو صانع أنمي Neon Genesis Evangelion؟",a:"هيديياكي آنو"},
+    {q:"ما اسم القرية التي وُلد فيها ناروتو؟",a:"قرية أوراق الخفية (كونوها)"},
+  ],
+  GEOGRAPHY: [
+    {q:"ما هي عاصمة أستراليا؟",a:"كانبيرا"},
+    {q:"ما هو أطول نهر في العالم؟",a:"نهر النيل"},
+    {q:"كم عدد الدول العربية؟",a:"22 دولة"},
+    {q:"ما هي أكبر دولة في العالم من حيث المساحة؟",a:"روسيا"},
+    {q:"ما هو المحيط الأكبر في العالم؟",a:"المحيط الهادئ"},
+    {q:"ما هي عاصمة البرازيل؟",a:"برازيليا"},
+    {q:"ما هو اسم أعلى قمة جبلية في العالم؟",a:"جبل إيفرست"},
+    {q:"كم عدد القارات في العالم؟",a:"7 قارات"},
+    {q:"ما هي أصغر دولة في العالم؟",a:"الفاتيكان"},
+    {q:"ما هي عاصمة كندا؟",a:"أوتاوا"},
+    {q:"ما هو أعمق بحيرة في العالم؟",a:"بحيرة بايكال"},
+    {q:"في أي دولة تقع جزيرة بالي؟",a:"إندونيسيا"},
+    {q:"ما هي عاصمة الأرجنتين؟",a:"بوينس آيرس"},
+    {q:"ما هو أكبر صحراء في العالم؟",a:"الصحراء الكبرى (أفريقيا)"},
+    {q:"ما هي عاصمة إثيوبيا؟",a:"أديس أبابا"},
+    {q:"ما هي عاصمة اليابان؟",a:"طوكيو"},
+    {q:"في أي دولة يقع برج إيفل؟",a:"فرنسا"},
+    {q:"ما هو أطول سلسلة جبال في العالم؟",a:"جبال الأنديز"},
+    {q:"ما هي عاصمة جنوب أفريقيا الإدارية؟",a:"بريتوريا"},
+    {q:"كم عدد دول العالم تقريباً؟",a:"195 دولة"},
+    {q:"في أي قارة تقع مصر؟",a:"أفريقيا"},
+    {q:"ما هو اسم المضيق الذي يفصل أوروبا عن أفريقيا؟",a:"مضيق جبل طارق"},
+    {q:"ما هي عاصمة تركيا؟",a:"أنقرة"},
+    {q:"في أي دولة تقع أطول سور في التاريخ؟",a:"الصين (سور الصين العظيم)"},
+    {q:"ما هو أصغر محيط في العالم؟",a:"المحيط المتجمد الشمالي"},
+    {q:"ما هي عاصمة النرويج؟",a:"أوسلو"},
+    {q:"في أي دولة يقع نهر الأمازون؟",a:"البرازيل"},
+    {q:"ما هي أكثر دول العالم سكاناً؟",a:"الهند"},
+    {q:"ما اسم الجزيرة التي تتبع البرتغال وتقع في المحيط الأطلسي؟",a:"الأزور"},
+    {q:"ما هي عاصمة المكسيك؟",a:"مكسيكو سيتي"},
+  ],
+  HISTORY: [
+    {q:"من هو مؤسس الإسلام؟",a:"النبي محمد ﷺ"},
+    {q:"في أي سنة فتح العرب الأندلس؟",a:"711 ميلادي"},
+    {q:"من هو أول رئيس للولايات المتحدة الأمريكية؟",a:"جورج واشنطن"},
+    {q:"في أي سنة قامت الثورة الفرنسية؟",a:"1789"},
+    {q:"من هو الفاتح لمصر في عهد الخليفة عمر بن الخطاب؟",a:"عمرو بن العاص"},
+    {q:"من بنى أهرامات الجيزة؟",a:"المصريون القدماء"},
+    {q:"في أي سنة سقط الاتحاد السوفيتي؟",a:"1991"},
+    {q:"من هو مؤسس الإمبراطورية العثمانية؟",a:"عثمان الأول"},
+    {q:"في أي سنة قامت الحرب العالمية الأولى؟",a:"1914"},
+    {q:"من اخترع الطباعة؟",a:"يوهانس غوتنبرغ"},
+    {q:"في أي سنة وصل كريستوف كولومبس إلى أمريكا؟",a:"1492"},
+    {q:"ما هو اسم الملكة التي كانت زوجة أخناتون في مصر القديمة؟",a:"نفرتيتي"},
+    {q:"في أي سنة تأسست الأمم المتحدة؟",a:"1945"},
+    {q:"من هو مؤسس الخلافة الأموية؟",a:"معاوية بن أبي سفيان"},
+    {q:"ما هو اسم آخر ملك في فرنسا قبل الثورة؟",a:"لويس السادس عشر"},
+    {q:"من هو القائد المغولي الذي غزا آسيا وأوروبا؟",a:"جنكيز خان"},
+    {q:"في أي سنة انتهت الحرب العالمية الثانية؟",a:"1945"},
+    {q:"من هو الإمبراطور الروماني الأول؟",a:"أوغسطس قيصر"},
+    {q:"في أي سنة سقطت القسطنطينية؟",a:"1453 على يد السلطان محمد الفاتح"},
+    {q:"من هو صلاح الدين الأيوبي؟",a:"قائد إسلامي استرجع القدس من الصليبيين عام 1187"},
+    {q:"في أي سنة قامت الحرب العالمية الثانية؟",a:"1939"},
+    {q:"من هو نيلسون مانديلا؟",a:"أول رئيس أسود لجنوب أفريقيا وزعيم حركة مناهضة الفصل العنصري"},
+    {q:"في أي سنة أُلغي الفصل العنصري في جنوب أفريقيا رسمياً؟",a:"1994"},
+    {q:"من هو مؤسس الدولة السعودية الحديثة؟",a:"الملك عبد العزيز آل سعود"},
+    {q:"في أي سنة استقلت الهند عن بريطانيا؟",a:"1947"},
+    {q:"ما اسم المعركة التي انتصر فيها صلاح الدين على الصليبيين؟",a:"معركة حطين (1187)"},
+    {q:"من هو أشهر فراعنة مصر القديمة؟",a:"رمسيس الثاني أو توت عنخ آمون"},
+    {q:"في أي سنة قام الإنسان بأول هبوط على القمر؟",a:"1969"},
+    {q:"ما اسم المعاهدة التي أنهت الحرب العالمية الأولى؟",a:"معاهدة فرساي (1919)"},
+    {q:"من هو مؤسس الإمبراطورية الإسلامية الأولى؟",a:"النبي محمد ﷺ ثم الخليفة أبو بكر الصديق"},
+  ],
+  SCIENCE: [
+    {q:"من هو مكتشف الجاذبية؟",a:"إسحاق نيوتن"},
+    {q:"ما هو الرمز الكيميائي للذهب؟",a:"Au"},
+    {q:"كم تبلغ سرعة الضوء؟",a:"300,000 كيلومتر في الثانية"},
+    {q:"ما هو العنصر الأكثر وفرة في الكون؟",a:"الهيدروجين"},
+    {q:"من هو مؤسس نظرية النسبية؟",a:"ألبرت أينشتاين"},
+    {q:"ما هو أكبر كوكب في المجموعة الشمسية؟",a:"المشتري"},
+    {q:"من هو مكتشف البنسلين؟",a:"ألكسندر فلمنج"},
+    {q:"كم عدد عناصر الجدول الدوري؟",a:"118 عنصر"},
+    {q:"ما هو الرمز الكيميائي للماء؟",a:"H₂O"},
+    {q:"من هو أول إنسان وطأت قدمه القمر؟",a:"نيل أرمسترونغ"},
+    {q:"كم عدد أسنان الإنسان البالغ؟",a:"32 سناً"},
+    {q:"ما اسم النظرية التي تفسر أصل الكون؟",a:"نظرية الانفجار الكبير (Big Bang)"},
+    {q:"كم عدد كروموسومات الإنسان الطبيعي؟",a:"46 كروموسوم"},
+    {q:"من اكتشف الكهرباء عملياً؟",a:"بنجامين فرانكلين"},
+    {q:"ما هي درجة غليان الماء على مئوية؟",a:"100 درجة مئوية"},
+  ],
+  GENERAL: [
+    {q:"كم عدد أيام السنة الكبيسة؟",a:"366 يوماً"},
+    {q:"من هو صاحب لوحة Mona Lisa؟",a:"ليوناردو دا فينشي"},
+    {q:"كم عدد نوتات السلم الموسيقي؟",a:"7 نوتات"},
+    {q:"ما هو الحيوان الأضخم في العالم؟",a:"الحوت الأزرق"},
+    {q:"من هو مؤلف قصة هاري بوتر؟",a:"ج.ك. رولينغ"},
+    {q:"كم عدد الكواكب في المجموعة الشمسية؟",a:"8 كواكب"},
+    {q:"ما هو أسرع حيوان بري؟",a:"الفهد"},
+    {q:"كم عدد أوتار القيثارة الكلاسيكية؟",a:"6 أوتار"},
+    {q:"كم لون في قوس قزح؟",a:"7 ألوان"},
+    {q:"ما هو طعام النحل الذي يصنعه من الرحيق؟",a:"العسل"},
+    {q:"كم عدد أوجه المكعب؟",a:"6 أوجه"},
+    {q:"ما هو العملة الرسمية في اليابان؟",a:"الين الياباني"},
+    {q:"كم عدد ساعات اليوم؟",a:"24 ساعة"},
+    {q:"من اخترع الهاتف؟",a:"ألكسندر غراهام بيل"},
+    {q:"ما هو الكوكب الأقرب إلى الشمس؟",a:"عطارد"},
+  ],
+  TECH: [
+    {q:"من هو مؤسس شركة Apple؟",a:"ستيف جوبز، ووزياك، ورون واين"},
+    {q:"في أي سنة أُطلق أول iPhone؟",a:"2007"},
+    {q:"ما هو اختصار CPU؟",a:"Central Processing Unit"},
+    {q:"من هو مؤسس Facebook؟",a:"مارك زوكربيرغ"},
+    {q:"ما معنى اختصار HTML؟",a:"HyperText Markup Language"},
+    {q:"من هو مؤسس Microsoft؟",a:"بيل غيتس وبول ألن"},
+    {q:"ما هو نظام التشغيل الذي طورته آبل للآيفون؟",a:"iOS"},
+    {q:"من هو مخترع شبكة الإنترنت (www)؟",a:"تيم بيرنرز لي"},
+    {q:"ما هو اختصار RAM؟",a:"Random Access Memory"},
+    {q:"في أي سنة أُسست شركة Google؟",a:"1998"},
+    {q:"من هو مؤسس Tesla؟",a:"إيلون ماسك"},
+    {q:"ما هو اختصار AI؟",a:"Artificial Intelligence (ذكاء اصطناعي)"},
+    {q:"من اخترع لغة Java؟",a:"جيمس غوسلينغ"},
+    {q:"كم بت في بايت واحد؟",a:"8 بت"},
+    {q:"من هو مؤسس شركة Amazon؟",a:"جيف بيزوس"},
+  ],
+  SPORTS: [
+    {q:"مين هو أكثر لاعب تنس فاز بلقب غراند سلام بالتاريخ؟",a:"نوفاك ديوكوفيتش (24 لقب)"},
+    {q:"كم مرة فاز محمد علي كلاي ببطولة العالم بالملاكمة؟",a:"3 مرات"},
+    {q:"في أي رياضة يُستخدم مصطلح 'سماش'؟",a:"التنس والتنس الطاولة والبادمنتون"},
+    {q:"أي دولة فازت بأكثر ميداليات ذهبية في الأولمبياد التاريخ؟",a:"الولايات المتحدة الأمريكية"},
+    {q:"مين أسرع عداء بالتاريخ؟",a:"أوسين بولت"},
+    {q:"كم مسافة سباق الماراثون؟",a:"42.195 كيلومتر"},
+    {q:"في أي رياضة يُستخدم مصطلح 'هوم ران'؟",a:"البيسبول"},
+    {q:"مين فاز بأكثر ألقاب في رياضة السباحة أولمبياً؟",a:"مايكل فيلبس (23 ذهبية)"},
+    {q:"كم لاعب بفريق كرة السلة؟",a:"5 لاعبين"},
+    {q:"أي دولة اخترعت رياضة الجودو؟",a:"اليابان"},
+    {q:"شنو اسم أشهر بطولة تنس على العشب؟",a:"ويمبلدون"},
+    {q:"مين فاز بأكثر بطولات Tour de France بالدراجات؟",a:"لانس أرمسترونغ (سُحبت ألقابه بسبب المنشطات)، الرسمي كريس فروم"},
+    {q:"كم مسافة سباق 100 متر الشهير؟",a:"100 متر"},
+    {q:"في أي مدينة أُقيمت أولمبياد 2024؟",a:"باريس"},
+    {q:"مين أشهر لاعب غولف بالتاريخ؟",a:"تايغر وودز"},
+    {q:"كم لاعب بفريق الكرة الطائرة؟",a:"6 لاعبين"},
+    {q:"شنو اسم أشهر بطولة ملاكمة بالعالم؟",a:"WBC أو WBA"},
+    {q:"مين أول عربي يفوز بميدالية أولمبية ذهبية؟",a:"رامي عصام (مصر، 1928 رفع الأثقال)"},
+    {q:"في أي رياضة تُستخدم الفلوريت والسيف والسابر؟",a:"المبارزة"},
+    {q:"كم مسافة سباق 400 متر؟",a:"400 متر (دورة كاملة حول الملعب)"},
+  ],
+  ARABIC_CULTURE: [
+    {q:"من هو الشاعر الجاهلي صاحب معلقة 'امرؤ القيس'؟",a:"امرؤ القيس"},
+    {q:"ما هي عاصمة الدولة العباسية؟",a:"بغداد"},
+    {q:"من هو ابن بطوطة؟",a:"رحالة مغربي من القرن الرابع عشر"},
+    {q:"ما هو الكتاب الذي كتبه ابن سينا في الطب؟",a:"القانون في الطب"},
+    {q:"ما هو أقدم جامعة في العالم لا تزال تعمل؟",a:"جامعة القرويين في المغرب"},
+    {q:"من هو خالد بن الوليد؟",a:"قائد عسكري إسلامي لُقب بسيف الله المسلول"},
+    {q:"في أي مدينة تقع الكعبة المشرفة؟",a:"مكة المكرمة"},
+    {q:"من هو الشاعر العربي الذي يُعتبر أمير الشعراء؟",a:"أحمد شوقي"},
+    {q:"ما هي لغة القرآن الكريم؟",a:"العربية الفصحى"},
+    {q:"ما هو اسم أشهر مكتبة في التاريخ العربي؟",a:"بيت الحكمة في بغداد"},
+    {q:"من هو الرحالة العربي الأشهر في القرون الوسطى؟",a:"ابن بطوطة"},
+    {q:"في أي دولة تقع جامعة الأزهر؟",a:"مصر"},
+    {q:"من هو صاحب مقدمة ابن خلدون؟",a:"ابن خلدون"},
+    {q:"ما هو الفن المعماري الإسلامي الأشهر في إسبانيا؟",a:"الحمراء في غرناطة"},
+    {q:"من اخترع الأرقام العربية؟",a:"علماء الهند وطوّرها العرب"},
+  ],
+};
+
+// ═══════════════ STATE ═══════════════
+const state = {
+  p1: { name:'', score:0, correct:0, wrong:0 },
+  p2: { name:'', score:0, correct:0, wrong:0 },
+  referee: '',
+  currentRound: 1,
+  maxRounds: 4,
+  questionsPerRound: 5,
+  p1Turn: true,
+  soloMode: false,
+  questions: [],
+  qIndex: 0,
+  timeLeft: 30,
+  selectedTime: 30,
+  timer: null,
+  answerShown: false,
+};
+
+// ═══════════════ HELPERS ═══════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+// ═══════════════ WAKE LOCK ═══════════════
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+}
+function releaseWakeLock() {
+  try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e) {}
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && wakeLock === null) {
+    const gs = document.getElementById('screen-game');
+    if (gs && gs.classList.contains('active')) await requestWakeLock();
+  }
+});
+
+// ═══════════════ CONFETTI ═══════════════
+function launchConfetti() {
+  const container = document.getElementById('confetti-container');
+  container.innerHTML = '';
+  const colors = ['#6c63ff','#ff6584','#ffd700','#00e676','#ff9800','#00bcd4','#e91e63'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (6 + Math.random() * 8) + 'px';
+    piece.style.height = (6 + Math.random() * 8) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.8) + 's';
+    container.appendChild(piece);
+  }
+  setTimeout(() => { container.innerHTML = ''; }, 4000);
+}
+
+// ═══════════════ GAME HISTORY ═══════════════
+const HISTORY_KEY = 'tahadi_game_history';
+
+function getGameHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveGameResult(winner, p1, p2, isTie) {
+  const history = getGameHistory();
+  const entry = {
+    date: new Date().toLocaleDateString('ar-IQ'),
+    winner: isTie ? 'تعادل' : winner.name,
+    p1name: p1.name, p1score: p1.score,
+    p2name: p2.name, p2score: p2.score,
+    isTie
+  };
+  history.unshift(entry);
+  if (history.length > 20) history.pop();
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) {}
+
+  // ── تسجيل بحساب المستخدم ──
+  if (currentUser && !currentUser.isGuest) {
+    const isMyWin = !isTie && winner.name === currentUser.username;
+    const myPlayer = (currentUser.username === p1.name) ? p1 : p2;
+    const xpGained = isMyWin ? 50 : isTie ? 20 : 10;
+    // bonus XP for correct answers
+    const bonusXp = myPlayer.correct * 5;
+    recordGameToProfile(winner, p1, p2, isTie);
+    addXpAndSave(xpGained + bonusXp, isMyWin, myPlayer.correct, myPlayer.wrong);
+  }
+}
+function openHistory() {
+  const history = getGameHistory();
+  const list = document.getElementById('history-list');
+  if (!history.length) {
+    list.innerHTML = '<div class="history-title">🏅 سجل الفائزين</div><div class="history-empty">ما في سجل بعد!<br>العب أول مباراة وتبدأ تتسجل هنا 🎮</div>';
+  } else {
+    const medals = ['🥇','🥈','🥉'];
+    list.innerHTML = '<div class="history-title">🏅 سجل الفائزين</div>' +
+      history.map((e, i) => `
+        <div class="history-item">
+          <div class="history-rank">${medals[i] || '🎮'}</div>
+          <div class="history-info">
+            <div class="history-winner">${e.isTie ? '🤝 تعادل' : '🏆 ' + e.winner}</div>
+            <div class="history-detail">${e.p1name} ${e.p1score} — ${e.p2name} ${e.p2score} &nbsp;·&nbsp; ${e.date}</div>
+          </div>
+        </div>`).join('');
+  }
+  prevScreen = 'screen-setup';
+  showScreen('screen-history');
+  document.getElementById('exit-btn').style.display = 'none';
+  document.getElementById('settings-btn').style.display = 'none';
+}
+function closeHistory() {
+  showScreen('screen-setup');
+  document.getElementById('settings-btn').style.display = 'flex';
+}
+
+// ═══════════════ SOLO MODE ═══════════════
+let isSoloMode = false;
+function selectMode(mode) {
+  isSoloMode = (mode === 'solo');
+  document.getElementById('mode-two').classList.toggle('selected', !isSoloMode);
+  document.getElementById('mode-solo').classList.toggle('selected', isSoloMode);
+  document.getElementById('p2-group').style.display = isSoloMode ? 'none' : '';
+  document.getElementById('ref-group').style.display = isSoloMode ? 'none' : '';
+}
+
+// ═══════════════ ANSWER CONFIRM ═══════════════
+function enableAnswerBtns() {
+  const bc = document.getElementById('btn-correct');
+  const bw = document.getElementById('btn-wrong');
+  const hint = document.getElementById('answer-hint');
+  bc.disabled = false; bc.style.opacity = '1'; bc.style.cursor = 'pointer';
+  bw.disabled = false; bw.style.opacity = '1'; bw.style.cursor = 'pointer';
+  hint.style.opacity = '0';
+}
+function disableAnswerBtns() {
+  const bc = document.getElementById('btn-correct');
+  const bw = document.getElementById('btn-wrong');
+  const hint = document.getElementById('answer-hint');
+  bc.disabled = true; bc.style.opacity = '0.45'; bc.style.cursor = 'not-allowed';
+  bw.disabled = true; bw.style.opacity = '0.45'; bw.style.cursor = 'not-allowed';
+  hint.style.opacity = '1';
+}
+
+
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+function playTone(freq, type, duration, vol=0.3) {
+  if (localStorage.getItem('sound_enabled') === 'false') return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(); osc.stop(ctx.currentTime + duration);
+  } catch(e){}
+}
+function soundCorrect() {
+  playTone(523, 'sine', 0.12, 0.35);
+  setTimeout(() => playTone(659, 'sine', 0.18, 0.35), 100);
+  setTimeout(() => playTone(784, 'sine', 0.25, 0.3), 200);
+}
+function soundWrong() {
+  playTone(220, 'sawtooth', 0.15, 0.25);
+  setTimeout(() => playTone(180, 'sawtooth', 0.2, 0.25), 130);
+}
+function soundTick() {
+  playTone(880, 'square', 0.05, 0.08);
+}
+function soundTimeUp() {
+  if (localStorage.getItem('sound_enabled') === 'false') return;
+  playTone(440, 'sawtooth', 0.1, 0.2);
+  setTimeout(() => playTone(330, 'sawtooth', 0.15, 0.2), 110);
+  setTimeout(() => playTone(220, 'sawtooth', 0.2, 0.3), 220);
+}
+function soundWin() {
+  [523,659,784,1047].forEach((f,i) => setTimeout(() => playTone(f,'sine',0.3,0.4), i*120));
+}
+
+// ═══════════════ HAPTIC ═══════════════
+function haptic(type='light') {
+  if (!navigator.vibrate) return;
+  if (type === 'light') navigator.vibrate(30);
+  else if (type === 'medium') navigator.vibrate(60);
+  else if (type === 'heavy') navigator.vibrate([60,40,60]);
+  else if (type === 'wrong') navigator.vibrate([80,30,80]);
+  else if (type === 'win') navigator.vibrate([100,50,100,50,200]);
+}
+
+// ═══════════════ THEME ═══════════════
+function applyTheme(isLight) {
+  document.body.classList.toggle('light', isLight);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = isLight ? '🌙 غامق' : '☀️ فاتح';
+  const tog = document.getElementById('theme-toggle');
+  if (tog) tog.checked = isLight;
+  try { localStorage.setItem('theme', isLight ? 'light' : 'dark'); } catch(e){}
+}
+function toggleTheme() {
+  const isLight = !document.body.classList.contains('light');
+  applyTheme(isLight);
+  haptic('light');
+}
+function toggleThemeFromSettings(checked) {
+  applyTheme(checked);
+  haptic('light');
+}
+function loadTheme() {
+  const saved = localStorage.getItem('theme');
+  applyTheme(saved === 'light');
+}
+
+// ═══════════════ SCREEN TRANSITION ═══════════════
+function showScreen(id) {
+  const current = document.querySelector('.screen.active');
+  const next = document.getElementById(id);
+  if (!next || (current && current.id === id)) return;
+
+  if (current) {
+    current.classList.add('slide-out');
+    setTimeout(() => {
+      current.classList.remove('active', 'slide-out');
+      next.classList.add('active');
+      // force reflow للأنيميشن
+      void next.offsetWidth;
+    }, 200);
+  } else {
+    next.classList.add('active');
+  }
+}
+
+// ═══════════════ AUTH & USER SYSTEM ═══════════════
+let currentUser = null;
+let selectedAvatarEmoji = '🦁';
+
+const XP_LEVELS = [0,100,250,500,850,1300,1900,2700,3700,5000];
+function getLevel(xp) {
+  let lvl = 1;
+  for (let i = 0; i < XP_LEVELS.length; i++) { if (xp >= XP_LEVELS[i]) lvl = i+1; }
+  return Math.min(lvl, XP_LEVELS.length);
+}
+function getLevelLabel(lvl) {
+  const labels = ['','مبتدئ','متحمس','محترف','خبير','نجم','بطل','أسطورة','إمبراطور','ملك','خالد'];
+  return labels[lvl] || 'خالد';
+}
+function getXpForLevel(lvl) { return XP_LEVELS[Math.min(lvl-1, XP_LEVELS.length-1)]; }
+function getXpForNextLevel(lvl) { return XP_LEVELS[Math.min(lvl, XP_LEVELS.length-1)]; }
+
+// ── حفظ بيانات المستخدم على Firestore ──
+async function saveUserToFirestore(userData) {
+  if (!userData || !userData.uid || userData.isGuest) return;
+  try {
+    const data = Object.assign({}, userData);
+    delete data.uid;
+    await fbDb.collection('users').doc(userData.uid).set(data, { merge: true });
+  } catch(e) { console.warn('Firestore save error:', e); }
+}
+
+function loadUserSession() {
+  // Firebase SDK يتولى هذا تلقائياً عبر onAuthStateChanged
+  showScreen('screen-login');
+}
+
+function afterLogin() {
+  updateUserBadge();
+  document.getElementById('user-badge').style.display = 'flex';
+  document.getElementById('p1-name').value = currentUser.username;
+  showScreen('screen-setup');
+}
+
+function updateUserBadge() {
+  if (!currentUser) return;
+  document.getElementById('badge-avatar').textContent = currentUser.avatar || '🦁';
+  document.getElementById('badge-name').textContent = currentUser.username;
+  document.getElementById('badge-xp').textContent = `⭐ ${currentUser.xp} XP`;
+}
+
+// ── Login / Register UI ──
+function switchLoginTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('form-login').style.display   = tab==='login' ? 'flex' : 'none';
+  document.getElementById('form-register').style.display = tab==='register' ? 'flex' : 'none';
+  clearLoginMsg();
+}
+function clearLoginMsg() {
+  ['login-error','reg-error','reg-success'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display='none'; el.textContent=''; }
+  });
+}
+function showMsg(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+function selectAvatar(el, emoji) {
+  document.querySelectorAll('.avatar-opt').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedAvatarEmoji = emoji;
+}
+
+async function doLogin() {
+  const email    = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showMsg('login-error','اكتب الإيميل وكلمة المرور'); return; }
+  try {
+    showMsg('login-error','⏳ جاري الدخول...');
+    document.getElementById('login-error').style.color = 'var(--muted)';
+    await fbAuth.signInWithEmailAndPassword(email, password);
+  } catch(e) {
+    document.getElementById('login-error').style.color = 'var(--red)';
+    const msgs = { 'auth/user-not-found':'ما في حساب بهذا الإيميل', 'auth/wrong-password':'كلمة المرور غلط', 'auth/invalid-email':'الإيميل غير صحيح', 'auth/invalid-credential':'الإيميل أو كلمة المرور غلط' };
+    showMsg('login-error', msgs[e.code] || 'خطأ في تسجيل الدخول');
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!username) { showMsg('reg-error','اكتب اسم العرض'); return; }
+  if (!email)    { showMsg('reg-error','اكتب الإيميل'); return; }
+  if (!password || password.length < 6) { showMsg('reg-error','كلمة المرور 6 أحرف على الأقل'); return; }
+  try {
+    showMsg('reg-success','⏳ جاري إنشاء الحساب...');
+    document.getElementById('reg-success').style.display = 'block';
+    const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
+    const newUser = { uid: cred.user.uid, username, avatar: selectedAvatarEmoji, xp: 0, games: 0, wins: 0, correct: 0, wrong: 0, joined: new Date().toLocaleDateString('ar-IQ'), history: [] };
+    await saveUserToFirestore(newUser);
+    // onAuthStateChanged يتولى الباقي
+  } catch(e) {
+    console.error('Register error:', e.code, e.message);
+    const msgs = { 'auth/email-already-in-use':'هذا الإيميل مسجل مسبقاً', 'auth/invalid-email':'الإيميل غير صحيح', 'auth/weak-password':'كلمة المرور ضعيفة' };
+    showMsg('reg-error', msgs[e.code] || ('خطأ: ' + e.message));
+  }
+}
+
+function guestLogin() {
+  currentUser = { username: 'ضيف_' + Math.floor(Math.random()*9000+1000), avatar: '👻', xp: 0, games: 0, wins: 0, correct: 0, wrong: 0, history: [], isGuest: true };
+  haptic('light');
+  afterLogin();
+}
+
+async function doLogout() {
+  if (currentUser && !currentUser.isGuest) {
+    await saveUserToFirestore(currentUser);
+    await fbAuth.signOut();
+  }
+  currentUser = null;
+  document.getElementById('user-badge').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  clearLoginMsg();
+  haptic('light');
+  showScreen('screen-login');
+}
+
+// ── XP & Stats ──
+async function addXpAndSave(xpGained, didWin, correctCount, wrongCount) {
+  if (!currentUser || currentUser.isGuest) return;
+  currentUser.xp      = (currentUser.xp      || 0) + xpGained;
+  currentUser.games   = (currentUser.games   || 0) + 1;
+  currentUser.wins    = (currentUser.wins    || 0) + (didWin ? 1 : 0);
+  currentUser.correct = (currentUser.correct || 0) + correctCount;
+  currentUser.wrong   = (currentUser.wrong   || 0) + wrongCount;
+  updateUserBadge();
+  await saveUserToFirestore(currentUser);
+}
+
+async function recordGameToProfile(winner, p1, p2, isTie) {
+  if (!currentUser || currentUser.isGuest) return;
+  const entry = {
+    date: new Date().toLocaleDateString('ar-IQ'),
+    opponent: (currentUser.username === p1.name) ? p2.name : p1.name,
+    result: isTie ? 'تعادل' : (winner.name === currentUser.username ? 'فوز' : 'خسارة'),
+    score: (currentUser.username === p1.name) ? p1.score : p2.score,
+    oppScore: (currentUser.username === p1.name) ? p2.score : p1.score,
+  };
+  if (!currentUser.history) currentUser.history = [];
+  currentUser.history.unshift(entry);
+  if (currentUser.history.length > 15) currentUser.history.pop();
+  await saveUserToFirestore(currentUser);
+}
+
+// ── Profile Screen ──
+function openProfile() {
+  if (!currentUser) return;
+  const lvl = getLevel(currentUser.xp);
+  document.getElementById('prof-avatar').textContent   = currentUser.avatar || '🦁';
+  document.getElementById('prof-username').textContent = currentUser.username;
+  document.getElementById('prof-level').textContent    = `🏅 ${getLevelLabel(lvl)} — مستوى ${lvl}`;
+  document.getElementById('prof-joined').textContent   = currentUser.isGuest ? 'دخول كضيف' : `انضم: ${currentUser.joined}`;
+
+  // XP bar
+  const xpCur  = currentUser.xp - getXpForLevel(lvl);
+  const xpNeed = getXpForNextLevel(lvl) - getXpForLevel(lvl);
+  const pct    = lvl >= XP_LEVELS.length ? 100 : Math.min(100, Math.round(xpCur/xpNeed*100));
+  document.getElementById('xp-label').textContent = `XP: ${currentUser.xp}`;
+  document.getElementById('xp-next').textContent  = lvl >= XP_LEVELS.length ? 'أعلى مستوى! 🔥' : `حتى المستوى التالي: ${getXpForNextLevel(lvl) - currentUser.xp}`;
+  document.getElementById('xp-bar').style.width   = pct + '%';
+
+  // stats
+  document.getElementById('prof-games').textContent   = currentUser.games   || 0;
+  document.getElementById('prof-wins').textContent    = currentUser.wins    || 0;
+  document.getElementById('prof-correct').textContent = currentUser.correct || 0;
+
+  // history
+  const hist = currentUser.history || [];
+  const histEl = document.getElementById('prof-history-list');
+  if (!hist.length) {
+    histEl.innerHTML = '<div class="history-empty">ما لعبت بعد! ابدأ أول مباراة 🎮</div>';
+  } else {
+    histEl.innerHTML = hist.slice(0,6).map(h => {
+      const icon = h.result==='فوز' ? '🏆' : h.result==='تعادل' ? '🤝' : '😔';
+      return `<div class="profile-history-item">
+        <div class="phi-left"><span class="phi-result">${icon}</span>${h.result} ضد ${h.opponent}</div>
+        <div class="phi-right">${h.score}–${h.oppScore} · ${h.date}</div>
+      </div>`;
+    }).join('');
+  }
+
+  prevScreen = document.querySelector('.screen.active')?.id || 'screen-setup';
+  showScreen('screen-profile');
+  document.getElementById('settings-btn').style.display = 'none';
+}
+
+function closeProfile() {
+  showScreen(prevScreen || 'screen-setup');
+  document.getElementById('settings-btn').style.display = 'flex';
+}
+
+// init on load
+document.addEventListener('DOMContentLoaded', () => { loadTheme(); });
+function currentPlayer() { return state.p1Turn ? state.p1 : state.p2; }
+
+// ═══════════════ TIME SELECTION ═══════════════
+function selectTime(seconds, btn) {
+  state.selectedTime = seconds;
+  document.querySelectorAll('.time-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ═══════════════ SETUP ═══════════════
+function startGame() {
+  const p1Input = document.getElementById('p1-name');
+  // إذا الحقل فارغ واللاعب مسجل، استخدم اسمه تلقائياً
+  if (!p1Input.value.trim() && currentUser) p1Input.value = currentUser.username;
+  const p1 = p1Input.value.trim();
+  const p2 = isSoloMode ? 'الحاسوب' : document.getElementById('p2-name').value.trim();
+  const ref = isSoloMode ? '' : (document.getElementById('ref-name').value.trim() || 'الحكم');
+  if (!p1) { alert('اكتب اسمك أولاً!'); return; }
+  if (!isSoloMode && !document.getElementById('p2-name').value.trim()) { alert('اكتب أسماء اللاعبين!'); return; }
+  state.p1.name = p1; state.p1.score = 0; state.p1.correct = 0; state.p1.wrong = 0;
+  state.p2.name = p2; state.p2.score = 0; state.p2.correct = 0; state.p2.wrong = 0;
+  state.referee = ref;
+  state.currentRound = 1;
+  state.p1Turn = true;
+  state.soloMode = isSoloMode;
+  document.getElementById('exit-btn').style.display = 'block';
+  haptic('medium');
+  showCategoryScreen();
+}
+
+// ═══════════════ CATEGORY ═══════════════
+function showCategoryScreen() {
+  document.getElementById('cat-round').textContent = `الجولة ${state.currentRound} من ${state.maxRounds}`;
+  const cp = currentPlayer();
+  document.getElementById('cat-player').textContent = state.soloMode ? `دورك 🎯` : `دور ${cp.name} 🎯`;
+  document.getElementById('ref-display').textContent = state.referee;
+  document.getElementById('referee-info').style.display = state.soloMode ? 'none' : '';
+  const label = state.selectedTime === 60 ? 'دقيقة' : `${state.selectedTime} ثانية`;
+  document.getElementById('time-badge-text').textContent = label;
+  showScreen('screen-category');
+}
+
+// ═══════════════ SMART NO-REPEAT SYSTEM ═══════════════
+const STORAGE_KEY = 'tahadi_used_questions';
+
+function getUsedQuestions() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveUsedQuestions(used) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(used)); } catch(e) {}
+}
+
+function markQuestionsAsUsed(cat, questions) {
+  const used = getUsedQuestions();
+  if (!used[cat]) used[cat] = [];
+  questions.forEach(q => {
+    if (!used[cat].includes(q.q)) used[cat].push(q.q);
+  });
+  // إذا استخدمنا أكثر من 80% من الأسئلة، امسح السجل ونبدأ من أول
+  const total = QUESTIONS[cat].length;
+  if (used[cat].length >= Math.floor(total * 0.8)) {
+    used[cat] = [];
+  }
+  saveUsedQuestions(used);
+}
+
+function selectCategory(cat) {
+  const used = getUsedQuestions();
+  const usedList = used[cat] || [];
+
+  // فلتر الأسئلة اللي ما استخدمناها
+  let fresh = QUESTIONS[cat].filter(q => !usedList.includes(q.q));
+
+  // إذا ما في كافي أسئلة جديدة، امسح السجل وابدأ من أول
+  if (fresh.length < 5) {
+    used[cat] = [];
+    saveUsedQuestions(used);
+    fresh = [...QUESTIONS[cat]];
+  }
+
+  const pool = shuffle(fresh);
+  state.questions = pool.slice(0, state.questionsPerRound);
+  markQuestionsAsUsed(cat, state.questions);
+  state.qIndex = 0;
+  startRound();
+}
+
+// ═══════════════ ROUND ═══════════════
+function startRound() {
+  updateScoreboard();
+  state.timeLeft = state.selectedTime;
+  state.answerShown = false;
+  showScreen('screen-game');
+  requestWakeLock();
+  renderQuestion();
+  startTimer();
+}
+
+function renderQuestion() {
+  const q = state.questions[state.qIndex];
+  document.getElementById('q-progress').textContent = `سؤال ${state.qIndex+1} من ${state.questions.length}`;
+  document.getElementById('q-text').textContent = q.q;
+  const aCard = document.getElementById('a-card');
+  aCard.textContent = '👁 اضغط لإظهار الجواب';
+  aCard.classList.remove('revealed');
+  state.answerShown = false;
+  disableAnswerBtns();
+}
+
+function toggleAnswer() {
+  const q = state.questions[state.qIndex];
+  const aCard = document.getElementById('a-card');
+  if (!state.answerShown) {
+    aCard.textContent = q.a;
+    aCard.classList.add('revealed');
+    state.answerShown = true;
+    enableAnswerBtns();
+  } else {
+    aCard.textContent = '👁 اضغط لإظهار الجواب';
+    aCard.classList.remove('revealed');
+    state.answerShown = false;
+    disableAnswerBtns();
+  }
+}
+
+function updateScoreboard() {
+  document.getElementById('sc1-name').textContent = state.p1.name;
+  document.getElementById('sc1-score').textContent = state.p1.score;
+  document.getElementById('sc2-name').textContent = state.p2.name;
+  document.getElementById('sc2-score').textContent = state.p2.score;
+  document.getElementById('sc2').style.display = state.soloMode ? 'none' : '';
+  if (state.p1Turn) {
+    document.getElementById('sc1').classList.add('active');
+    document.getElementById('sc2').classList.remove('active');
+  } else {
+    document.getElementById('sc2').classList.add('active');
+    document.getElementById('sc1').classList.remove('active');
+  }
+}
+
+// ═══════════════ TIMER ═══════════════
+function startTimer() {
+  clearInterval(state.timer);
+  state.timeLeft = state.selectedTime;
+  updateTimerUI();
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerUI();
+    // تيك صوتي في آخر 5 ثواني
+    if (state.timeLeft <= 5 && state.timeLeft > 0) soundTick();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      soundTimeUp();
+      haptic('heavy');
+      endRound();
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const t = state.timeLeft;
+  const total = state.selectedTime;
+  document.getElementById('timer-text').textContent = t;
+  const arc = document.getElementById('timer-arc');
+  const pct = t / total;
+  arc.style.strokeDashoffset = 314 * (1 - pct);
+  let color = '#00e676';
+  const warnOn = localStorage.getItem('warn_enabled') !== 'false';
+  if (t <= Math.floor(total * 0.33)) {
+    color = '#f44336';
+    if (warnOn && t <= 5) document.getElementById('q-card').style.borderColor = '#f44336';
+  } else if (t <= Math.floor(total * 0.66)) {
+    color = '#ff9800';
+    if (warnOn) document.getElementById('q-card').style.borderColor = '#ff9800';
+  } else {
+    document.getElementById('q-card').style.borderColor = 'var(--border)';
+  }
+  arc.style.stroke = color;
+  document.getElementById('timer-text').style.color = color;
+}
+
+// ═══════════════ ACTIONS ═══════════════
+function answerCorrect() {
+  const cp = currentPlayer();
+  cp.correct++;
+  cp.score += 10;
+  updateScoreboard();
+  flashCard('flash-correct');
+  soundCorrect();
+  haptic('medium');
+  nextQuestion();
+}
+
+function answerWrong() {
+  const cp = currentPlayer();
+  cp.wrong++;
+  if (cp.score > 0) cp.score -= 3;
+  updateScoreboard();
+  flashCard('flash-wrong');
+  soundWrong();
+  haptic('wrong');
+  nextQuestion();
+}
+
+function skipQuestion() {
+  haptic('light');
+  nextQuestion();
+}
+
+function flashCard(cls) {
+  const card = document.getElementById('q-card');
+  card.classList.add(cls);
+  setTimeout(() => card.classList.remove(cls), 400);
+}
+
+function nextQuestion() {
+  state.qIndex++;
+  if (state.qIndex >= state.questions.length) {
+    clearInterval(state.timer);
+    endRound();
+  } else {
+    renderQuestion();
+  }
+}
+
+// ═══════════════ END ROUND ═══════════════
+function endRound() {
+  clearInterval(state.timer);
+  if (state.currentRound >= state.maxRounds) {
+    showGameOver();
+    return;
+  }
+  // show result
+  document.getElementById('result-title').textContent = `نهاية الجولة ${state.currentRound} 🎯`;
+  document.getElementById('rs1-name').textContent = state.p1.name;
+  document.getElementById('rs1-score').textContent = state.p1.score;
+  document.getElementById('rs2-name').textContent = state.p2.name;
+  document.getElementById('rs2-score').textContent = state.p2.score;
+  const rs1 = document.getElementById('rs1');
+  const rs2 = document.getElementById('rs2');
+  rs1.classList.remove('leading'); rs2.classList.remove('leading');
+  if (state.p1.score > state.p2.score) rs1.classList.add('leading');
+  else if (state.p2.score > state.p1.score) rs2.classList.add('leading');
+  showScreen('screen-result');
+}
+
+function nextRound() {
+  state.currentRound++;
+  state.p1Turn = !state.p1Turn;
+  haptic('medium');
+  showCategoryScreen();
+}
+
+// ═══════════════ GAME OVER ═══════════════
+function showGameOver() {
+  releaseWakeLock();
+  const isTie = state.p1.score === state.p2.score;
+  const winner = isTie ? null : (state.p1.score > state.p2.score ? state.p1 : state.p2);
+  saveGameResult(winner, state.p1, state.p2, isTie);
+  if (isTie) {
+    document.getElementById('winner-name').textContent = `🤝 تعادل!`;
+    document.getElementById('winner-sub').textContent = `كلاكم رائعين بـ ${state.p1.score} نقطة!`;
+    document.querySelector('.winner-badge').textContent = '🤝';
+  } else {
+    document.getElementById('winner-name').textContent = `🎉 ${winner.name}`;
+    document.getElementById('winner-sub').textContent = `فاز بـ ${winner.score} نقطة!`;
+    document.querySelector('.winner-badge').textContent = '🏆';
+  }
+
+  document.getElementById('fs1-name').textContent = state.p1.name;
+  document.getElementById('fs1-score').textContent = state.p1.score;
+  document.getElementById('fs1-stats').textContent = `✅ ${state.p1.correct} صح  |  ❌ ${state.p1.wrong} خطأ`;
+  document.getElementById('fs2-name').textContent = state.p2.name;
+  document.getElementById('fs2-score').textContent = state.p2.score;
+  document.getElementById('fs2-stats').textContent = `✅ ${state.p2.correct} صح  |  ❌ ${state.p2.wrong} خطأ`;
+
+  if (isTie) {
+    document.getElementById('fs1').classList.add('winner-card');
+    document.getElementById('fs2').classList.add('winner-card');
+  } else if (state.p1.score > state.p2.score) {
+    document.getElementById('fs1').classList.add('winner-card');
+  } else {
+    document.getElementById('fs2').classList.add('winner-card');
+  }
+
+  showScreen('screen-gameover');
+  soundWin();
+  haptic('win');
+
+  // اعرض XP مكتسب إذا المستخدم مسجّل
+  if (currentUser && !currentUser.isGuest) {
+    const isMyWin = !isTie && winner && winner.name === currentUser.username;
+    const myPlayer = (currentUser.username === state.p1.name) ? state.p1 : state.p2;
+    const xpTotal = (isMyWin ? 50 : isTie ? 20 : 10) + myPlayer.correct * 5;
+    const existingXpNote = document.getElementById('xp-note');
+    if (existingXpNote) existingXpNote.remove();
+    const xpNote = document.createElement('div');
+    xpNote.id = 'xp-note';
+    xpNote.style.cssText = 'text-align:center;margin-bottom:14px;font-size:0.95rem;color:var(--gold);font-weight:700;animation:pulse 2s ease-in-out infinite;';
+    xpNote.textContent = `⭐ +${xpTotal} XP — ${getLevelLabel(getLevel(currentUser.xp))}`;
+    document.querySelector('.winner-sub').insertAdjacentElement('afterend', xpNote);
+  }
+
+  setTimeout(launchConfetti, 300);
+}
+
+function resetGame() {
+  clearInterval(state.timer);
+  releaseWakeLock();
+  document.getElementById('fs1').classList.remove('winner-card');
+  document.getElementById('fs2').classList.remove('winner-card');
+  document.querySelector('.winner-badge').textContent = '🏆';
+  document.getElementById('exit-btn').style.display = 'none';
+  showScreen('screen-setup');
+}
+
+// ═══════════════ EXIT ═══════════════
+function askExit() {
+  clearInterval(state.timer);
+  document.getElementById('exit-modal').classList.add('active');
+}
+function confirmExit() {
+  document.getElementById('exit-modal').classList.remove('active');
+  resetGame();
+}
+function cancelExit() {
+  document.getElementById('exit-modal').classList.remove('active');
+  // أعد المؤقت من حيث توقف فقط إذا كنا بشاشة اللعبة
+  if (document.getElementById('screen-game').classList.contains('active')) {
+    startTimer();
+  }
+}
+
+// ═══════════════ SETTINGS ═══════════════
+let prevScreen = 'screen-setup';
+
+function openSettings() {
+  // حفظ الشاشة الحالية للرجوع إليها
+  const cur = document.querySelector('.screen.active');
+  prevScreen = cur ? cur.id : 'screen-setup';
+  // تحديث الأزرار المحددة
+  syncSettingsUI();
+  showScreen('screen-settings');
+  document.getElementById('exit-btn').style.display = 'none';
+  document.getElementById('settings-btn').style.display = 'none';
+}
+
+function closeSettings() {
+  showScreen(prevScreen);
+  // إعادة ظهور الأزرار حسب الشاشة
+  if (prevScreen !== 'screen-setup') {
+    document.getElementById('exit-btn').style.display = 'block';
+  }
+  document.getElementById('settings-btn').style.display = 'flex';
+}
+
+function syncSettingsUI() {
+  // ثيم
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) themeToggle.checked = document.body.classList.contains('light');
+
+  // وقت الجولة
+  ['t30','t45','t60'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  const tMap = {30:'t30', 45:'t45', 60:'t60'};
+  document.getElementById(tMap[state.selectedTime] || 't30').classList.add('selected');
+
+  // عدد الجولات
+  ['r2','r4','r6','r8'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  const rMap = {2:'r2', 4:'r4', 6:'r6', 8:'r8'};
+  const rBtn = document.getElementById(rMap[state.maxRounds]);
+  if (rBtn) rBtn.classList.add('selected');
+  else document.getElementById('r4').classList.add('selected');
+
+  // عدد الأسئلة
+  ['q3','q5','q7','q10'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  const qMap = {3:'q3', 5:'q5', 7:'q7', 10:'q10'};
+  const qBtn = document.getElementById(qMap[state.questionsPerRound]);
+  if (qBtn) qBtn.classList.add('selected');
+  else document.getElementById('q5').classList.add('selected');
+
+  // الصوت
+  const soundVal = localStorage.getItem('sound_enabled');
+  document.getElementById('sound-toggle').checked = soundVal !== 'false';
+  const warnVal = localStorage.getItem('warn_enabled');
+  document.getElementById('warn-toggle').checked = warnVal !== 'false';
+}
+
+function setTimeFromSettings(sec) {
+  state.selectedTime = sec;
+  // تحديث أزرار الوقت في الإعدادات
+  ['t30','t45','t60'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  const tMap = {30:'t30', 45:'t45', 60:'t60'};
+  document.getElementById(tMap[sec]).classList.add('selected');
+  // مزامنة مع شاشة الإعداد
+  document.querySelectorAll('.time-opt').forEach(b => b.classList.remove('selected'));
+  const labels = {30:0, 45:1, 60:2};
+  document.querySelectorAll('.time-opt')[labels[sec]].classList.add('selected');
+}
+
+function setRoundsFromSettings(n) {
+  state.maxRounds = n;
+  ['r2','r4','r6','r8'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  const rMap = {2:'r2', 4:'r4', 6:'r6', 8:'r8'};
+  document.getElementById(rMap[n]).classList.add('selected');
+}
+
+function setQsFromSettings(n) {
+  state.questionsPerRound = n;
+  ['q3','q5','q7','q10'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  const qMap = {3:'q3', 5:'q5', 7:'q7', 10:'q10'};
+  document.getElementById(qMap[n]).classList.add('selected');
+}
+
+function saveSoundSetting(val) {
+  localStorage.setItem('sound_enabled', val);
+}
+function saveWarnSetting(val) {
+  localStorage.setItem('warn_enabled', val);
+}
+
+function resetHistoryFromSettings() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  const btn = event.target;
+  btn.textContent = '✅ تم المسح!';
+  setTimeout(() => { btn.textContent = '🔁 مسح سجل الأسئلة المستخدمة'; }, 2000);
+}
+function clearGameHistory() {
+  try { localStorage.removeItem(HISTORY_KEY); } catch(e) {}
+  const btn = event.target;
+  btn.textContent = '✅ تم المسح!';
+  setTimeout(() => { btn.textContent = '🏅 مسح سجل الفائزين'; }, 2000);
+}
+</script>
+</body>
+</html>
