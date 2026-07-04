@@ -2378,6 +2378,21 @@ function _tryInitFirebase(retriesLeft) {
 }
 _tryInitFirebase(30);
 
+// ينتظر لين تخلص تهيئة Firebase الحقيقية (أو تنتهي المحاولات) قبل أي طلب
+// فعلي لقاعدة البيانات — يمنع استخدام النسخة البديلة لو المستخدم كان
+// سريع وضغط زر يحتاج Firestore قبل ما تخلص المحاولات بالخلفية.
+function waitForFirebaseReady(maxWaitMs = 10000) {
+  if (_fbReady) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const start = Date.now();
+    (function check() {
+      if (_fbReady) return resolve(true);
+      if (Date.now() - start >= maxWaitMs) return resolve(false);
+      setTimeout(check, 150);
+    })();
+  });
+}
+
 
 
 // ══ تحميل الأسئلة الإضافية من Firestore ══
@@ -2385,6 +2400,7 @@ const _firestoreQCache = {};
 
 async function loadExtraQuestionsFromFirestore(cat) {
   if (_firestoreQCache[cat]) return _firestoreQCache[cat];
+  await waitForFirebaseReady();
   if (!navigator.onLine) return [];
   try {
     const snap = await fbDb.collection('questions').where('cat', '==', cat).get();
@@ -11440,6 +11456,11 @@ async function loadIQFromFirestore() {
   if (_iqLoaded) return IQ_QUESTION_POOL;
   if (!navigator.onLine) {
     showToast('❌ لا يوجد اتصال بالإنترنت. يتطلب اختبار الذكاء الاتصال بالشبكة للمتابعة.');
+    return [];
+  }
+  const fbOk = await waitForFirebaseReady();
+  if (!fbOk) {
+    showToast('❌ تعذّر الاتصال بخادم الأسئلة. تحقق من الاتصال بالإنترنت وحاول مجدداً.');
     return [];
   }
   try {
