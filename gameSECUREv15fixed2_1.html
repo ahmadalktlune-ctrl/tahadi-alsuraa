@@ -2373,18 +2373,11 @@ function _tryInitFirebase(attempt) {
   if (typeof firebase.firestore === 'function') {
     try {
       fbDb = firebase.firestore();
-      // بعض الـ WebView (خصوصاً الي تفتح ملف عبر content:// من تطبيقات ثانية)
-      // تحجب اتصال Firestore الافتراضي (WebChannel/Streaming) بصمت فتعلّق
-      // الطلبات للأبد بدون أي خطأ ظاهر. هذا الإعداد يكتشف تلقائياً لو
-      // الاتصال العادي ما يشتغل ويرجع لطريقة أبسط (long polling).
-      // *لازم* يُستدعى قبل أي عملية ثانية على fbDb.
-      // نفرض long polling مباشرة (بدون اكتشاف تلقائي) — بعض الـ WebView
-      // (خصوصاً فتح ملف عبر content:// من تطبيق ثاني) تحجب اتصال
-      // Firestore الافتراضي (WebChannel/Streaming) بصمت فتعلّق الطلبات
-      // للأبد بدون أي خطأ ظاهر، والاكتشاف التلقائي نفسه لا يكتشف الحجب
-      // بمثل هالبيئات. *لازم* يُستدعى قبل أي عملية ثانية على fbDb.
-      try { fbDb.settings({ experimentalForceLongPolling: true, merge: true }); }
-      catch(e2) { console.warn('⚠️ فشل ضبط إعدادات Firestore:', e2 && e2.message); }
+      // ملاحظة: جربنا سابقاً إجبار long polling هنا كحل لمشكلة تعليق
+      // الاستعلامات، لكن فحص مباشر ثبت إن الاتصال الافتراضي (بدون أي
+      // إعداد خاص) يشتغل زين وبسرعة على بيئة المستخدم — فرضية الحجب
+      // كانت غلط، وإجبار long polling هو الي كان يسبب التعليق فعلياً.
+      // لذلك نترك إعدادات Firestore على وضعها الافتراضي.
       anyReady = true;
     } catch(e) { console.warn('⚠️ فشل تهيئة firebase.firestore:', e && e.message); }
     // نعزل تفعيل التخزين المؤقت بمحاولة منفصلة — فشلها (شائع ببعض
