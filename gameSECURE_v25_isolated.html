@@ -8499,11 +8499,9 @@ function markQuestionsAsUsed(cat, questions) {
   questions.forEach(q => {
     if (!used[cat].includes(q.q)) used[cat].push(q.q);
   });
-  // إذا استخدمنا أكثر من 80% من الأسئلة، امسح السجل ونبدأ من أول
-  const total = getQuestions(cat).length;
-  if (used[cat].length >= Math.floor(total * 0.8)) {
-    used[cat] = [];
-  }
+  // ملاحظة: كان هنا مسح للسجل عند استهلاك 80% من الفئة — انشال نهائياً.
+  // السياسة الجديدة: السؤال الملعوب ما يتكرر أبداً، وإذا نفدت أسئلة
+  // الفئة تظهر رسالة "انتهت الأسئلة" بدل إعادة التدوير.
   saveUsedQuestions(used);
 }
 
@@ -8517,20 +8515,14 @@ function selectCategory(cat) {
 
   let allQ = getQuestions(cat);
 
-  // فلتر: بعيد عن المستخدمة بهذه اللعبة أولاً، ثم localStorage
+  // منع التكرار الحرفي نهائياً: نستبعد الملعوب بهذه اللعبة وبكل الألعاب السابقة
   let fresh = allQ.filter(q => !gameUsed.includes(q.q) && !usedList.includes(q.q));
 
-  // إذا ما في كافي، اعتمد بس على gameUsed (تجنب التكرار بنفس اللعبة)
+  // نفدت أسئلة الفئة — ما نعيد التدوير، نخبر اللاعب ونخليه يختار فئة ثانية
   if (fresh.length < state.questionsPerRound) {
-    fresh = allQ.filter(q => !gameUsed.includes(q.q));
-  }
-
-  // إذا لا يزال ما في كافي، امسح كل شي وابدأ من أول
-  if (fresh.length < state.questionsPerRound) {
-    state.gameUsedQuestions = [];
-    used[cat] = [];
-    saveUsedQuestions(used);
-    fresh = shuffle([...allQ]);
+    showToast('📭 انتهت أسئلة هذه الفئة حالياً. انتظر التحديث القادم للحصول على أسئلة جديدة 🔄');
+    haptic('light');
+    return;
   }
 
   const pool = shuffle(fresh);
@@ -9185,18 +9177,13 @@ function startMixModeGame() {
     allQ.push(...catQuestions);
   });
 
-  // فلتر التكرار
+  // منع التكرار الحرفي نهائياً (نفس سياسة الفئة المفردة)
   let fresh = allQ.filter(q => !gameUsed.includes(q.q) && !(used[q._sourceCat] || []).includes(q.q));
 
   if (fresh.length < state.questionsPerRound) {
-    fresh = allQ.filter(q => !gameUsed.includes(q.q));
-  }
-
-  if (fresh.length < state.questionsPerRound) {
-    state.gameUsedQuestions = [];
-    mixSelectedCats.forEach(cat => { used[cat] = []; });
-    saveUsedQuestions(used);
-    fresh = shuffle([...allQ]);
+    showToast('📭 انتهت الأسئلة المتاحة في الفئات المختارة حالياً. انتظر التحديث القادم للحصول على أسئلة جديدة 🔄');
+    haptic('light');
+    return;
   }
 
   const pool = shuffle(fresh);
@@ -9865,25 +9852,41 @@ function changeQuestion() {
   const cat = state.currentCategory;
   if (!cat) return;
 
+  // البديل لازم يكون جديد كلياً: مو من أسئلة الجولة، ولا من الملعوب
+  // بهذه اللعبة، ولا من الملعوب بالألعاب السابقة (منع التكرار الحرفي)
+  const usedStore = getUsedQuestions();
+  const roundUsed = state.questions.map(x => x.q);
+  const gameUsed = state.gameUsedQuestions || [];
+  const isFresh = (q, srcCat) =>
+    !roundUsed.includes(q.q) && !gameUsed.includes(q.q) && !(usedStore[srcCat] || []).includes(q.q);
+
   // دعم وضع الخليط: "MIX:cat1,cat2,..."
   let pool;
+  let newQSrcCat = cat;
   if (cat.startsWith('MIX:')) {
     const cats = cat.slice(4).split(',');
-    let allQ = [];
-    cats.forEach(c => allQ.push(...getQuestions(c)));
-    const used = state.questions.map(x => x.q);
-    pool = allQ.filter(q => !used.includes(q.q));
+    pool = [];
+    cats.forEach(c => getQuestions(c).forEach(q => { if (isFresh(q, c)) pool.push({ ...q, _srcCat: c }); }));
   } else {
-    pool = getQuestions(cat).filter(q => {
-      const used = state.questions.map(x => x.q);
-      return !used.includes(q.q);
-    });
+    pool = getQuestions(cat).filter(q => isFresh(q, cat));
   }
 
-  if (pool.length === 0) { showToast('⚠️ ما في أسئلة إضافية في هذه الفئة'); return; }
+  if (pool.length === 0) {
+    // نرجّع محاولة التبديل للاعب لأن ما صار تبديل فعلي
+    state.questionChanged = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔀<br><small>1</small>'; }
+    showToast('📭 لا توجد أسئلة جديدة متبقية للتبديل في هذه الفئة حالياً. انتظر التحديث القادم 🔄');
+    return;
+  }
 
   const newQ = pool[Math.floor(Math.random() * pool.length)];
+  if (newQ._srcCat) newQSrcCat = newQ._srcCat;
   state.questions[state.qIndex] = newQ;
+
+  // نسجل البديل كمستخدم (بهذه اللعبة وبالسجل الدائم) حتى ما يرجع يتكرر
+  if (!state.gameUsedQuestions) state.gameUsedQuestions = [];
+  if (!state.gameUsedQuestions.includes(newQ.q)) state.gameUsedQuestions.push(newQ.q);
+  markQuestionsAsUsed(newQSrcCat, [newQ]);
 
   // إعادة رسم السؤال وإخفاء الجواب
   state.answerShown = false;
@@ -10513,7 +10516,8 @@ const M_QUESTIONS_POOL = [
 
 const M_USED_KEY = 'million_used_q';
 function getMUsed() { try { return JSON.parse(localStorage.getItem(M_USED_KEY)||'[]'); } catch(e) { return []; } }
-function saveMUsed(arr) { try { localStorage.setItem(M_USED_KEY, JSON.stringify(arr.slice(-50))); } catch(e) {} }
+// السجل كامل بلا سقف — كان .slice(-50) يخلي الأسئلة تتكرر بعد 50 سؤال
+function saveMUsed(arr) { try { localStorage.setItem(M_USED_KEY, JSON.stringify(arr)); } catch(e) {} }
 
 function buildMillionQuestions() {
   const used = getMUsed();
@@ -10528,25 +10532,25 @@ function buildMillionQuestions() {
 
   let selected = [];
   let newUsed = [...used];
+  let exhausted = false;
 
   levels.forEach(({ lvl, count }) => {
-    let pool = M_QUESTIONS_POOL.filter(q => q.lvl === lvl && !newUsed.includes(q.q));
-    // إذا ما في كافي، امسح المستخدمة من هذا المستوى
-    if (pool.length < count) {
-      newUsed = newUsed.filter(u => !M_QUESTIONS_POOL.filter(q=>q.lvl===lvl).map(q=>q.q).includes(u));
-      pool = M_QUESTIONS_POOL.filter(q => q.lvl === lvl);
-    }
-    const shuffled = mShuffle(pool);
-    const picked = shuffled.slice(0, count);
+    const pool = M_QUESTIONS_POOL.filter(q => q.lvl === lvl && !newUsed.includes(q.q));
+    // نفدت أسئلة هذا المستوى — ما نعيد التدوير، الوضع كله يعتبر منتهي
+    if (pool.length < count) { exhausted = true; return; }
+    const picked = mShuffle(pool).slice(0, count);
     selected = selected.concat(picked);
     newUsed = newUsed.concat(picked.map(q => q.q));
   });
+
+  if (exhausted) return null;
 
   saveMUsed(newUsed);
   return selected;
 }
 
-const M_QUESTIONS = buildMillionQuestions();
+// ملاحظة: كان هنا استدعاء بأعلى الملف يبني (ويحرق) 15 سؤال من الرصيد
+// بكل فتحة للصفحة حتى بلا لعب — انشال، والبناء صار فقط عند بدء اللعب
 
 let mState = { qIndex:0, selectedOpt:null, lifelines:{'5050':false,phone:false,audience:false}, correctCount:0, playerName:'', phoneTimer:null, done:false };
 
@@ -10558,8 +10562,12 @@ function mSafeAmount(){const i=mSafeZoneIndex();return i>=0?M_PRIZES[i].a:'0';}
 
 function startMillionMode(){
   const name=document.getElementById('p1-name').value.trim()||'اللاعب';
-  // بناء أسئلة جديدة بكل لعبة بدون تكرار
+  // بناء أسئلة جديدة بكل لعبة بدون تكرار — null يعني نفدت الأسئلة
   window._currentMillionQ = buildMillionQuestions();
+  if (!window._currentMillionQ) {
+    alert('📭 انتهت أسئلة وضع "من سيربح المليون" المتاحة حالياً.\nانتظر التحديث القادم للحصول على أسئلة جديدة 🔄');
+    return;
+  }
   mState={qIndex:0,selectedOpt:null,lifelines:{'5050':false,phone:false,audience:false},correctCount:0,playerName:name,phoneTimer:null,done:false};
   ['m-ll-5050','m-ll-phone','m-ll-audience'].forEach(id=>{const el=document.getElementById(id);el.disabled=false;el.classList.remove('used');});
   document.getElementById('m-poll-wrap').style.display='none';
@@ -10601,6 +10609,7 @@ function mStartTimer(){
 
 function mRender(){
   const _mq = window._currentMillionQ || buildMillionQuestions();
+  if (!_mq) { showScreen('screen-setup'); return; }
   const q=_mq[mState.qIndex];
   const safeIdx=mSafeZoneIndex();
   document.getElementById('m-prize-now').textContent='💰 '+M_PRIZES[mState.qIndex].a;
@@ -11695,7 +11704,7 @@ const IQ_GRADES = [
 // ══════════════════════════════════════════════
 
 // نظام منع التكرار — يحفظ الأسئلة المستخدمة
-const _iqUsedIndices = new Set();
+// (سجل الاستخدام صار دائم بـ localStorage — شوف IQ_USED_KEY و buildIQPool)
 
 const IQ_QUESTION_POOL = []; // تُحمَّل من Firestore
 let _iqLoaded = false;
@@ -11731,26 +11740,31 @@ async function loadIQFromFirestore() {
   }
 }
 
-function buildIQPool(count) {
-  // أسئلة لم تُستخدم بعد
-  let available = IQ_QUESTION_POOL
-    .map((q, i) => ({ q, i }))
-    .filter(({ i }) => !_iqUsedIndices.has(i));
+// سجل أسئلة IQ المستخدمة — دائم بالجهاز (localStorage) حتى ما تتكرر
+// الأسئلة حرفياً بين الاختبارات ولا بعد غلق اللعبة وفتحها
+const IQ_USED_KEY = 'tahadi_used_iq';
+function getIQUsed() {
+  try { return JSON.parse(localStorage.getItem(IQ_USED_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveIQUsed(arr) {
+  try { localStorage.setItem(IQ_USED_KEY, JSON.stringify(arr)); } catch(e) {}
+}
 
-  // لو ما كفت — نصفّي الكل ونبدأ من الأول
-  if (available.length < count) {
-    _iqUsedIndices.clear();
-    available = IQ_QUESTION_POOL.map((q, i) => ({ q, i }));
-  }
+function buildIQPool(count) {
+  const usedTexts = getIQUsed();
+  let available = IQ_QUESTION_POOL.filter(q => !usedTexts.includes(q.q));
+
+  // نفدت الأسئلة غير المستخدمة — نرجع null والمستدعي يعرض رسالة النفاد
+  if (available.length < count) return null;
 
   // نخلط ونأخذ العدد المطلوب
   available.sort(() => Math.random() - 0.5);
   const picked = available.slice(0, count);
 
-  // نسجّل المستخدمة
-  picked.forEach(({ i }) => _iqUsedIndices.add(i));
+  // نسجّل المستخدمة بشكل دائم
+  saveIQUsed(usedTexts.concat(picked.map(q => q.q)));
 
-  return picked.map(({ q }) => q);
+  return picked;
 }
 
 // ── حالة اختبار IQ ──
@@ -11912,8 +11926,9 @@ async function startIQTest() {
       return;
     }
     iqState.questions = buildIQPool(20, iqPool);
-    if (iqState.questions.length < 5) {
-      alert('⚠️ ما في أسئلة كافية! تأكد من فتح فئة واحدة على الأقل.');
+    if (!iqState.questions) {
+      alert('📭 انتهت أسئلة اختبار الذكاء المتاحة حالياً.\nانتظر التحديث القادم للحصول على أسئلة جديدة 🔄');
+      showScreen('screen-setup');
       return;
     }
     iqState.current = 0;
