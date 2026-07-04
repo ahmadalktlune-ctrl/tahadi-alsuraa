@@ -2373,6 +2373,13 @@ function _tryInitFirebase(attempt) {
   if (typeof firebase.firestore === 'function') {
     try {
       fbDb = firebase.firestore();
+      // بعض الـ WebView (خصوصاً الي تفتح ملف عبر content:// من تطبيقات ثانية)
+      // تحجب اتصال Firestore الافتراضي (WebChannel/Streaming) بصمت فتعلّق
+      // الطلبات للأبد بدون أي خطأ ظاهر. هذا الإعداد يكتشف تلقائياً لو
+      // الاتصال العادي ما يشتغل ويرجع لطريقة أبسط (long polling).
+      // *لازم* يُستدعى قبل أي عملية ثانية على fbDb.
+      try { fbDb.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }
+      catch(e2) { console.warn('⚠️ فشل ضبط إعدادات Firestore:', e2 && e2.message); }
       anyReady = true;
     } catch(e) { console.warn('⚠️ فشل تهيئة firebase.firestore:', e && e.message); }
     // نعزل تفعيل التخزين المؤقت بمحاولة منفصلة — فشلها (شائع ببعض
@@ -11507,6 +11514,7 @@ async function loadIQFromFirestore() {
     _iqLoaded = true;
     return IQ_QUESTION_POOL;
   } catch(e) {
+    window._lastIQError = (e && (e.code || e.message)) || String(e);
     if (e && e.message === 'TIMEOUT') {
       showToast('❌ الاتصال بطيء جداً أو الإنترنت غير فعّال. تحقق من الشبكة وحاول مجدداً.');
     } else {
@@ -11688,7 +11696,8 @@ async function startIQTest() {
         ' apps=' + (typeof firebase !== 'undefined' && firebase.apps ? firebase.apps.length : '؟') +
         ' fbReady=' + _fbReady +
         ' fsReady=' + _isFirestoreReallyReady() +
-        ' online=' + navigator.onLine;
+        ' online=' + navigator.onLine +
+        ' lastErr=' + (window._lastIQError || 'none');
       console.warn('IQ load failed diag:', diag);
       alert('❌ تعذّر تحميل أسئلة اختبار الذكاء.\nتحقق من الاتصال بالإنترنت والمحاولة مجدداً.\n\n(تشخيص: ' + diag + ')');
       showScreen('screen-setup');
