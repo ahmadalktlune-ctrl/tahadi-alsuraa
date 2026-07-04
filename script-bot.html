@@ -467,6 +467,48 @@ const TEMPLATES = [
       F('selector','text',{ar:'العنصر المطلوب (CSS selector)',en:'Target element (CSS selector)'},'h2')
     ],
     gen:genScraper
+  },
+  /* 12. Telegram Poll / Voting */
+  {
+    id:'tg-poll', icon:'🗳️', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تصويت',en:'Voting'},
+    title:{ar:'بوت تصويت واستطلاع',en:'Poll & Voting Bot'},
+    desc:{ar:'ينشئ استطلاع رأي بخيارات جاهزة عبر أمر بسيط.',en:'Creates a poll with ready options via a simple command.'},
+    fields:baseBot([
+      F('question','text',{ar:'سؤال الاستطلاع',en:'Poll question'},'شنو رأيك بالخدمة؟'),
+      F('choices','textarea',{ar:'الخيارات (خيار في كل سطر)',en:'Options (one per line)'},'ممتازة\nجيدة\nتحتاج تحسين')
+    ]),
+    gen:genPoll
+  },
+  /* 13. Telegram Number Game */
+  {
+    id:'tg-game', icon:'🎮', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'ألعاب',en:'Games'},
+    title:{ar:'بوت لعبة تخمين الرقم',en:'Number Guessing Game Bot'},
+    desc:{ar:'لعبة يخمّن فيها المستخدم رقماً عشوائياً بين 1 و100.',en:'A game where the user guesses a random number between 1 and 100.'},
+    fields:baseBot(),
+    gen:genGame
+  },
+  /* 14. Telegram Calculator */
+  {
+    id:'tg-calc', icon:'🧮', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'بوت آلة حاسبة',en:'Calculator Bot'},
+    desc:{ar:'يحسب أي عملية حسابية يرسلها المستخدم (جمع، طرح، ضرب، قسمة).',en:'Evaluates any arithmetic expression the user sends (+, −, ×, ÷).'},
+    fields:baseBot(),
+    gen:genCalc
+  },
+  /* 15. Script: Password Generator */
+  {
+    id:'sc-password', icon:'🔐', platform:'script', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'سكربت مولّد كلمات السر',en:'Password Generator Script'},
+    desc:{ar:'يولّد كلمات سر قوية وعشوائية بالطول والعدد الذي تحدده.',en:'Generates strong random passwords with the length and count you choose.'},
+    fields:[
+      F('length','text',{ar:'طول كلمة السر',en:'Password length'},'16'),
+      F('count','text',{ar:'عدد الكلمات المطلوبة',en:'How many passwords'},'5')
+    ],
+    gen:genPassword
   }
 ];
 
@@ -1305,6 +1347,262 @@ r.handle+'();'
   ].join('\n');
 }
 
+/* ---- 12. Poll / Voting ---- */
+function genPoll(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const choices=String(o.choices||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'QUESTION = '+JSON.stringify(o.question||'سؤالك؟'),
+'CHOICES = '+JSON.stringify(choices),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🗳️ أرسل /poll لبدء التصويت.")',
+'',
+'async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await context.bot.send_poll(',
+'        update.effective_chat.id,',
+'        QUESTION,',
+'        CHOICES,',
+'        is_anonymous=False,',
+'        allows_multiple_answers=False,',
+'    )',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("poll", poll))',
+'    print("Poll bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const QUESTION = '+JSON.stringify(o.question||'سؤالك؟')+';',
+'const CHOICES = '+JSON.stringify(choices)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🗳️ أرسل /poll لبدء التصويت.");',
+'});',
+'',
+r.botv+'.onText(/\\/poll/, (msg) => {',
+'  '+r.botv+'.sendPoll(msg.chat.id, QUESTION, CHOICES, { is_anonymous: false, allows_multiple_answers: false });',
+'});',
+'',
+'console.log("Poll bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 13. Number Guessing Game ---- */
+function genGame(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import random',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'games = {}',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    games[chat] = {"number": random.randint(1, 100), "tries": 0}',
+'    await update.message.reply_text("🎮 خمّن رقماً بين 1 و 100! أرسل تخمينك.")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    if chat not in games:',
+'        await update.message.reply_text("أرسل /start لبدء اللعبة.")',
+'        return',
+'    try:',
+'        guess = int(update.message.text.strip())',
+'    except ValueError:',
+'        return',
+'    game = games[chat]',
+'    game["tries"] += 1',
+'    if guess < game["number"]:',
+'        await update.message.reply_text("⬆️ الرقم أكبر.")',
+'    elif guess > game["number"]:',
+'        await update.message.reply_text("⬇️ الرقم أصغر.")',
+'    else:',
+'        await update.message.reply_text(f"🎉 صحيح! خمّنته بـ {game[\'tries\']} محاولة. /start للعب مجدداً.")',
+'        del games[chat]',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Game bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'const games = {};',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  games[msg.chat.id] = { number: Math.floor(Math.random() * 100) + 1, tries: 0 };',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🎮 خمّن رقماً بين 1 و 100! أرسل تخمينك.");',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const game = games[msg.chat.id];',
+'  if (!game || !msg.text || msg.text.startsWith("/")) return;',
+'  const guess = parseInt(msg.text.trim());',
+'  if (!guess) return;',
+'  game.tries++;',
+'  if (guess < game.number) '+r.botv+'.sendMessage(msg.chat.id, "⬆️ الرقم أكبر.");',
+'  else if (guess > game.number) '+r.botv+'.sendMessage(msg.chat.id, "⬇️ الرقم أصغر.");',
+'  else {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "🎉 صحيح! خمّنته بـ " + game.tries + " محاولة. /start للعب مجدداً.");',
+'    delete games[msg.chat.id];',
+'  }',
+'});',
+'',
+'console.log("Game bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 14. Calculator ---- */
+function genCalc(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import re',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🧮 أرسل أي عملية حسابية، مثال: 12 * (3 + 4)")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    expr = (update.message.text or "").strip()',
+'    '+c+' allow only safe arithmetic characters',
+'    if not re.fullmatch(r"[0-9+\\-*/(). ]+", expr):',
+'        await update.message.reply_text("أرسل أرقاماً وعمليات حسابية فقط.")',
+'        return',
+'    try:',
+'        result = eval(expr, {"__builtins__": {}}, {})',
+'        await update.message.reply_text(f"= {result}")',
+'    except Exception:',
+'        await update.message.reply_text("تعذّر حساب هذه العملية.")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Calculator bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🧮 أرسل أي عملية حسابية، مثال: 12 * (3 + 4)");',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  if (!msg.text || msg.text.startsWith("/")) return;',
+'  const expr = msg.text.trim();',
+'  '+c+' allow only safe arithmetic characters',
+'  if (!/^[0-9+\\-*/(). ]+$/.test(expr)) {',
+'    return '+r.botv+'.sendMessage(msg.chat.id, "أرسل أرقاماً وعمليات حسابية فقط.");',
+'  }',
+'  try {',
+'    const result = Function("\\"use strict\\"; return (" + expr + ");")();',
+'    '+r.botv+'.sendMessage(msg.chat.id, "= " + result);',
+'  } catch (e) {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "تعذّر حساب هذه العملية.");',
+'  }',
+'});',
+'',
+'console.log("Calculator bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 15. Password Generator ---- */
+function genPassword(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const length=parseInt(o.length)||16;
+  const count=parseInt(o.count)||5;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import secrets, string',
+'',
+'LENGTH = '+length,
+'COUNT = '+count,
+'',
+'def '+r.handle+'(length):',
+'    alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"',
+'    return "".join(secrets.choice(alphabet) for _ in range(length))',
+'',
+'if __name__ == "__main__":',
+'    print(f"🔐 {COUNT} كلمة سر بطول {LENGTH}:")',
+'    for i in range(COUNT):',
+'        print(f"{i + 1}. {'+r.handle+'(LENGTH)}")'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const crypto = require("crypto");',
+'',
+'const LENGTH = '+length+';',
+'const COUNT = '+count+';',
+'',
+'function '+r.handle+'(length) {',
+'  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";',
+'  let out = "";',
+'  for (let i = 0; i < length; i++) {',
+'    out += alphabet[crypto.randomInt(alphabet.length)];',
+'  }',
+'  return out;',
+'}',
+'',
+'console.log("🔐 " + COUNT + " كلمة سر بطول " + LENGTH + ":");',
+'for (let i = 0; i < COUNT; i++) {',
+'  console.log((i + 1) + ". " + '+r.handle+'(LENGTH));',
+'}'
+  ].join('\n');
+}
+
 /* ============================================================
    EXPLANATIONS (bilingual, built from platform + language)
    ============================================================ */
@@ -1445,7 +1743,7 @@ function renderHome(){
   const b2=el('button',{class:'btn ghost'},t('hero_cta2')); b2.onclick=()=>go('play');
   cta.appendChild(b1); cta.appendChild(b2); hero.appendChild(cta);
   const stats=el('div',{class:'stats'});
-  [['11',t('st_tpl')],['100%',t('st_off')],['0$',t('st_free')],['∞',t('st_uniq')]].forEach(([n,l])=>{
+  [['15',t('st_tpl')],['100%',t('st_off')],['0$',t('st_free')],['∞',t('st_uniq')]].forEach(([n,l])=>{
     const s=el('div',{class:'s'}); s.appendChild(el('b',{},n)); s.appendChild(el('span',{},l)); stats.appendChild(s);
   });
   hero.appendChild(stats);
