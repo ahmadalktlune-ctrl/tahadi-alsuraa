@@ -2380,12 +2380,11 @@ function _tryInitFirebase(attempt) {
       // لذلك نترك إعدادات Firestore على وضعها الافتراضي.
       anyReady = true;
     } catch(e) { console.warn('⚠️ فشل تهيئة firebase.firestore:', e && e.message); }
-    // نعزل تفعيل التخزين المؤقت بمحاولة منفصلة — فشلها (شائع ببعض
-    // المتصفحات/الـ WebView الي ما تدعم IndexedDB) ما يصير يفشّل fbDb نفسها
-    if (fbDb && typeof fbDb.enablePersistence === 'function') {
-      try { fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {}); }
-      catch(e) { console.warn('⚠️ enablePersistence فشلت (تُتجاهل، ما تؤثر على القراءة/الكتابة):', e && e.message); }
-    }
+    // تعطيل enablePersistence بالكامل: فحص مباشر (minitest) أثبت إن
+    // القراءة تشتغل فوراً بدونها، بينما بوجودها بهالكود كانت الاستعلامات
+    // تتعلّق للأبد بنفس البيئة رغم إنها معزولة بـ try/catch — يبدو إنها
+    // تكسر الاتصال الداخلي لـ Firestore حتى لو وعدها بالذات ما يفشل
+    // بشكل ظاهر. التخزين المؤقت بدون نت شي ثانوي، حذفه أهم من نشغله.
   }
   // Realtime Database غير مُعدّة أصلاً (ما أكو databaseURL بالإعدادات)
   // فتشغيلها راح تفشل دائماً وقد تحجز موارد شبكة/اتصال بلا فائدة —
