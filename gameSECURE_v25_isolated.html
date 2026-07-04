@@ -2554,6 +2554,14 @@ async function _waitForSdkScript(maxMs) {
   return true;
 }
 
+// ── قاطع دائرة للنسخة المشتركة ──
+// سجل الجهاز الحقيقي (أندرويد 10، فتح بـ content://) بيّن إن auth يعلّق
+// وما يصدر حالته أبداً، و Firestore بالتطبيق المشترك ينتظر توكن من auth
+// قبل أي طلب — فكل استعلام مشترك يموت TIMEOUT بينما المعزول (بلا auth)
+// يرد بأقل من ثانية. بدل ما ندفع 8 ثواني عقوبة على كل استعلام، أول
+// فشل TIMEOUT يفتح القاطع وكل الاستعلامات بعده تروح للمعزول فوراً.
+let _sharedFsBroken = false;
+
 // ينفّذ الاستعلام عالنسخة المشتركة، ولو علّگت/فشلت يعيده عالنسخة المعزولة.
 // buildQuery دالة تستلم db وترجع Query — مثال: db => db.collection('x').get()
 async function _fsGetWithFallback(buildQuery, label) {
@@ -2562,13 +2570,24 @@ async function _fsGetWithFallback(buildQuery, label) {
     throw new Error('SDK_NOT_LOADED');
   }
   // فرصة قصيرة للتهيئة المشتركة تلحق تخلص (تعيد المحاولة كل 300ms بالخلفية)
-  if (!_isFirestoreReallyReady()) await waitForFirebaseReady(3000);
-  if (_isFirestoreReallyReady()) {
+  if (!_sharedFsBroken && !_isFirestoreReallyReady()) await waitForFirebaseReady(3000);
+  if (_sharedFsBroken) {
+    // القاطع مفتوح — ما نجرب المشتركة أصلاً
+  } else if (_isFirestoreReallyReady()) {
     try {
       return await _timedGet(buildQuery(fbDb), label + '/مشترك', 8000);
     } catch(e) {
       window._lastIQError = (e && (e.code || e.message)) || String(e);
-      _dbg(label + '/مشترك: فشل (' + window._lastIQError + ') — ننتقل للنسخة المعزولة');
+      if (e && e.message === 'TIMEOUT') {
+        if (!_sharedFsBroken) {
+          _sharedFsBroken = true;
+          _dbg(label + '/مشترك: TIMEOUT — فتحنا القاطع، كل الاستعلامات الجاية تروح للمعزول مباشرة');
+        } else {
+          _dbg(label + '/مشترك: TIMEOUT (كان بالطريق من قبل فتح القاطع)');
+        }
+      } else {
+        _dbg(label + '/مشترك: فشل (' + window._lastIQError + ') — ننتقل للنسخة المعزولة');
+      }
     }
   } else {
     _dbg(label + ': النسخة المشتركة مو جاهزة — نروح مباشرة للمعزولة');
@@ -2619,15 +2638,15 @@ function startQuestionsPrefetch() {
   const cats = (typeof QUESTIONS !== 'undefined') ? Object.keys(QUESTIONS) : [];
   if (!cats.length) { _qPrefetchStarted = false; return; }
   _dbg('prefetch: بدأ التحميل المسبق لـ ' + cats.length + ' فئة');
-  let idx = 0, loaded = 0;
+  let idx = 0, loaded = 0, settled = 0;
   const loader = setInterval(() => {
-    if (idx >= cats.length) {
-      clearInterval(loader);
-      _dbg('prefetch: خلص — ' + loaded + '/' + cats.length + ' فئة بالكاش');
-      return;
-    }
+    if (idx >= cats.length) { clearInterval(loader); return; }
     const cat = cats[idx++];
-    loadExtraQuestionsFromFirestore(cat).then(qs => { if (qs && qs.length) loaded++; });
+    loadExtraQuestionsFromFirestore(cat).then(qs => {
+      if (qs && qs.length) loaded++;
+      // نسجل الخلاصة بس لما تخلص كل الفئات فعلياً (مو لما يخلص الطابور)
+      if (++settled === cats.length) _dbg('prefetch: خلص — ' + loaded + '/' + cats.length + ' فئة بالكاش');
+    });
   }, 1000);
 }
 // تنطلق بعد 3 ثواني من التحميل — QUESTIONS معرّف ببلوك لاحق فننتظر اكتمال الصفحة
@@ -2775,7 +2794,16 @@ function attachAuthListener() {
   if (!fbAuth || typeof fbAuth.onAuthStateChanged !== 'function') return;
   // لو أعدنا الربط بعد نجاح تهيئة Firebase الحقيقية، نلغي أي اشتراك سابق بالكائن البديل
   if (typeof _authListenerUnsub === 'function') { try { _authListenerUnsub(); } catch(e) {} }
+  // مراقب: لو auth ما أصدر أي حالة خلال 6 ثواني، هذا هو سبب تعليق
+  // النسخة المشتركة (Firestore ينتظر توكن منه) — نسجلها كدليل قاطع
+  if (!window._authWatchdogSet) {
+    window._authWatchdogSet = true;
+    setTimeout(() => {
+      if (!window._authStateFired) _dbg('auth: ⚠️ ما أصدر أي حالة خلال 6ث — auth معلّق، وهذا سبب تعليق Firestore المشترك');
+    }, 6000);
+  }
   _authListenerUnsub = fbAuth.onAuthStateChanged(async (user) => {
+  window._authStateFired = true;
   _dbg('auth: تغيّرت الحالة — ' + (user ? ('مسجّل (' + user.uid.slice(0, 6) + '…)') : 'بدون مستخدم'));
   // لو المستخدم دخل كضيف، ما نتدخل أبداً بأي شكل
   if (window.isGuestMode === true) return;
