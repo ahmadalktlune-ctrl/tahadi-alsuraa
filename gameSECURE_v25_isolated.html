@@ -9955,6 +9955,10 @@ function endRound() {
 
 // ── startRound الموحدة (تدعم solo + two player + تبديل السؤال) ──
 function startRound() {
+  // ⚠️ إعادة ضبط حارس نهاية الجولة — كان ينضبط مرة وحدة ببداية اللعبة بس،
+  // فمن الجولة الثانية endRound() كانت ترجع فوراً بلا ما تسوي شي:
+  // المؤقت يجمد، السؤال الأخير يعلگ، وكل الأزرار تبدو ميتة (باگ التجمد)
+  state._endRoundCalled = false;
   // إعادة ضبط تبديل السؤال
   state.questionChanged = false;
   refreshChangeBtn();
@@ -12818,7 +12822,9 @@ window.startGame = function() {
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
-  for (let i = 0; i < 55; i++) {
+  // أجهزة ضعيفة (4 أنوية أو أقل) = جزيئات أقل — تخفيف حمل الرسم
+  const PARTICLE_COUNT = (navigator.hardwareConcurrency || 8) <= 4 ? 28 : 55;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     particles.push({
       x: rand(0, 1), y: rand(0, 1),
@@ -12832,7 +12838,11 @@ window.startGame = function() {
   }
 
   let frame = 0;
-  function draw() {
+  let _lastDraw = 0;
+  function draw(ts) {
+    // سقف ~30 إطار/ثانية — نص حمل الرسم، فرق ما ينشاف بجزيئات بطيئة
+    if (ts && ts - _lastDraw < 33) { requestAnimationFrame(draw); return; }
+    _lastDraw = ts || 0;
     ctx.clearRect(0, 0, W, H);
     frame++;
     particles.forEach(p => {
@@ -12913,8 +12923,12 @@ window._floatScore = floatScore;
   let t = 0;
   // كانت draw() تنستدعى بس الدالة ما موجودة بهذا السكوب أصلاً — خطأ كان
   // مخفي لأن البلوك كله كان يموت قبل ما يوصل هنا (خطأ resize بالجزيئات)
-  function draw() {
+  let _lastDraw = 0;
+  function draw(ts) {
     const W = canvas.width, H = canvas.height;
+    // سقف ~30 إطار/ثانية + تخطي الرسم لما الكانفس مخفي (حجمه صفر)
+    if (!W || !H || (ts && ts - _lastDraw < 33)) { requestAnimationFrame(draw); return; }
+    _lastDraw = ts || 0;
     ctx.clearRect(0, 0, W, H);
     lines.forEach(l => {
       ctx.beginPath();
