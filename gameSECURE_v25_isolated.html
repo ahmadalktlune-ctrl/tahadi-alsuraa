@@ -2534,6 +2534,16 @@ function _timedGet(queryPromise, label, timeoutMs) {
   return Promise.race([queryPromise, timeoutPromise]);
 }
 
+// مهلة عامة لأي وعد Firestore — للقراءات/الكتابات المصادَق عليها اللي
+// ما ينفعها fallback المعزول (يحتاج auth). بدل التعليق الأبدي، ترمي
+// TIMEOUT فيوصل الخطأ لمعالج الدالة الأصلي (كلهن جوّة try/catch)
+function _fsTimed(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms || 8000))
+  ]);
+}
+
 // ينتظر تحميل سكربتات SDK نفسها (مو التهيئة) — لازمة للنسخة المعزولة هم
 async function _waitForSdkScript(maxMs) {
   const start = Date.now();
@@ -8889,7 +8899,7 @@ async function loadGems() {
     return;
   }
   try {
-    const doc = await fbDb.collection('users').doc(currentUser.uid).get();
+    const doc = await _fsTimed(fbDb.collection('users').doc(currentUser.uid).get());
     if (doc.exists) {
       const data = doc.data();
       currentUser.gems = data.gems || 0;
@@ -9001,7 +9011,7 @@ function showGemEarn(text) {
 async function giveWelcomeGems() {
   if (!currentUser || currentUser.isGuest) return;
   try {
-    const doc = await fbDb.collection('users').doc(currentUser.uid).get();
+    const doc = await _fsTimed(fbDb.collection('users').doc(currentUser.uid).get());
     const data = doc.exists ? doc.data() : {};
     if (!data.welcomeGemsGiven) {
       currentUser.gems = (currentUser.gems || 0) + 50;
@@ -9270,7 +9280,7 @@ async function buyWithGems(cat) {
 
   try {
     // ✅ اقرأ الجواهر من Firebase مباشرة (لا تثق بالقيمة المحلية)
-    const doc = await fbDb.collection('users').doc(currentUser.uid).get();
+    const doc = await _fsTimed(fbDb.collection('users').doc(currentUser.uid).get());
     if (!doc.exists) { showToast('❌ حدث خطأ، حاول مجدداً'); return; }
     const serverData = doc.data();
     const serverGems = serverData.gems || 0;
@@ -9592,10 +9602,10 @@ async function loadLeaderboard(sortBy = 'xp') {
   try {
     const fieldMap = { xp: 'xp', wins: 'wins', correct: 'correct' };
     const field = fieldMap[sortBy] || 'xp';
-    const snap = await fbDb.collection('users')
+    const snap = await _fsTimed(fbDb.collection('users')
       .orderBy(field, 'desc')
       .limit(20)
-      .get();
+      .get());
 
     if (snap.empty) {
       el.innerHTML = '<div class="lb-empty">ما في لاعبين بعد! 👻<br>كن أول واحد بالقائمة 🚀</div>';
