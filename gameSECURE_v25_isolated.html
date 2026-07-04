@@ -8558,6 +8558,13 @@ function _origRenderQuestion() {
   aCard.classList.remove('revealed');
   state.answerShown = false;
   disableAnswerBtns();
+  // التلميح يخص سؤاله بس: نخفي نص تلميح السؤال السابق ونصفّر تدرّج
+  // التلميحات (الأول: عدد الحروف، الثاني: أول كلمة...) — بدون هذا كان
+  // تلميح السؤال القديم يظل معروض طول الجولة، وأول تلميح بالسؤال الجديد
+  // يبدأ من المستوى اللي وقف عنده السؤال السابق. (رصيد التلميحات ما ينمس)
+  hintUsedCount = 0;
+  const hintTextEl = document.getElementById('hint-text');
+  if (hintTextEl) hintTextEl.style.display = 'none';
 }
 
 function toggleAnswer() {
