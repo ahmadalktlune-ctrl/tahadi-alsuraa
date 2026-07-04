@@ -2347,41 +2347,59 @@ fbAuth = { onAuthStateChanged: (cb) => { cb(null); return () => {}; }, signInWit
 fbDb   = { collection: () => ({ doc: () => ({ get: () => Promise.resolve({exists:false}), set: () => Promise.resolve() }) }) };
 rtdb   = { ref: () => ({ once: () => Promise.resolve({val:()=>null}), set: () => Promise.resolve(), update: () => Promise.resolve(), remove: () => Promise.resolve(), on: () => {}, off: () => {} }) };
 
-function _tryInitFirebase(retriesLeft) {
+function _tryInitFirebase(attempt) {
   if (typeof firebase === 'undefined' || !firebase.initializeApp) {
-    if (retriesLeft <= 0) {
-      console.warn('⚠️ فشل تحميل مكتبة Firebase بعد عدة محاولات — تسجيل الدخول وحفظ النتائج واختبار الذكاء لن تعمل حتى تُعاد تحميل الصفحة باتصال أفضل.');
-      return;
-    }
-    setTimeout(() => _tryInitFirebase(retriesLeft - 1), 300);
+    console.warn('⏳ محاولة ' + attempt + ': مكتبة Firebase لسه ما تحمّلت (firebase غير معرّفة).');
+    setTimeout(() => _tryInitFirebase(attempt + 1), attempt < 20 ? 300 : 2000);
     return;
   }
   try {
-    firebase.initializeApp(firebaseConfig);
-    fbAuth = firebase.auth();
-    fbDb   = firebase.firestore();
-    rtdb   = firebase.database();
+    if (!firebase.apps || firebase.apps.length === 0) {
+      firebase.initializeApp(firebaseConfig);
+    }
+  } catch(e) {
+    console.warn('⚠️ محاولة ' + attempt + ': فشل firebase.initializeApp:', e && e.message);
+    setTimeout(() => _tryInitFirebase(attempt + 1), attempt < 20 ? 300 : 2000);
+    return;
+  }
 
+  // كل خدمة تُهيّأ باستقلالية — فشل خدمة وحدة (مثلاً Realtime Database)
+  // ما يمنع الخدمات الثانية (خصوصاً Firestore الي عليها أسئلة اللعبة) من الشغل
+  let anyReady = false;
+  if (typeof firebase.auth === 'function') {
+    try { fbAuth = firebase.auth(); anyReady = true; }
+    catch(e) { console.warn('⚠️ فشل تهيئة firebase.auth:', e && e.message); }
+  }
+  if (typeof firebase.firestore === 'function') {
+    try {
+      fbDb = firebase.firestore();
+      fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+      anyReady = true;
+    } catch(e) { console.warn('⚠️ فشل تهيئة firebase.firestore:', e && e.message); }
+  }
+  if (typeof firebase.database === 'function') {
+    try { rtdb = firebase.database(); }
+    catch(e) { console.warn('⚠️ فشل تهيئة firebase.database:', e && e.message); }
+  }
+
+  if (anyReady) {
     // ⚠️ تحذير أمني مهم
     console.warn('⚠️ تحذير أمني: يجب تطبيق Firebase Security Rules من الملف!');
     console.warn('⚠️ بدون القواعس الأمنية، أي شخص يمكنه تعديل البيانات!');
-
-    // تفعيل Offline Cache بحماية (يفشل أحياناً في Safari/iOS)
-    fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
-
     _fbReady = true;
     attachAuthListener();
-  } catch(e) {
-    console.warn('Firebase init failed:', e);
-    if (retriesLeft > 0) setTimeout(() => _tryInitFirebase(retriesLeft - 1), 300);
+    console.log('✅ Firebase جاهز (محاولة ' + attempt + ')');
+  } else {
+    console.warn('⚠️ محاولة ' + attempt + ': ولا خدمة Firebase (auth/firestore) نجحت، بعاود المحاولة.');
+    setTimeout(() => _tryInitFirebase(attempt + 1), attempt < 20 ? 300 : 2000);
   }
 }
-_tryInitFirebase(30);
+_tryInitFirebase(1);
 
 // ينتظر لين تخلص تهيئة Firebase الحقيقية (أو تنتهي المحاولات) قبل أي طلب
 // فعلي لقاعدة البيانات — يمنع استخدام النسخة البديلة لو المستخدم كان
 // سريع وضغط زر يحتاج Firestore قبل ما تخلص المحاولات بالخلفية.
-function waitForFirebaseReady(maxWaitMs = 10000) {
+function waitForFirebaseReady(maxWaitMs = 25000) {
   if (_fbReady) return Promise.resolve(true);
   return new Promise((resolve) => {
     const start = Date.now();
@@ -11655,7 +11673,12 @@ async function startIQTest() {
     // بناء 20 سؤال ديناميكي من بنك اللعبة
     const iqPool = await loadIQFromFirestore();
     if (!iqPool || iqPool.length < 5) {
-      showToast('❌ تعذّر تحميل أسئلة اختبار الذكاء. يرجى التحقق من الاتصال بالإنترنت والمحاولة مجدداً.');
+      const diag = 'firebase=' + (typeof firebase) +
+        ' apps=' + (typeof firebase !== 'undefined' && firebase.apps ? firebase.apps.length : '؟') +
+        ' fbReady=' + _fbReady +
+        ' online=' + navigator.onLine;
+      console.warn('IQ load failed diag:', diag);
+      alert('❌ تعذّر تحميل أسئلة اختبار الذكاء.\nتحقق من الاتصال بالإنترنت والمحاولة مجدداً.\n\n(تشخيص: ' + diag + ')');
       showScreen('screen-setup');
       return;
     }
