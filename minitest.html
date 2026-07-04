@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>فحص Firestore المصغّر</title>
+<style>
+body { font-family: monospace; background: #0a0a0f; color: #0f0; padding: 20px; direction: ltr; font-size: 15px; line-height: 1.8; }
+.line { margin: 4px 0; white-space: pre-wrap; word-break: break-word; }
+.err { color: #f66; }
+.ok { color: #6f6; }
+.info { color: #6cf; }
+</style>
+</head>
+<body>
+<div id="log"><div class="line info">بدء الفحص...</div></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+function log(msg, cls) {
+  const d = document.createElement('div');
+  d.className = 'line ' + (cls || '');
+  d.textContent = '[' + new Date().toISOString().slice(11,23) + '] ' + msg;
+  document.getElementById('log').appendChild(d);
+}
+
+log('typeof firebase = ' + (typeof firebase), typeof firebase === 'undefined' ? 'err' : 'ok');
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBmBfsXMYPy4yqVRQCZhValMcvED96F8o0",
+  authDomain: "ahmed-6e607.firebaseapp.com",
+  projectId: "ahmed-6e607",
+  storageBucket: "ahmed-6e607.firebasestorage.app",
+  messagingSenderId: "808220028213",
+  appId: "1:808220028213:web:3ddd9e09bc2f8e3e7c4f21"
+};
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  log('firebase.initializeApp نجحت', 'ok');
+} catch(e) {
+  log('firebase.initializeApp فشلت: ' + e.message, 'err');
+}
+
+let db;
+try {
+  db = firebase.firestore();
+  log('firebase.firestore() نجحت، النوع: ' + typeof db.collection, 'ok');
+} catch(e) {
+  log('firebase.firestore() فشلت: ' + e.message, 'err');
+}
+
+log('navigator.onLine = ' + navigator.onLine, navigator.onLine ? 'ok' : 'err');
+log('location.href = ' + location.href, 'info');
+log('userAgent = ' + navigator.userAgent, 'info');
+
+log('جاري محاولة قراءة iq_questions (بدون أي مهلة زمنية، ننتظر لين يرد فعلياً)...', 'info');
+const t0 = Date.now();
+
+db.collection('iq_questions').limit(3).get().then(snap => {
+  const ms = Date.now() - t0;
+  log('✅ نجحت القراءة! المدة: ' + ms + ' مللي ثانية. عدد الوثائق: ' + snap.size, 'ok');
+  snap.forEach(doc => log('  - ' + doc.id + ': ' + JSON.stringify(doc.data()).slice(0, 120), 'ok'));
+}).catch(e => {
+  const ms = Date.now() - t0;
+  log('❌ فشلت القراءة بعد ' + ms + ' مللي ثانية.', 'err');
+  log('نوع الخطأ (code): ' + e.code, 'err');
+  log('رسالة الخطأ (message): ' + e.message, 'err');
+  log('كامل الخطأ: ' + JSON.stringify(e, Object.getOwnPropertyNames(e)), 'err');
+});
+
+// نطبع تحديث كل 3 ثواني نعرف الصفحة لسا حية وتنتظر
+let ticks = 0;
+const interval = setInterval(() => {
+  ticks++;
+  log('... لسا ننتظر (بعد ' + (ticks*3) + ' ثانية)', 'info');
+  if (ticks > 20) clearInterval(interval);
+}, 3000);
+</script>
+</body>
+</html>
