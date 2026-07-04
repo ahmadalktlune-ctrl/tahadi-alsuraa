@@ -2373,9 +2373,14 @@ function _tryInitFirebase(attempt) {
   if (typeof firebase.firestore === 'function') {
     try {
       fbDb = firebase.firestore();
-      fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
       anyReady = true;
     } catch(e) { console.warn('⚠️ فشل تهيئة firebase.firestore:', e && e.message); }
+    // نعزل تفعيل التخزين المؤقت بمحاولة منفصلة — فشلها (شائع ببعض
+    // المتصفحات/الـ WebView الي ما تدعم IndexedDB) ما يصير يفشّل fbDb نفسها
+    if (fbDb && typeof fbDb.enablePersistence === 'function') {
+      try { fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {}); }
+      catch(e) { console.warn('⚠️ enablePersistence فشلت (تُتجاهل، ما تؤثر على القراءة/الكتابة):', e && e.message); }
+    }
   }
   if (typeof firebase.database === 'function') {
     try { rtdb = firebase.database(); }
@@ -2399,12 +2404,18 @@ _tryInitFirebase(1);
 // ينتظر لين تخلص تهيئة Firebase الحقيقية (أو تنتهي المحاولات) قبل أي طلب
 // فعلي لقاعدة البيانات — يمنع استخدام النسخة البديلة لو المستخدم كان
 // سريع وضغط زر يحتاج Firestore قبل ما تخلص المحاولات بالخلفية.
+function _isFirestoreReallyReady() {
+  // النسخة البديلة (fallback) ما عندها collection(...).get — فقط الحقيقية عندها
+  try { return !!(fbDb && typeof fbDb.collection('_probe').get === 'function'); }
+  catch(e) { return false; }
+}
+
 function waitForFirebaseReady(maxWaitMs = 25000) {
-  if (_fbReady) return Promise.resolve(true);
+  if (_isFirestoreReallyReady()) return Promise.resolve(true);
   return new Promise((resolve) => {
     const start = Date.now();
     (function check() {
-      if (_fbReady) return resolve(true);
+      if (_isFirestoreReallyReady()) return resolve(true);
       if (Date.now() - start >= maxWaitMs) return resolve(false);
       setTimeout(check, 150);
     })();
@@ -11676,6 +11687,7 @@ async function startIQTest() {
       const diag = 'firebase=' + (typeof firebase) +
         ' apps=' + (typeof firebase !== 'undefined' && firebase.apps ? firebase.apps.length : '؟') +
         ' fbReady=' + _fbReady +
+        ' fsReady=' + _isFirestoreReallyReady() +
         ' online=' + navigator.onLine;
       console.warn('IQ load failed diag:', diag);
       alert('❌ تعذّر تحميل أسئلة اختبار الذكاء.\nتحقق من الاتصال بالإنترنت والمحاولة مجدداً.\n\n(تشخيص: ' + diag + ')');
