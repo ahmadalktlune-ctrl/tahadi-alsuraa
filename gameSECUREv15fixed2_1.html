@@ -2378,7 +2378,12 @@ function _tryInitFirebase(attempt) {
       // الطلبات للأبد بدون أي خطأ ظاهر. هذا الإعداد يكتشف تلقائياً لو
       // الاتصال العادي ما يشتغل ويرجع لطريقة أبسط (long polling).
       // *لازم* يُستدعى قبل أي عملية ثانية على fbDb.
-      try { fbDb.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }
+      // نفرض long polling مباشرة (بدون اكتشاف تلقائي) — بعض الـ WebView
+      // (خصوصاً فتح ملف عبر content:// من تطبيق ثاني) تحجب اتصال
+      // Firestore الافتراضي (WebChannel/Streaming) بصمت فتعلّق الطلبات
+      // للأبد بدون أي خطأ ظاهر، والاكتشاف التلقائي نفسه لا يكتشف الحجب
+      // بمثل هالبيئات. *لازم* يُستدعى قبل أي عملية ثانية على fbDb.
+      try { fbDb.settings({ experimentalForceLongPolling: true, merge: true }); }
       catch(e2) { console.warn('⚠️ فشل ضبط إعدادات Firestore:', e2 && e2.message); }
       anyReady = true;
     } catch(e) { console.warn('⚠️ فشل تهيئة firebase.firestore:', e && e.message); }
@@ -2389,7 +2394,11 @@ function _tryInitFirebase(attempt) {
       catch(e) { console.warn('⚠️ enablePersistence فشلت (تُتجاهل، ما تؤثر على القراءة/الكتابة):', e && e.message); }
     }
   }
-  if (typeof firebase.database === 'function') {
+  // Realtime Database غير مُعدّة أصلاً (ما أكو databaseURL بالإعدادات)
+  // فتشغيلها راح تفشل دائماً وقد تحجز موارد شبكة/اتصال بلا فائدة —
+  // نتجاوزها بالكامل ونخليها بالنسخة البديلة الآمنة (rtdb يُستخدم بس
+  // بميزة الغرف الأونلاين غير المفعّلة أصلاً بدون هذا الإعداد).
+  if (firebaseConfig.databaseURL && typeof firebase.database === 'function') {
     try { rtdb = firebase.database(); }
     catch(e) { console.warn('⚠️ فشل تهيئة firebase.database:', e && e.message); }
   }
