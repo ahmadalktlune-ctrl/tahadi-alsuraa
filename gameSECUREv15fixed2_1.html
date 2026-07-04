@@ -2336,26 +2336,47 @@ const firebaseConfig = {
   appId: "1:808220028213:web:3ddd9e09bc2f8e3e7c4f21"
 };
 // ── تهيئة Firebase مع حماية كاملة من الأخطاء ──
+// ملاحظة: على بعض الشبكات (خصوصاً الموبايل) قد تتأخر مكتبات Firebase
+// (السكربتات من gstatic.com) عن التحميل. لذلك نبدأ بكائنات بديلة آمنة
+// فوراً حتى لا تنكسر بقية الكود، وبنفس الوقت نحاول التهيئة الحقيقية
+// بشكل متكرر لمدة ~9 ثواني، ونرفّع fbAuth/fbDb/rtdb فور نجاحها.
 let fbAuth, fbDb, rtdb;
-try {
-  firebase.initializeApp(firebaseConfig);
-  fbAuth = firebase.auth();
-  fbDb   = firebase.firestore();
-  rtdb   = firebase.database();
-  
-  // ⚠️ تحذير أمني مهم
-  console.warn('⚠️ تحذير أمني: يجب تطبيق Firebase Security Rules من الملف!');
-  console.warn('⚠️ بدون القواعس الأمنية، أي شخص يمكنه تعديل البيانات!');
-  
-  // تفعيل Offline Cache بحماية (يفشل أحياناً في Safari/iOS)
-  fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
-} catch(e) {
-  console.warn('Firebase init failed:', e);
-  // إنشاء كائنات بديلة حتى لا تنكسر بقية الكود
-  fbAuth = { onAuthStateChanged: (cb) => { cb(null); return () => {}; }, signInWithEmailAndPassword: () => Promise.reject({code:'unavailable'}), createUserWithEmailAndPassword: () => Promise.reject({code:'unavailable'}), signOut: () => Promise.resolve() };
-  fbDb   = { collection: () => ({ doc: () => ({ get: () => Promise.resolve({exists:false}), set: () => Promise.resolve() }) }) };
-  rtdb   = { ref: () => ({ once: () => Promise.resolve({val:()=>null}), set: () => Promise.resolve(), update: () => Promise.resolve(), remove: () => Promise.resolve(), on: () => {}, off: () => {} }) };
+let _fbReady = false;
+
+fbAuth = { onAuthStateChanged: (cb) => { cb(null); return () => {}; }, signInWithEmailAndPassword: () => Promise.reject({code:'unavailable'}), createUserWithEmailAndPassword: () => Promise.reject({code:'unavailable'}), signOut: () => Promise.resolve() };
+fbDb   = { collection: () => ({ doc: () => ({ get: () => Promise.resolve({exists:false}), set: () => Promise.resolve() }) }) };
+rtdb   = { ref: () => ({ once: () => Promise.resolve({val:()=>null}), set: () => Promise.resolve(), update: () => Promise.resolve(), remove: () => Promise.resolve(), on: () => {}, off: () => {} }) };
+
+function _tryInitFirebase(retriesLeft) {
+  if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+    if (retriesLeft <= 0) {
+      console.warn('⚠️ فشل تحميل مكتبة Firebase بعد عدة محاولات — تسجيل الدخول وحفظ النتائج واختبار الذكاء لن تعمل حتى تُعاد تحميل الصفحة باتصال أفضل.');
+      return;
+    }
+    setTimeout(() => _tryInitFirebase(retriesLeft - 1), 300);
+    return;
+  }
+  try {
+    firebase.initializeApp(firebaseConfig);
+    fbAuth = firebase.auth();
+    fbDb   = firebase.firestore();
+    rtdb   = firebase.database();
+
+    // ⚠️ تحذير أمني مهم
+    console.warn('⚠️ تحذير أمني: يجب تطبيق Firebase Security Rules من الملف!');
+    console.warn('⚠️ بدون القواعس الأمنية، أي شخص يمكنه تعديل البيانات!');
+
+    // تفعيل Offline Cache بحماية (يفشل أحياناً في Safari/iOS)
+    fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+
+    _fbReady = true;
+    attachAuthListener();
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+    if (retriesLeft > 0) setTimeout(() => _tryInitFirebase(retriesLeft - 1), 300);
+  }
 }
+_tryInitFirebase(30);
 
 
 
@@ -2521,8 +2542,12 @@ function showBackConfirmDialog(title, message, onConfirm) {
 
 // ── مراقبة حالة تسجيل الدخول ──
 let _firebaseReady = false;
-if (fbAuth && typeof fbAuth.onAuthStateChanged === 'function')
-fbAuth.onAuthStateChanged(async (user) => {
+let _authListenerUnsub = null;
+function attachAuthListener() {
+  if (!fbAuth || typeof fbAuth.onAuthStateChanged !== 'function') return;
+  // لو أعدنا الربط بعد نجاح تهيئة Firebase الحقيقية، نلغي أي اشتراك سابق بالكائن البديل
+  if (typeof _authListenerUnsub === 'function') { try { _authListenerUnsub(); } catch(e) {} }
+  _authListenerUnsub = fbAuth.onAuthStateChanged(async (user) => {
   // لو المستخدم دخل كضيف، ما نتدخل أبداً بأي شكل
   if (window.isGuestMode === true) return;
   if (window.currentUser && window.currentUser.isGuest) return;
@@ -2530,7 +2555,7 @@ fbAuth.onAuthStateChanged(async (user) => {
 
   // لو اللعبة شغّالة (ما في شاشة login نشطة)، ما نتدخل
   const loginScreen = document.getElementById('screen-login');
-  
+
   if (user) {
     // مستخدم مسجل تلقائياً — شغّل فقط لو شاشة اللوجن نشطة
     if (loginScreen && !loginScreen.classList.contains('active')) return;
@@ -2558,7 +2583,9 @@ fbAuth.onAuthStateChanged(async (user) => {
       }
     }
   }
-});
+  });
+}
+attachAuthListener();
 </script>
 <!-- ══ SERVICE WORKER ══ -->
 <script>
