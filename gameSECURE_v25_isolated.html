@@ -2606,6 +2606,33 @@ async function getQuestionsForCat(cat) {
   return [...local, ...extra];
 }
 
+// ══ التحميل المسبق لأسئلة الفئات من Firestore ══
+// كانت الحلقة جوّة afterLogin() فقط — يعني الضيوف ما يحصلون أسئلة Firestore
+// أبداً، والمسجلين هم لا بالنسخ السابقة (مستمع الدخول كان ميت بباگ TDZ).
+// القراءة عامة بالقواعد (allow read: if true) فما تحتاج تسجيل دخول أصلاً —
+// نشغلها من تحميل الصفحة للجميع. فئة كل ثانية حتى ما نثقل الاتصال.
+let _qPrefetchStarted = false;
+function startQuestionsPrefetch() {
+  if (_qPrefetchStarted) return;
+  _qPrefetchStarted = true;
+  if (!navigator.onLine) { _qPrefetchStarted = false; return; }
+  const cats = (typeof QUESTIONS !== 'undefined') ? Object.keys(QUESTIONS) : [];
+  if (!cats.length) { _qPrefetchStarted = false; return; }
+  _dbg('prefetch: بدأ التحميل المسبق لـ ' + cats.length + ' فئة');
+  let idx = 0, loaded = 0;
+  const loader = setInterval(() => {
+    if (idx >= cats.length) {
+      clearInterval(loader);
+      _dbg('prefetch: خلص — ' + loaded + '/' + cats.length + ' فئة بالكاش');
+      return;
+    }
+    const cat = cats[idx++];
+    loadExtraQuestionsFromFirestore(cat).then(qs => { if (qs && qs.length) loaded++; });
+  }, 1000);
+}
+// تنطلق بعد 3 ثواني من التحميل — QUESTIONS معرّف ببلوك لاحق فننتظر اكتمال الصفحة
+window.addEventListener('load', () => setTimeout(startQuestionsPrefetch, 3000));
+
 
 // ══ معالج زر الرجوع (Android Back Button) ══
 (function() {
@@ -9166,6 +9193,9 @@ function startMixModeGame() {
 
 // ── محاولة اختيار فئة ──
 function trySelectCategory(cat) {
+  // لو أسئلة Firestore لهاي الفئة بعدها مو بالكاش (اللاعب سبق التحميل
+  // المسبق)، نجيبها هسه بالخلفية — تلحق الجولات الجاية بنفس اللعبة
+  if (!_firestoreQCache[cat]) { try { loadExtraQuestionsFromFirestore(cat); } catch(e) {} }
   if (isCatUnlocked(cat)) {
     if (mixMode) {
       toggleCatSelection(cat);
@@ -9988,20 +10018,9 @@ function afterLogin() {
     giveWelcomeGems();
     refreshCatLocks();
   });
-  // تحميل ذكي: فئتان كل ثانيتين
-  // تحميل أسئلة Firestore في الخلفية بعد تسجيل الدخول (بشكل ذكي)
-  setTimeout(() => {
-    if (!navigator.onLine) return;
-    const cats = Object.keys(QUESTIONS);
-    // تحميل 2 فئات كل 2 ثانية حتى لا يثقل الاتصال
-    let idx = 0;
-    const loader = setInterval(() => {
-      if (idx >= cats.length) { clearInterval(loader); return; }
-      loadExtraQuestionsFromFirestore(cats[idx]);
-      idx++;
-    }, 2000);
-  }, 5000); // انتظر 5 ثواني بعد تسجيل الدخول
-
+  // التحميل المسبق لأسئلة Firestore — صار يشتغل من تحميل الصفحة للجميع
+  // (شوف startQuestionsPrefetch)، هنا بس ضمان إضافي لو فشل أول مرة
+  startQuestionsPrefetch();
 }
 
 async function sendSupportMsg() {
