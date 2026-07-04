@@ -1,0 +1,1783 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+<meta name="theme-color" content="#0b1020" />
+<title>Script Bot — سكربت بوت</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#111834; --card:#151d3b; --card2:#1b244a;
+    --text:#eaf0ff; --muted:#9aa6d4; --line:#26305c;
+    --accent:#6d8bff; --accent2:#a06bff; --good:#2fd27a; --warn:#ffb23e; --bad:#ff5c72;
+    --code-bg:#0c1226; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"]{
+    --bg:#eef2fb; --bg2:#e6ecf9; --card:#ffffff; --card2:#f3f6ff;
+    --text:#141a33; --muted:#5a6690; --line:#dbe2f5;
+    --accent:#3f5bd6; --accent2:#7c3aed; --good:#12a35a; --warn:#c77700; --bad:#d63a52;
+    --code-bg:#0c1226; --shadow:0 10px 34px rgba(30,50,120,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 700px at 80% -10%, rgba(160,107,255,.18), transparent 60%),
+               radial-gradient(1000px 600px at -10% 10%, rgba(109,139,255,.18), transparent 55%),
+               var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",Tahoma,system-ui,-apple-system,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+    min-height:100vh; line-height:1.6;
+  }
+  a{color:var(--accent);text-decoration:none}
+  .container{max-width:1100px;margin:0 auto;padding:0 16px}
+
+  /* Header */
+  header.appbar{
+    position:sticky;top:0;z-index:50;
+    background:linear-gradient(180deg, rgba(11,16,32,.92), rgba(11,16,32,.72));
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  :root[data-theme="light"] header.appbar{background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72))}
+  .appbar .row{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;cursor:pointer;user-select:none}
+  .brand .logo{
+    width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:20px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 18px rgba(109,139,255,.5)
+  }
+  .brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.5px}
+  nav.tabs{display:flex;gap:6px;margin-inline-start:auto;flex-wrap:wrap}
+  nav.tabs button, .iconbtn{
+    background:var(--card);border:1px solid var(--line);color:var(--text);
+    padding:9px 14px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;transition:.15s
+  }
+  nav.tabs button:hover,.iconbtn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  nav.tabs button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .iconbtn{padding:9px 12px}
+
+  /* Hero */
+  .hero{padding:46px 0 22px;text-align:center}
+  .hero h1{font-size:clamp(28px,5vw,46px);margin:0 0 10px;line-height:1.15;
+    background:linear-gradient(120deg,var(--text),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:clamp(15px,2.2vw,19px);max-width:680px;margin:0 auto 18px}
+  .hero .cta{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn{
+    border:none;cursor:pointer;font-weight:700;font-size:15px;padding:12px 22px;border-radius:13px;transition:.15s;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 22px rgba(109,139,255,.35)
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(109,139,255,.5)}
+  .btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:none}
+  .btn.small{padding:9px 15px;font-size:13px;border-radius:11px}
+  .btn.good{background:linear-gradient(135deg,#2fd27a,#12a35a)}
+  .btn.warn{background:linear-gradient(135deg,#ffb23e,#ff7a2f)}
+
+  .stats{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:22px;color:var(--muted)}
+  .stats .s b{color:var(--text);font-size:22px;display:block}
+  .stats .s span{font-size:13px}
+
+  /* Filters */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:26px 0 6px}
+  .chip{
+    background:var(--card);border:1px solid var(--line);color:var(--muted);
+    padding:8px 15px;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;transition:.15s
+  }
+  .chip:hover{color:var(--text);border-color:var(--accent)}
+  .chip.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+
+  /* Cards grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:22px 0 60px}
+  .tcard{
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--line);border-radius:var(--radius);padding:18px;cursor:pointer;
+    transition:.18s;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:8px
+  }
+  .tcard:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:var(--shadow)}
+  .tcard .ic{font-size:30px}
+  .tcard h3{margin:2px 0 0;font-size:18px}
+  .tcard p{margin:0;color:var(--muted);font-size:13.5px;flex:1}
+  .tcard .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .tag{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);color:var(--muted);font-weight:600}
+  .tag.tg{color:#5eb3ff;border-color:#2a4d78}
+  .tag.wa{color:#43d97f;border-color:#1f5c3a}
+  .tag.sc{color:#ffb45e;border-color:#6b4a1f}
+  .tag.py{color:#ffd15e}
+  .tag.js{color:#f7df6e}
+
+  /* Builder */
+  .panel{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin:22px 0}
+  .panel h2{margin:0 0 4px;font-size:22px}
+  .panel .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+  .field{margin:14px 0}
+  .field label{display:block;font-weight:700;margin-bottom:6px;font-size:14px}
+  .field .hint{color:var(--muted);font-size:12.5px;font-weight:400;margin-inline-start:6px}
+  .field input,.field textarea,.field select{
+    width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);
+    padding:11px 13px;border-radius:11px;font-size:14px;font-family:inherit;transition:.15s
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,139,255,.18)}
+  .field textarea{min-height:84px;resize:vertical}
+  .segrow{display:flex;flex-wrap:wrap;gap:16px}
+  .segrow .field{flex:1;min-width:180px;margin:8px 0}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{
+    background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:9px 15px;border-radius:11px;
+    cursor:pointer;font-weight:700;font-size:13.5px;transition:.15s;display:flex;align-items:center;gap:6px
+  }
+  .seg button:hover{border-color:var(--accent)}
+  .seg button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .seg button:disabled{opacity:.35;cursor:not-allowed}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+  /* Result */
+  .result{margin-top:6px}
+  .codehead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;padding:9px 12px}
+  .codehead .fname{font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--muted)}
+  .codehead .sp{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+  pre.code{
+    margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:0 0 12px 12px;
+    padding:16px;overflow:auto;max-height:520px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.65;direction:ltr;text-align:left;color:#d7e0ff
+  }
+  /* syntax colors */
+  .tok-com{color:#6b7aa8;font-style:italic}
+  .tok-str{color:#7ee0a0}
+  .tok-key{color:#c58bff;font-weight:700}
+  .tok-num{color:#ffcf6b}
+  .tok-fn{color:#6fb7ff}
+
+  .explain{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:16px}
+  .explain h4{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .explain ol{margin:0;padding-inline-start:20px}
+  .explain li{margin:7px 0;color:var(--text)}
+  .explain code{background:var(--code-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:12.5px;color:#8fd3ff;direction:ltr;display:inline-block}
+  .note{border-inline-start:3px solid var(--warn);padding:8px 12px;background:rgba(255,178,62,.08);border-radius:8px;margin-top:10px;font-size:13.5px;color:var(--muted)}
+
+  .runout{margin-top:12px;background:#05070f;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
+  .runout .rh{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--line);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
+  .runout pre{margin:0;padding:12px 14px;font-family:ui-monospace,monospace;font-size:12.5px;color:#cfe;direction:ltr;text-align:left;max-height:280px;overflow:auto;white-space:pre-wrap}
+  .runout .err{color:var(--bad)}
+  .runout .ok{color:var(--good)}
+
+  /* Saved */
+  .saved-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin:10px 0}
+  .saved-item .meta{flex:1;min-width:0}
+  .saved-item .meta b{display:block;font-size:15px}
+  .saved-item .meta span{color:var(--muted);font-size:12.5px}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px}
+  .empty .big{font-size:52px;margin-bottom:10px}
+
+  /* Playground */
+  .pg textarea{width:100%;min-height:220px;background:var(--code-bg);color:#d7e0ff;border:1px solid var(--line);border-radius:12px;padding:14px;font-family:ui-monospace,monospace;font-size:13px;direction:ltr;text-align:left}
+
+  /* Toast */
+  #toast{position:fixed;inset-inline:0;bottom:24px;display:flex;justify-content:center;z-index:100;pointer-events:none}
+  #toast .t{background:var(--card2);border:1px solid var(--accent);color:var(--text);padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);font-weight:700;opacity:0;transform:translateY(14px);transition:.25s}
+  #toast .t.show{opacity:1;transform:translateY(0)}
+
+  footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--muted);font-size:13px;margin-top:40px}
+  .hidden{display:none !important}
+  @media (max-width:560px){
+    .hero{padding:30px 0 12px}
+    nav.tabs{width:100%;margin-inline-start:0}
+    .brand{font-size:18px}
+  }
+</style>
+
+<header class="appbar">
+  <div class="row">
+    <div class="brand" onclick="go('home')">
+      <div class="logo">🤖</div>
+      <div>Script Bot <small id="brandSub">صانع البوتات والسكربتات</small></div>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+
+<main id="app" class="container"></main>
+
+<footer>
+  <div class="container">
+    <div id="footText">Script Bot — يولّد بوتات وسكربتات جاهزة بدون إنترنت وبدون ذكاء اصطناعي.</div>
+    <div style="margin-top:6px;opacity:.7">v1.0 · 100% offline · Telegram · WhatsApp · Python · JavaScript</div>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   Script Bot — single-file, offline, no-AI code generator
+   ========================================================================= */
+"use strict";
+
+/* ---------------- State ---------------- */
+const store = {
+  get lang(){ return localStorage.getItem('sb_lang') || 'ar'; },
+  set lang(v){ localStorage.setItem('sb_lang', v); },
+  get theme(){ return localStorage.getItem('sb_theme') || 'dark'; },
+  set theme(v){ localStorage.setItem('sb_theme', v); },
+  get projects(){ try{ return JSON.parse(localStorage.getItem('sb_projects')||'[]'); }catch(e){ return []; } },
+  set projects(v){ localStorage.setItem('sb_projects', JSON.stringify(v)); }
+};
+const state = {
+  lang: store.lang,
+  view: 'home',
+  filter: 'all',
+  tpl: null,          // selected template object
+  platform: null,
+  langCode: null,     // 'python' | 'javascript'
+  opts: {},
+  code: '',
+  fname: ''
+};
+
+/* ---------------- i18n ---------------- */
+const I = {
+  ar: {
+    dir:'rtl',
+    brandSub:'صانع البوتات والسكربتات',
+    nav_home:'الرئيسية', nav_build:'الإنشاء', nav_play:'المختبر', nav_saved:'مشاريعي',
+    lang_btn:'English', theme_dark:'🌙', theme_light:'☀️',
+    hero_h:'اصنع بوتك وسكربتك بضغطة زر',
+    hero_p:'اختر نوع البوت أو السكربت، عبّئ التفاصيل، واحصل على كود جاهز يشتغل — لتلكرام وواتساب، بلغة بايثون أو جافا سكريبت. بدون إنترنت وبدون ذكاء اصطناعي.',
+    hero_cta:'ابدأ الآن', hero_cta2:'جرّب المختبر',
+    st_tpl:'قالب جاهز', st_off:'يعمل بدون نت', st_free:'مجاني بالكامل', st_uniq:'كود فريد لكل مرة',
+    f_all:'الكل', f_telegram:'تلكرام', f_whatsapp:'واتساب', f_script:'سكربتات',
+    choose:'اختر قالباً لتبدأ', pick_platform:'المنصّة', pick_lang:'لغة الكود',
+    settings:'الإعدادات', generate:'⚡ توليد الكود', regenerate:'🔀 نسخة مختلفة', back:'← رجوع',
+    copy:'📋 نسخ', copied:'تم النسخ ✓', download:'⬇️ تحميل', run:'▶️ تشغيل (JS)',
+    save:'💾 حفظ المشروع', saved_ok:'انحفظ المشروع ✓',
+    explain_h:'📖 شرح الكود',
+    run_h:'مخرجات التشغيل', running:'... يشتغل',
+    play_h:'المختبر — جرّب أي كود جافا سكريبت', play_p:'اكتب أو الصق كود جافا سكريبت وشغّله مباشرة. استعمل console.log لإظهار النتائج.',
+    play_run:'▶️ تشغيل', play_clear:'🧹 مسح', play_ph:'// اكتب كودك هنا\nconsole.log("أهلاً من سكربت بوت!");\nfor (let i = 1; i <= 3; i++) console.log("رقم", i);',
+    saved_h:'مشاريعي المحفوظة', saved_empty:'ماكو مشاريع محفوظة بعد. سوِّ كوداً واحفظه ليظهر هنا.',
+    open:'فتح', del:'حذف', del_ok:'انحذف ✓', confirm_del:'تريد حذف هذا المشروع؟',
+    field_botName:'اسم البوت', field_token:'توكن البوت', field_token_hint:'من BotFather في تلكرام',
+    unnamed:'بدون اسم', by_platform:'المنصّة', by_lang:'اللغة',
+    note_wa:'واتساب يشتغل بـ Node.js فقط عبر مكتبة whatsapp-web.js (تمسح رمز QR بهاتفك لأول مرة).',
+    note_run_bot:'كود البوت يحتاج بيئة تشغيل حقيقية (Node.js / Python) لأنه يتصل بالإنترنت والمكتبات — ما يشتغل داخل المتصفح. استعمل التعليمات بالأسفل. زر التشغيل هنا للسكربتات الجافا سكريبت البسيطة فقط.',
+    no_output:'(لا توجد مخرجات — استعمل console.log)',
+    run_done:'تم التنفيذ', run_timeout:'توقف التنفيذ (قد يكون هناك حلقة لا نهائية).',
+    apk_h:'📱 تحويله إلى تطبيق APK', apk_p:'هذا الملف مكتفٍ ذاتياً ويعمل بدون إنترنت، لذا يمكن تغليفه كتطبيق أندرويد ونشره على Google Play.',
+  },
+  en: {
+    dir:'ltr',
+    brandSub:'Bot & Script Generator',
+    nav_home:'Home', nav_build:'Build', nav_play:'Playground', nav_saved:'My Projects',
+    lang_btn:'العربية', theme_dark:'🌙', theme_light:'☀️',
+    hero_h:'Build your bot & script in one click',
+    hero_p:'Pick a bot or script type, fill in the details, and get working code — for Telegram and WhatsApp, in Python or JavaScript. Fully offline, no AI required.',
+    hero_cta:'Get started', hero_cta2:'Open Playground',
+    st_tpl:'ready templates', st_off:'works offline', st_free:'100% free', st_uniq:'unique code each time',
+    f_all:'All', f_telegram:'Telegram', f_whatsapp:'WhatsApp', f_script:'Scripts',
+    choose:'Pick a template to start', pick_platform:'Platform', pick_lang:'Language',
+    settings:'Settings', generate:'⚡ Generate code', regenerate:'🔀 Different variant', back:'← Back',
+    copy:'📋 Copy', copied:'Copied ✓', download:'⬇️ Download', run:'▶️ Run (JS)',
+    save:'💾 Save project', saved_ok:'Project saved ✓',
+    explain_h:'📖 Code explanation',
+    run_h:'Run output', running:'... running',
+    play_h:'Playground — run any JavaScript', play_p:'Type or paste JavaScript and run it instantly. Use console.log to print results.',
+    play_run:'▶️ Run', play_clear:'🧹 Clear', play_ph:'// Write your code here\nconsole.log("Hello from Script Bot!");\nfor (let i = 1; i <= 3; i++) console.log("number", i);',
+    saved_h:'My saved projects', saved_empty:'No saved projects yet. Generate some code and save it to see it here.',
+    open:'Open', del:'Delete', del_ok:'Deleted ✓', confirm_del:'Delete this project?',
+    field_botName:'Bot name', field_token:'Bot token', field_token_hint:'from BotFather on Telegram',
+    unnamed:'Untitled', by_platform:'Platform', by_lang:'Language',
+    note_wa:'WhatsApp runs on Node.js only via the whatsapp-web.js library (scan a QR code with your phone the first time).',
+    note_run_bot:'Bot code needs a real runtime (Node.js / Python) because it connects to the internet and libraries — it cannot run inside the browser. Use the instructions below. The Run button here is for simple JavaScript scripts only.',
+    no_output:'(no output — use console.log)',
+    run_done:'Finished', run_timeout:'Execution stopped (possible infinite loop).',
+    apk_h:'📱 Turn it into an APK', apk_p:'This file is self-contained and works offline, so it can be wrapped as an Android app and published to Google Play.',
+  }
+};
+function t(k){ return (I[state.lang] && I[state.lang][k]) || (I.ar[k]) || k; }
+function L(obj){ return (obj && (obj[state.lang] || obj.ar || obj.en)) || ''; }
+
+/* ---------------- Randomizer (unique code each time) ---------------- */
+function makeRnd(){
+  const P = a => a[(Math.random()*a.length)|0];
+  const id = (Math.random().toString(36).slice(2,8) + Math.random().toString(36).slice(2,4)).toUpperCase();
+  return {
+    id,
+    date: new Date().toISOString().slice(0,10),
+    P,
+    greet: P(['sendWelcome','greetUser','welcomeUser','sayHello','onStart']),
+    help:  P(['sendHelp','showHelp','helpMenu','displayHelp']),
+    handle:P(['handleMessage','onMessage','processMessage','routeMessage','dispatch']),
+    reply: P(['reply','response','answer','result','out']),
+    botv:  P(['bot','client','app','tg','engine']),
+    logv:  P(['log','trace','report','record']),
+    kw:    P(['hi','hello','hey','start','menu']),
+    tone:  P(['friendly','clear','helpful'])
+  };
+}
+
+/* ---------------- Header banner for generated code ---------------- */
+function banner(c, r, ctx){
+  const name = ctx.opts.botName || 'ScriptBot';
+  const plat = ctx.platform === 'telegram' ? 'Telegram' : ctx.platform === 'whatsapp' ? 'WhatsApp' : 'Script';
+  const lang = ctx.langCode === 'python' ? 'Python' : 'JavaScript';
+  return [
+    c + ' ============================================================',
+    c + '  ' + name,
+    c + '  ' + ctx.tpl.title.en + '  (' + plat + ' · ' + lang + ')',
+    c + '  Generated by Script Bot  ·  Build #' + r.id + '  ·  ' + r.date,
+    c + '  This build is unique — regenerate for a different variant.',
+    c + ' ============================================================'
+  ].join('\n');
+}
+
+/* ============================================================
+   TEMPLATES
+   Each: id, icon, platform, langs[], cat{}, title{}, desc{},
+         fields[], gen(ctx), note{}
+   ============================================================ */
+function F(key,type,label,def,hint){ return {key,type,label,def:def||'',hint:hint||null}; }
+const baseBot = (extra)=>[
+  F('botName','text',{ar:'اسم البوت',en:'Bot name'},'MyBot'),
+  F('token','text',{ar:'توكن البوت',en:'Bot token'},'PASTE_YOUR_TOKEN_HERE',{ar:'من BotFather',en:'from BotFather'}),
+  ...(extra||[])
+];
+
+const TEMPLATES = [
+  /* 1. Telegram Customer Service */
+  {
+    id:'tg-customer', icon:'🎧', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'خدمة العملاء',en:'Customer Service'},
+    title:{ar:'بوت خدمة العملاء',en:'Customer Service Bot'},
+    desc:{ar:'يستقبل استفسارات العملاء ويرد بردود جاهزة وأسئلة شائعة، ويحوّل للموظف عند الحاجة.',en:'Handles customer questions with canned replies & FAQs, and hands off to a human when needed.'},
+    fields:baseBot([
+      F('company','text',{ar:'اسم النشاط/الشركة',en:'Business name'},'My Store'),
+      F('faq','textarea',{ar:'أسئلة شائعة (سؤال=جواب في كل سطر)',en:'FAQ (question=answer per line)'},'ساعات العمل؟=من 9 صباحاً حتى 9 مساءً\nالتوصيل؟=خلال 24 ساعة\nهل يوجد ضمان؟=نعم، سنة كاملة'),
+      F('agent','text',{ar:'معرف موظف الدعم (اختياري)',en:'Support agent @username (optional)'},'@support')
+    ]),
+    gen:genCustomer
+  },
+  /* 2. Telegram Welcome / Auto-reply */
+  {
+    id:'tg-welcome', icon:'👋', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'ترحيب',en:'Welcome'},
+    title:{ar:'بوت ترحيب ورد آلي',en:'Welcome & Auto-reply Bot'},
+    desc:{ar:'يرحّب بالأعضاء الجدد ويرد تلقائياً على كلمات مفتاحية معيّنة.',en:'Greets new members and auto-replies to specific keywords.'},
+    fields:baseBot([
+      F('welcome','textarea',{ar:'رسالة الترحيب',en:'Welcome message'},'أهلاً {name}! نورت المجموعة 🌟'),
+      F('rules','text',{ar:'رابط/نص القوانين (اختياري)',en:'Rules text/link (optional)'},'يرجى احترام الجميع وعدم نشر الإعلانات.'),
+      F('keywords','textarea',{ar:'ردود تلقائية (كلمة=رد في كل سطر)',en:'Auto-replies (keyword=reply per line)'},'السعر=تواصل معنا للأسعار 💰\nالعنوان=بغداد - شارع الرشيد')
+    ]),
+    gen:genWelcome
+  },
+  /* 3. Telegram Group Moderation */
+  {
+    id:'tg-mod', icon:'🛡️', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'إدارة المجموعات',en:'Moderation'},
+    title:{ar:'بوت إدارة وحماية المجموعات',en:'Group Moderation Bot'},
+    desc:{ar:'يحذف الروابط والسبام، ويوفّر أوامر طرد وكتم للمشرفين.',en:'Deletes links/spam and gives admins ban & mute commands.'},
+    fields:baseBot([
+      F('banWords','text',{ar:'كلمات ممنوعة (مفصولة بفاصلة)',en:'Banned words (comma separated)'},'اعلان,سبام,رابط مخالف'),
+      F('blockLinks','select',{ar:'حذف الروابط تلقائياً؟',en:'Auto-delete links?'},'yes')
+    ]),
+    gen:genMod
+  },
+  /* 4. Telegram Store / Orders */
+  {
+    id:'tg-store', icon:'🛒', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'متجر',en:'Store'},
+    title:{ar:'بوت متجر وطلبات',en:'Store & Orders Bot'},
+    desc:{ar:'يعرض المنتجات بأزرار، يستقبل الطلبات ويرسلها لصاحب المتجر.',en:'Shows products as buttons, takes orders and forwards them to the owner.'},
+    fields:baseBot([
+      F('company','text',{ar:'اسم المتجر',en:'Store name'},'My Shop'),
+      F('products','textarea',{ar:'المنتجات (اسم=سعر في كل سطر)',en:'Products (name=price per line)'},'قميص=15000\nبنطلون=25000\nحذاء=40000'),
+      F('ownerId','text',{ar:'معرف صاحب المتجر الرقمي',en:'Owner numeric chat ID'},'123456789',{ar:'رقمك من @userinfobot',en:'your id from @userinfobot'})
+    ]),
+    gen:genStore
+  },
+  /* 5. Telegram Reminder */
+  {
+    id:'tg-reminder', icon:'⏰', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تذكير',en:'Reminder'},
+    title:{ar:'بوت تذكير ومواعيد',en:'Reminder Bot'},
+    desc:{ar:'يذكّر المستخدم بمهمة بعد وقت محدد عبر أمر بسيط.',en:'Reminds the user of a task after a set delay via a simple command.'},
+    fields:baseBot(),
+    gen:genReminder
+  },
+  /* 6. Telegram Broadcast / Notifications */
+  {
+    id:'tg-broadcast', icon:'📢', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'بث وإشعارات',en:'Broadcast'},
+    title:{ar:'بوت بث وإشعارات',en:'Broadcast Bot'},
+    desc:{ar:'يجمع المشتركين ويسمح للمشرف ببثّ رسالة للجميع دفعة واحدة.',en:'Collects subscribers and lets the admin broadcast a message to everyone.'},
+    fields:baseBot([
+      F('adminId','text',{ar:'معرف المشرف الرقمي',en:'Admin numeric ID'},'123456789')
+    ]),
+    gen:genBroadcast
+  },
+  /* 7. Telegram FAQ / Quiz */
+  {
+    id:'tg-quiz', icon:'❓', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'أسئلة',en:'Quiz'},
+    title:{ar:'بوت اختبار وأسئلة',en:'Quiz Bot'},
+    desc:{ar:'يطرح أسئلة اختيار من متعدد ويحسب النتيجة.',en:'Asks multiple-choice questions and scores the user.'},
+    fields:baseBot([
+      F('questions','textarea',{ar:'الأسئلة (سؤال | خيار1,خيار2,خيار3 | رقم الإجابة الصحيحة)',en:'Questions (q | opt1,opt2,opt3 | correct index)'},'عاصمة العراق؟ | بغداد,البصرة,أربيل | 1\n2+2 يساوي؟ | 3,4,5 | 2')
+    ]),
+    gen:genQuiz
+  },
+  /* 8. WhatsApp Auto-reply */
+  {
+    id:'wa-autoreply', icon:'💬', platform:'whatsapp', langs:['javascript'],
+    cat:{ar:'رد آلي',en:'Auto-reply'},
+    title:{ar:'بوت رد آلي للواتساب',en:'WhatsApp Auto-reply Bot'},
+    desc:{ar:'يرد تلقائياً على رسائل واتساب حسب كلمات مفتاحية.',en:'Auto-replies to WhatsApp messages based on keywords.'},
+    fields:[
+      F('botName','text',{ar:'اسم البوت',en:'Bot name'},'WaBot'),
+      F('welcome','text',{ar:'رسالة الترحيب',en:'Welcome message'},'أهلاً بك! كيف أقدر أساعدك؟'),
+      F('keywords','textarea',{ar:'ردود تلقائية (كلمة=رد في كل سطر)',en:'Auto-replies (keyword=reply per line)'},'السعر=راسلنا للأسعار\nالعنوان=بغداد\nشكرا=العفو، بخدمتك 🌟')
+    ],
+    gen:genWaAuto
+  },
+  /* 9. WhatsApp Customer Service */
+  {
+    id:'wa-customer', icon:'🎫', platform:'whatsapp', langs:['javascript'],
+    cat:{ar:'خدمة العملاء',en:'Customer Service'},
+    title:{ar:'بوت خدمة عملاء للواتساب',en:'WhatsApp Customer Service Bot'},
+    desc:{ar:'قائمة خيارات رقمية للعملاء مع ردود جاهزة وأسئلة شائعة.',en:'A numbered menu for customers with canned replies & FAQs.'},
+    fields:[
+      F('botName','text',{ar:'اسم البوت',en:'Bot name'},'CareBot'),
+      F('company','text',{ar:'اسم النشاط',en:'Business name'},'My Store'),
+      F('menu','textarea',{ar:'خيارات القائمة (عنوان=رد في كل سطر)',en:'Menu options (title=reply per line)'},'ساعات العمل=من 9 صباحاً حتى 9 مساءً\nالتوصيل=خلال 24 ساعة داخل المدينة\nطرق الدفع=نقداً أو تحويل')
+    ],
+    gen:genWaCare
+  },
+  /* 10. Script: File Organizer */
+  {
+    id:'sc-fileorg', icon:'🗂️', platform:'script', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'سكربت ترتيب الملفات',en:'File Organizer Script'},
+    desc:{ar:'يرتّب ملفات مجلد حسب النوع (صور، فيديو، مستندات...) في مجلدات فرعية.',en:'Sorts a folder\'s files by type (images, videos, docs…) into subfolders.'},
+    fields:[
+      F('folder','text',{ar:'مسار المجلد',en:'Folder path'},'./downloads')
+    ],
+    gen:genFileOrg
+  },
+  /* 11. Script: Web Scraper */
+  {
+    id:'sc-scraper', icon:'🕸️', platform:'script', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'سكربت سحب بيانات من موقع',en:'Web Scraper Script'},
+    desc:{ar:'يجلب عناوين ونصوص من صفحة ويب ويحفظها في ملف.',en:'Fetches titles/text from a web page and saves them to a file.'},
+    fields:[
+      F('url','text',{ar:'رابط الموقع',en:'Website URL'},'https://example.com'),
+      F('selector','text',{ar:'العنصر المطلوب (CSS selector)',en:'Target element (CSS selector)'},'h2')
+    ],
+    gen:genScraper
+  }
+];
+
+/* ============================================================
+   CODE GENERATORS
+   Convention: return code as a string. Generated code must NOT
+   contain backticks (` ) — we use quotes/concatenation instead.
+   ============================================================ */
+function parsePairs(text, sep){
+  sep = sep || '=';
+  return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const i = l.indexOf(sep);
+    if(i<0) return [l, ''];
+    return [l.slice(0,i).trim(), l.slice(i+1).trim()];
+  });
+}
+function pyDict(pairs){
+  return '{\n' + pairs.map(([k,v])=>'    '+JSON.stringify(k)+': '+JSON.stringify(v)).join(',\n') + '\n}';
+}
+function jsObj(pairs){
+  return '{\n' + pairs.map(([k,v])=>'  '+JSON.stringify(k)+': '+JSON.stringify(v)).join(',\n') + '\n}';
+}
+
+/* ---- 1. Customer Service ---- */
+function genCustomer(ctx){
+  const r = ctx.rnd, o = ctx.opts;
+  const faq = parsePairs(o.faq);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'COMPANY = '+JSON.stringify(o.company||o.botName),
+'AGENT = '+JSON.stringify(o.agent||''),
+'',
+c+' Frequently asked questions',
+'FAQ = '+pyDict(faq),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(',
+'        f"مرحباً بك في خدمة عملاء {COMPANY} 👋\\n"',
+'        "اكتب سؤالك وسأحاول مساعدتك، أو /help لعرض المواضيع."',
+'    )',
+'',
+'async def '+r.help+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    topics = "\\n".join("• " + q for q in FAQ)',
+'    await update.message.reply_text("المواضيع المتاحة:\\n" + topics)',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    text = (update.message.text or "").strip().lower()',
+'    for question, answer in FAQ.items():',
+'        if question.lower() in text or text in question.lower():',
+'            await update.message.reply_text(answer)',
+'            return',
+'    reply = "لم أجد إجابة جاهزة لسؤالك."',
+'    if AGENT:',
+'        reply += f" يمكنك التواصل مع الدعم: {AGENT}"',
+'    await update.message.reply_text(reply)',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("help", '+r.help+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Customer service bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  // JS
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const COMPANY = '+JSON.stringify(o.company||o.botName)+';',
+'const AGENT = '+JSON.stringify(o.agent||'')+';',
+'const FAQ = '+jsObj(faq)+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "مرحباً بك في خدمة عملاء " + COMPANY + " 👋\\nاكتب سؤالك أو /help.");',
+'});',
+'',
+r.botv+'.onText(/\\/help/, (msg) => {',
+'  const topics = Object.keys(FAQ).map(q => "• " + q).join("\\n");',
+'  '+r.botv+'.sendMessage(msg.chat.id, "المواضيع المتاحة:\\n" + topics);',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  if (!msg.text || msg.text.startsWith("/")) return;',
+'  const text = msg.text.toLowerCase();',
+'  for (const question of Object.keys(FAQ)) {',
+'    if (text.includes(question.toLowerCase())) {',
+'      '+r.botv+'.sendMessage(msg.chat.id, FAQ[question]);',
+'      return;',
+'    }',
+'  }',
+'  let '+r.reply+' = "لم أجد إجابة جاهزة لسؤالك.";',
+'  if (AGENT) '+r.reply+' += " تواصل مع الدعم: " + AGENT;',
+'  '+r.botv+'.sendMessage(msg.chat.id, '+r.reply+');',
+'});',
+'',
+'console.log("Customer service bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 2. Welcome / Auto-reply ---- */
+function genWelcome(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const kw=parsePairs(o.keywords);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'WELCOME = '+JSON.stringify(o.welcome||'أهلاً {name}!'),
+'RULES = '+JSON.stringify(o.rules||''),
+'KEYWORDS = '+pyDict(kw),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    for member in update.message.new_chat_members:',
+'        name = member.first_name',
+'        await update.message.reply_text(WELCOME.replace("{name}", name))',
+'        if RULES:',
+'            await update.message.reply_text("📋 القوانين:\\n" + RULES)',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    text = (update.message.text or "").lower()',
+'    for word, answer in KEYWORDS.items():',
+'        if word.lower() in text:',
+'            await update.message.reply_text(answer)',
+'            return',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Welcome bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const WELCOME = '+JSON.stringify(o.welcome||'أهلاً {name}!')+';',
+'const RULES = '+JSON.stringify(o.rules||'')+';',
+'const KEYWORDS = '+jsObj(kw)+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.on("new_chat_members", (msg) => {',
+'  msg.new_chat_members.forEach((m) => {',
+'    '+r.botv+'.sendMessage(msg.chat.id, WELCOME.replace("{name}", m.first_name));',
+'    if (RULES) '+r.botv+'.sendMessage(msg.chat.id, "📋 القوانين:\\n" + RULES);',
+'  });',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  if (!msg.text) return;',
+'  const text = msg.text.toLowerCase();',
+'  for (const word of Object.keys(KEYWORDS)) {',
+'    if (text.includes(word.toLowerCase())) {',
+'      '+r.botv+'.sendMessage(msg.chat.id, KEYWORDS[word]);',
+'      return;',
+'    }',
+'  }',
+'});',
+'',
+'console.log("Welcome bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 3. Moderation ---- */
+function genMod(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const words=String(o.banWords||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const blockLinks=(o.blockLinks||'yes')==='yes';
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'BANNED_WORDS = '+JSON.stringify(words),
+'BLOCK_LINKS = '+(blockLinks?'True':'False'),
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    msg = update.message',
+'    text = (msg.text or "").lower()',
+'    if BLOCK_LINKS and ("http://" in text or "https://" in text or "t.me/" in text):',
+'        await msg.delete()',
+'        return',
+'    for word in BANNED_WORDS:',
+'        if word.lower() in text:',
+'            await msg.delete()',
+'            return',
+'',
+'async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.message.reply_to_message:',
+'        user = update.message.reply_to_message.from_user',
+'        await context.bot.ban_chat_member(update.message.chat_id, user.id)',
+'        await update.message.reply_text(f"🚫 تم طرد {user.first_name}")',
+'',
+'async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    from telegram import ChatPermissions',
+'    if update.message.reply_to_message:',
+'        user = update.message.reply_to_message.from_user',
+'        await context.bot.restrict_chat_member(update.message.chat_id, user.id, ChatPermissions(can_send_messages=False))',
+'        await update.message.reply_text(f"🔇 تم كتم {user.first_name}")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("ban", ban))',
+'    '+r.botv+'.add_handler(CommandHandler("mute", mute))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Moderation bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const BANNED_WORDS = '+JSON.stringify(words)+';',
+'const BLOCK_LINKS = '+(blockLinks?'true':'false')+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.on("message", async (msg) => {',
+'  const text = (msg.text || "").toLowerCase();',
+'  if (BLOCK_LINKS && /(https?:\\/\\/|t\\.me\\/)/.test(text)) {',
+'    return '+r.botv+'.deleteMessage(msg.chat.id, msg.message_id).catch(() => {});',
+'  }',
+'  if (BANNED_WORDS.some((w) => text.includes(w.toLowerCase()))) {',
+'    '+r.botv+'.deleteMessage(msg.chat.id, msg.message_id).catch(() => {});',
+'  }',
+'});',
+'',
+r.botv+'.onText(/\\/ban/, (msg) => {',
+'  if (!msg.reply_to_message) return;',
+'  const u = msg.reply_to_message.from;',
+'  '+r.botv+'.banChatMember(msg.chat.id, u.id)',
+'    .then(() => '+r.botv+'.sendMessage(msg.chat.id, "🚫 تم طرد " + u.first_name));',
+'});',
+'',
+r.botv+'.onText(/\\/mute/, (msg) => {',
+'  if (!msg.reply_to_message) return;',
+'  const u = msg.reply_to_message.from;',
+'  '+r.botv+'.restrictChatMember(msg.chat.id, u.id, { can_send_messages: false })',
+'    .then(() => '+r.botv+'.sendMessage(msg.chat.id, "🔇 تم كتم " + u.first_name));',
+'});',
+'',
+'console.log("Moderation bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 4. Store ---- */
+function genStore(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const products=parsePairs(o.products);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup',
+'from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'STORE = '+JSON.stringify(o.company||o.botName),
+'OWNER_ID = '+String(parseInt(o.ownerId)||0),
+'PRODUCTS = '+pyDict(products),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    buttons = [[InlineKeyboardButton(f"{name} - {price}", callback_data=name)] for name, price in PRODUCTS.items()]',
+'    await update.message.reply_text(',
+'        f"🛒 أهلاً بك في {STORE}\\nاختر منتجاً للطلب:",',
+'        reply_markup=InlineKeyboardMarkup(buttons)',
+'    )',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    query = update.callback_query',
+'    await query.answer()',
+'    product = query.data',
+'    price = PRODUCTS.get(product, "")',
+'    user = query.from_user',
+'    await query.edit_message_text(f"✅ تم استلام طلبك: {product} ({price})\\nسنتواصل معك قريباً.")',
+'    if OWNER_ID:',
+'        await context.bot.send_message(OWNER_ID, f"🔔 طلب جديد: {product} ({price})\\nمن: {user.first_name} (@{user.username})")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CallbackQueryHandler('+r.handle+'))',
+'    print("Store bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const STORE = '+JSON.stringify(o.company||o.botName)+';',
+'const OWNER_ID = '+String(parseInt(o.ownerId)||0)+';',
+'const PRODUCTS = '+jsObj(products)+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  const keyboard = Object.keys(PRODUCTS).map((name) => [{ text: name + " - " + PRODUCTS[name], callback_data: name }]);',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🛒 أهلاً بك في " + STORE + "\\nاختر منتجاً للطلب:", { reply_markup: { inline_keyboard: keyboard } });',
+'});',
+'',
+r.botv+'.on("callback_query", (q) => {',
+'  const product = q.data;',
+'  const price = PRODUCTS[product] || "";',
+'  '+r.botv+'.answerCallbackQuery(q.id);',
+'  '+r.botv+'.sendMessage(q.message.chat.id, "✅ تم استلام طلبك: " + product + " (" + price + ")\\nسنتواصل معك قريباً.");',
+'  if (OWNER_ID) '+r.botv+'.sendMessage(OWNER_ID, "🔔 طلب جديد: " + product + " (" + price + ")\\nمن: " + q.from.first_name);',
+'});',
+'',
+'console.log("Store bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 5. Reminder ---- */
+function genReminder(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import asyncio',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(',
+'        "⏰ بوت التذكير\\n"',
+'        "استخدم: /remind <عدد الثواني> <النص>\\n"',
+'        "مثال: /remind 60 شرب الماء"',
+'    )',
+'',
+'async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    try:',
+'        seconds = int(context.args[0])',
+'        text = " ".join(context.args[1:]) or "تذكير!"',
+'    except (IndexError, ValueError):',
+'        await update.message.reply_text("الصيغة: /remind <ثواني> <النص>")',
+'        return',
+'    await update.message.reply_text(f"✅ سأذكّرك بعد {seconds} ثانية.")',
+'    await asyncio.sleep(seconds)',
+'    await update.message.reply_text(f"🔔 تذكير: {text}")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("remind", remind))',
+'    print("Reminder bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "⏰ بوت التذكير\\nاستخدم: /remind <ثواني> <النص>\\nمثال: /remind 60 شرب الماء");',
+'});',
+'',
+r.botv+'.onText(/\\/remind (\\d+) (.+)/, (msg, match) => {',
+'  const seconds = parseInt(match[1]);',
+'  const text = match[2];',
+'  '+r.botv+'.sendMessage(msg.chat.id, "✅ سأذكّرك بعد " + seconds + " ثانية.");',
+'  setTimeout(() => {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "🔔 تذكير: " + text);',
+'  }, seconds * 1000);',
+'});',
+'',
+'console.log("Reminder bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 6. Broadcast ---- */
+function genBroadcast(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const admin=String(parseInt(o.adminId)||0);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import json, os',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'ADMIN_ID = '+admin,
+'DB = "subscribers.json"',
+'',
+'def load_subs():',
+'    if os.path.exists(DB):',
+'        with open(DB) as f:',
+'            return json.load(f)',
+'    return []',
+'',
+'def save_subs(subs):',
+'    with open(DB, "w") as f:',
+'        json.dump(subs, f)',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    subs = load_subs()',
+'    if update.effective_chat.id not in subs:',
+'        subs.append(update.effective_chat.id)',
+'        save_subs(subs)',
+'    await update.message.reply_text("✅ تم اشتراكك، ستصلك الإشعارات.")',
+'',
+'async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.effective_user.id != ADMIN_ID:',
+'        return',
+'    message = " ".join(context.args)',
+'    if not message:',
+'        await update.message.reply_text("اكتب: /broadcast <الرسالة>")',
+'        return',
+'    subs = load_subs()',
+'    sent = 0',
+'    for chat_id in subs:',
+'        try:',
+'            await context.bot.send_message(chat_id, "📢 " + message)',
+'            sent += 1',
+'        except Exception:',
+'            pass',
+'    await update.message.reply_text(f"تم الإرسال إلى {sent} مشترك.")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("broadcast", broadcast))',
+'    print("Broadcast bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const fs = require("fs");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const ADMIN_ID = '+admin+';',
+'const DB = "subscribers.json";',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+'function loadSubs() { try { return JSON.parse(fs.readFileSync(DB)); } catch (e) { return []; } }',
+'function saveSubs(s) { fs.writeFileSync(DB, JSON.stringify(s)); }',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  const subs = loadSubs();',
+'  if (!subs.includes(msg.chat.id)) { subs.push(msg.chat.id); saveSubs(subs); }',
+'  '+r.botv+'.sendMessage(msg.chat.id, "✅ تم اشتراكك، ستصلك الإشعارات.");',
+'});',
+'',
+r.botv+'.onText(/\\/broadcast (.+)/, (msg, match) => {',
+'  if (msg.from.id !== ADMIN_ID) return;',
+'  const subs = loadSubs();',
+'  subs.forEach((id) => '+r.botv+'.sendMessage(id, "📢 " + match[1]).catch(() => {}));',
+'  '+r.botv+'.sendMessage(msg.chat.id, "تم الإرسال إلى " + subs.length + " مشترك.");',
+'});',
+'',
+'console.log("Broadcast bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 7. Quiz ---- */
+function parseQuiz(text){
+  return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const parts=l.split('|').map(s=>s.trim());
+    const q=parts[0]||'';
+    const opts=(parts[1]||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const correct=parseInt(parts[2])||1;
+    return {q,opts,correct};
+  });
+}
+function genQuiz(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const qs=parseQuiz(o.questions);
+  const qsJson=JSON.stringify(qs,null,2);
+  if(ctx.langCode==='python'){
+    const c='#';
+    const pyq=JSON.stringify(qs).replace(/"q":/g,'"q":').replace(/true/g,'True').replace(/false/g,'False');
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'QUESTIONS = '+pyList(qs),
+'',
+'user_state = {}',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    user_state[update.effective_chat.id] = {"index": 0, "score": 0}',
+'    await ask(update, context)',
+'',
+'async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    st = user_state[chat]',
+'    if st["index"] >= len(QUESTIONS):',
+'        await context.bot.send_message(chat, f"🏁 انتهى الاختبار! نتيجتك: {st[\'score\']}/{len(QUESTIONS)}")',
+'        return',
+'    q = QUESTIONS[st["index"]]',
+'    opts = "\\n".join(f"{i+1}. {opt}" for i, opt in enumerate(q["opts"]))',
+'    await context.bot.send_message(chat, f"❓ {q[\'q\']}\\n{opts}\\n\\nأرسل رقم الإجابة.")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    if chat not in user_state:',
+'        return',
+'    st = user_state[chat]',
+'    q = QUESTIONS[st["index"]]',
+'    try:',
+'        answer = int(update.message.text.strip())',
+'    except ValueError:',
+'        return',
+'    if answer == q["correct"]:',
+'        st["score"] += 1',
+'        await update.message.reply_text("✅ صحيح!")',
+'    else:',
+'        await update.message.reply_text(f"❌ خطأ. الصحيح: {q[\'correct\']}")',
+'    st["index"] += 1',
+'    await ask(update, context)',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Quiz bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const QUESTIONS = '+qsJson+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'const userState = {};',
+'',
+'function ask(chatId) {',
+'  const st = userState[chatId];',
+'  if (st.index >= QUESTIONS.length) {',
+'    '+r.botv+'.sendMessage(chatId, "🏁 انتهى الاختبار! نتيجتك: " + st.score + "/" + QUESTIONS.length);',
+'    return;',
+'  }',
+'  const q = QUESTIONS[st.index];',
+'  const opts = q.opts.map((o, i) => (i + 1) + ". " + o).join("\\n");',
+'  '+r.botv+'.sendMessage(chatId, "❓ " + q.q + "\\n" + opts + "\\n\\nأرسل رقم الإجابة.");',
+'}',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  userState[msg.chat.id] = { index: 0, score: 0 };',
+'  ask(msg.chat.id);',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const st = userState[msg.chat.id];',
+'  if (!st || !msg.text || msg.text.startsWith("/")) return;',
+'  const answer = parseInt(msg.text.trim());',
+'  if (!answer) return;',
+'  const q = QUESTIONS[st.index];',
+'  if (answer === q.correct) { st.score++; '+r.botv+'.sendMessage(msg.chat.id, "✅ صحيح!"); }',
+'  else '+r.botv+'.sendMessage(msg.chat.id, "❌ خطأ. الصحيح: " + q.correct);',
+'  st.index++;',
+'  ask(msg.chat.id);',
+'});',
+'',
+'console.log("Quiz bot is running...");'
+  ].join('\n');
+}
+function pyList(qs){
+  return '[\n' + qs.map(q=>'    {"q": '+JSON.stringify(q.q)+', "opts": '+JSON.stringify(q.opts)+', "correct": '+q.correct+'}').join(',\n') + '\n]';
+}
+
+/* ---- 8. WhatsApp Auto-reply ---- */
+function genWaAuto(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const kw=parsePairs(o.keywords);
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const { Client, LocalAuth } = require("whatsapp-web.js");',
+'const qrcode = require("qrcode-terminal");',
+'',
+'const WELCOME = '+JSON.stringify(o.welcome||'أهلاً بك!')+';',
+'const KEYWORDS = '+jsObj(kw)+';',
+'',
+'const '+r.botv+' = new Client({ authStrategy: new LocalAuth() });',
+'',
+r.botv+'.on("qr", (qr) => {',
+'  qrcode.generate(qr, { small: true });',
+'  console.log("امسح رمز QR أعلاه بتطبيق واتساب.");',
+'});',
+'',
+r.botv+'.on("ready", () => console.log("WhatsApp bot is ready!"));',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const text = (msg.body || "").toLowerCase();',
+'  if (["hi", "مرحبا", "السلام", "اهلا"].some((g) => text.includes(g))) {',
+'    return msg.reply(WELCOME);',
+'  }',
+'  for (const word of Object.keys(KEYWORDS)) {',
+'    if (text.includes(word.toLowerCase())) {',
+'      return msg.reply(KEYWORDS[word]);',
+'    }',
+'  }',
+'});',
+'',
+r.botv+'.initialize();'
+  ].join('\n');
+}
+
+/* ---- 9. WhatsApp Customer Service ---- */
+function genWaCare(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const menu=parsePairs(o.menu);
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const { Client, LocalAuth } = require("whatsapp-web.js");',
+'const qrcode = require("qrcode-terminal");',
+'',
+'const COMPANY = '+JSON.stringify(o.company||o.botName)+';',
+'const MENU = '+jsArr(menu)+';',
+'',
+'const '+r.botv+' = new Client({ authStrategy: new LocalAuth() });',
+'',
+r.botv+'.on("qr", (qr) => { qrcode.generate(qr, { small: true }); console.log("امسح رمز QR."); });',
+r.botv+'.on("ready", () => console.log("WhatsApp customer service is ready!"));',
+'',
+'function menuText() {',
+'  let m = "🤝 أهلاً بك في خدمة عملاء " + COMPANY + "\\nاختر رقماً:\\n";',
+'  MENU.forEach((item, i) => { m += (i + 1) + ". " + item.title + "\\n"; });',
+'  return m;',
+'}',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const text = (msg.body || "").trim();',
+'  const num = parseInt(text);',
+'  if (num >= 1 && num <= MENU.length) {',
+'    return msg.reply(MENU[num - 1].reply);',
+'  }',
+'  return msg.reply(menuText());',
+'});',
+'',
+r.botv+'.initialize();'
+  ].join('\n');
+}
+function jsArr(pairs){
+  return '[\n' + pairs.map(([k,v])=>'  { title: '+JSON.stringify(k)+', reply: '+JSON.stringify(v)+' }').join(',\n') + '\n]';
+}
+
+/* ---- 10. File Organizer ---- */
+function genFileOrg(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import os, shutil',
+'',
+'FOLDER = '+JSON.stringify(o.folder||'.'),
+'',
+'CATEGORIES = {',
+'    "Images": [".jpg", ".jpeg", ".png", ".gif", ".webp"],',
+'    "Videos": [".mp4", ".mov", ".avi", ".mkv"],',
+'    "Documents": [".pdf", ".doc", ".docx", ".txt", ".xlsx"],',
+'    "Audio": [".mp3", ".wav", ".ogg"],',
+'    "Archives": [".zip", ".rar", ".7z"],',
+'}',
+'',
+'def '+r.handle+'(folder):',
+'    moved = 0',
+'    for filename in os.listdir(folder):',
+'        path = os.path.join(folder, filename)',
+'        if not os.path.isfile(path):',
+'            continue',
+'        ext = os.path.splitext(filename)[1].lower()',
+'        for category, extensions in CATEGORIES.items():',
+'            if ext in extensions:',
+'                dest = os.path.join(folder, category)',
+'                os.makedirs(dest, exist_ok=True)',
+'                shutil.move(path, os.path.join(dest, filename))',
+'                moved += 1',
+'                print(f"نُقل: {filename} -> {category}")',
+'                break',
+'    print(f"✅ تم ترتيب {moved} ملف.")',
+'',
+'if __name__ == "__main__":',
+'    '+r.handle+'(FOLDER)'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const fs = require("fs");',
+'const path = require("path");',
+'',
+'const FOLDER = '+JSON.stringify(o.folder||'.')+';',
+'',
+'const CATEGORIES = {',
+'  Images: [".jpg", ".jpeg", ".png", ".gif", ".webp"],',
+'  Videos: [".mp4", ".mov", ".avi", ".mkv"],',
+'  Documents: [".pdf", ".doc", ".docx", ".txt", ".xlsx"],',
+'  Audio: [".mp3", ".wav", ".ogg"],',
+'  Archives: [".zip", ".rar", ".7z"],',
+'};',
+'',
+'function '+r.handle+'(folder) {',
+'  let moved = 0;',
+'  for (const filename of fs.readdirSync(folder)) {',
+'    const filePath = path.join(folder, filename);',
+'    if (!fs.statSync(filePath).isFile()) continue;',
+'    const ext = path.extname(filename).toLowerCase();',
+'    for (const [category, exts] of Object.entries(CATEGORIES)) {',
+'      if (exts.includes(ext)) {',
+'        const dest = path.join(folder, category);',
+'        fs.mkdirSync(dest, { recursive: true });',
+'        fs.renameSync(filePath, path.join(dest, filename));',
+'        moved++;',
+'        console.log("نُقل: " + filename + " -> " + category);',
+'        break;',
+'      }',
+'    }',
+'  }',
+'  console.log("✅ تم ترتيب " + moved + " ملف.");',
+'}',
+'',
+r.handle+'(FOLDER);'
+  ].join('\n');
+}
+
+/* ---- 11. Web Scraper ---- */
+function genScraper(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import requests',
+'from bs4 import BeautifulSoup',
+'',
+'URL = '+JSON.stringify(o.url||'https://example.com'),
+'SELECTOR = '+JSON.stringify(o.selector||'h2'),
+'',
+'def '+r.handle+'():',
+'    response = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"})',
+'    soup = BeautifulSoup(response.text, "html.parser")',
+'    elements = soup.select(SELECTOR)',
+'    results = [el.get_text(strip=True) for el in elements if el.get_text(strip=True)]',
+'    with open("results.txt", "w", encoding="utf-8") as f:',
+'        for i, item in enumerate(results, 1):',
+'            line = f"{i}. {item}"',
+'            print(line)',
+'            f.write(line + "\\n")',
+'    print(f"✅ تم حفظ {len(results)} عنصر في results.txt")',
+'',
+'if __name__ == "__main__":',
+'    '+r.handle+'()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+c+' يحتاج: npm install axios cheerio',
+'const axios = require("axios");',
+'const cheerio = require("cheerio");',
+'const fs = require("fs");',
+'',
+'const URL = '+JSON.stringify(o.url||'https://example.com')+';',
+'const SELECTOR = '+JSON.stringify(o.selector||'h2')+';',
+'',
+'async function '+r.handle+'() {',
+'  const { data } = await axios.get(URL, { headers: { "User-Agent": "Mozilla/5.0" } });',
+'  const $ = cheerio.load(data);',
+'  const results = [];',
+'  $(SELECTOR).each((i, el) => {',
+'    const text = $(el).text().trim();',
+'    if (text) results.push(text);',
+'  });',
+'  const out = results.map((t, i) => (i + 1) + ". " + t).join("\\n");',
+'  fs.writeFileSync("results.txt", out);',
+'  console.log(out);',
+'  console.log("✅ تم حفظ " + results.length + " عنصر في results.txt");',
+'}',
+'',
+r.handle+'();'
+  ].join('\n');
+}
+
+/* ============================================================
+   EXPLANATIONS (bilingual, built from platform + language)
+   ============================================================ */
+function buildExplain(ctx){
+  const o=ctx.opts, p=ctx.platform, lang=ctx.langCode;
+  const steps={ar:[],en:[]};
+  const push=(ar,en)=>{ steps.ar.push(ar); steps.en.push(en); };
+
+  // What it does
+  push('هذا الكود ينفّذ: '+L(ctx.tpl.desc), 'What it does: '+ctx.tpl.desc.en);
+
+  // Install
+  if(p==='telegram'&&lang==='python'){
+    push('ثبّت المكتبة: <code>pip install python-telegram-bot</code>','Install: <code>pip install python-telegram-bot</code>');
+  } else if(p==='telegram'&&lang==='javascript'){
+    push('ثبّت المكتبة: <code>npm install node-telegram-bot-api</code>','Install: <code>npm install node-telegram-bot-api</code>');
+  } else if(p==='whatsapp'){
+    push('ثبّت المكتبات: <code>npm install whatsapp-web.js qrcode-terminal</code>','Install: <code>npm install whatsapp-web.js qrcode-terminal</code>');
+  } else if(p==='script'&&lang==='python'&&ctx.tpl.id==='sc-scraper'){
+    push('ثبّت المكتبات: <code>pip install requests beautifulsoup4</code>','Install: <code>pip install requests beautifulsoup4</code>');
+  } else if(p==='script'&&lang==='javascript'&&ctx.tpl.id==='sc-scraper'){
+    push('ثبّت المكتبات: <code>npm install axios cheerio</code>','Install: <code>npm install axios cheerio</code>');
+  } else if(p==='script'){
+    push('لا يحتاج مكتبات إضافية — يعمل بالمكتبات القياسية.','No extra libraries needed — uses the standard library.');
+  }
+
+  // Token
+  if(p==='telegram'){
+    push('احصل على التوكن من <code>@BotFather</code> في تلكرام وضعه مكان <code>'+ (o.token||'TOKEN') +'</code>.',
+         'Get your token from <code>@BotFather</code> on Telegram and replace <code>'+(o.token||'TOKEN')+'</code>.');
+  } else if(p==='whatsapp'){
+    push('عند التشغيل سيظهر رمز QR — امسحه من واتساب (الأجهزة المرتبطة) مرة واحدة.',
+         'On first run a QR code appears — scan it from WhatsApp (Linked Devices) once.');
+  }
+
+  // Save & run
+  const fname = ctx.fname;
+  push('احفظ الكود في ملف باسم <code>'+fname+'</code>.','Save the code to a file named <code>'+fname+'</code>.');
+  if(lang==='python') push('شغّله: <code>python '+fname+'</code>','Run it: <code>python '+fname+'</code>');
+  else push('شغّله: <code>node '+fname+'</code>','Run it: <code>node '+fname+'</code>');
+
+  // Customize
+  push('عدّل القيم في أعلى الملف (الرسائل، الكلمات المفتاحية...) لتغيير سلوك '+(p==='script'?'السكربت':'البوت')+'.',
+       'Edit the values at the top of the file (messages, keywords…) to change how the '+(p==='script'?'script':'bot')+' behaves.');
+
+  return steps;
+}
+
+/* ============================================================
+   SYNTAX HIGHLIGHTING
+   ============================================================ */
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+const PY_KW = 'def|class|import|from|return|if|elif|else|for|while|in|and|or|not|is|True|False|None|async|await|with|as|try|except|finally|lambda|pass|break|continue|global|yield|raise|print';
+const JS_KW = 'const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|typeof|instanceof|of|in|async|await|try|catch|finally|throw|class|extends|super|require|module|exports|true|false|null|undefined|console';
+function highlight(code, lang){
+  const esc = escapeHtml(code);
+  let re, kw;
+  if(lang==='python'){
+    kw = PY_KW;
+    re = new RegExp(
+      '(#[^\\n]*)' +                                   // 1 comment
+      '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\')' + // 2 string
+      '|\\b(' + kw + ')\\b' +                          // 3 keyword
+      '|\\b(\\d+\\.?\\d*)\\b' +                        // 4 number
+      '|([A-Za-z_]\\w*)(?=\\s*\\()',                   // 5 function
+      'g');
+  } else {
+    kw = JS_KW;
+    re = new RegExp(
+      '(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)' +       // 1 comment
+      '|("(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\')' + // 2 string
+      '|\\b(' + kw + ')\\b' +                          // 3 keyword
+      '|\\b(\\d+\\.?\\d*)\\b' +                        // 4 number
+      '|([A-Za-z_$]\\w*)(?=\\s*\\()',                  // 5 function
+      'g');
+  }
+  return esc.replace(re, function(m, com, str, key, num, fn){
+    if(com) return '<span class="tok-com">'+com+'</span>';
+    if(str) return '<span class="tok-str">'+str+'</span>';
+    if(key) return '<span class="tok-key">'+key+'</span>';
+    if(num) return '<span class="tok-num">'+num+'</span>';
+    if(fn)  return '<span class="tok-fn">'+fn+'</span>';
+    return m;
+  });
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const app = document.getElementById('app');
+const el = (tag, attrs, html)=>{ const e=document.createElement(tag); if(attrs) for(const k in attrs){ if(k==='class')e.className=attrs[k]; else if(k==='html')e.innerHTML=attrs[k]; else e.setAttribute(k,attrs[k]); } if(html!=null)e.innerHTML=html; return e; };
+
+function applyChrome(){
+  document.documentElement.setAttribute('dir', t('dir'));
+  document.documentElement.setAttribute('lang', state.lang);
+  document.documentElement.setAttribute('data-theme', store.theme);
+  document.getElementById('brandSub').textContent = t('brandSub');
+  document.getElementById('footText').textContent = state.lang==='ar'
+    ? 'Script Bot — يولّد بوتات وسكربتات جاهزة بدون إنترنت وبدون ذكاء اصطناعي.'
+    : 'Script Bot — generates ready bots & scripts, offline and without AI.';
+  renderTabs();
+}
+function renderTabs(){
+  const tabs=document.getElementById('tabs');
+  tabs.innerHTML='';
+  const items=[['home','nav_home'],['build','nav_build'],['play','nav_play'],['saved','nav_saved']];
+  items.forEach(([v,key])=>{
+    const b=el('button',{class: state.view===v?'active':''}, t(key));
+    b.onclick=()=>go(v);
+    tabs.appendChild(b);
+  });
+  const langBtn=el('button',{}, t('lang_btn')); langBtn.onclick=toggleLang; tabs.appendChild(langBtn);
+  const themeBtn=el('button',{}, store.theme==='dark'?t('theme_light'):t('theme_dark')); themeBtn.onclick=toggleTheme; tabs.appendChild(themeBtn);
+}
+function toggleLang(){ state.lang = state.lang==='ar'?'en':'ar'; store.lang=state.lang; render(); }
+function toggleTheme(){ store.theme = store.theme==='dark'?'light':'dark'; render(); }
+
+function go(view){ state.view=view; render(); window.scrollTo(0,0); }
+
+function render(){
+  applyChrome();
+  app.innerHTML='';
+  if(state.view==='home') return renderHome();
+  if(state.view==='build') return renderBuild();
+  if(state.view==='play') return renderPlay();
+  if(state.view==='saved') return renderSaved();
+}
+
+/* ---- Home ---- */
+function renderHome(){
+  const hero=el('section',{class:'hero'});
+  hero.appendChild(el('h1',{},t('hero_h')));
+  hero.appendChild(el('p',{},t('hero_p')));
+  const cta=el('div',{class:'cta'});
+  const b1=el('button',{class:'btn'},t('hero_cta')); b1.onclick=()=>{ document.getElementById('grid').scrollIntoView({behavior:'smooth'}); };
+  const b2=el('button',{class:'btn ghost'},t('hero_cta2')); b2.onclick=()=>go('play');
+  cta.appendChild(b1); cta.appendChild(b2); hero.appendChild(cta);
+  const stats=el('div',{class:'stats'});
+  [['11',t('st_tpl')],['100%',t('st_off')],['0$',t('st_free')],['∞',t('st_uniq')]].forEach(([n,l])=>{
+    const s=el('div',{class:'s'}); s.appendChild(el('b',{},n)); s.appendChild(el('span',{},l)); stats.appendChild(s);
+  });
+  hero.appendChild(stats);
+  app.appendChild(hero);
+
+  const filters=el('div',{class:'filters'});
+  [['all','f_all'],['telegram','f_telegram'],['whatsapp','f_whatsapp'],['script','f_script']].forEach(([f,key])=>{
+    const c=el('button',{class:'chip'+(state.filter===f?' active':'')},t(key));
+    c.onclick=()=>{ state.filter=f; renderHome_refresh(); };
+    filters.appendChild(c);
+  });
+  app.appendChild(filters);
+
+  const grid=el('div',{class:'grid',id:'grid'});
+  app.appendChild(grid);
+  fillGrid(grid);
+}
+function renderHome_refresh(){ render(); document.getElementById('grid') && document.querySelector('.filters').scrollIntoView({behavior:'smooth',block:'start'}); }
+function fillGrid(grid){
+  grid.innerHTML='';
+  const list = TEMPLATES.filter(tp=> state.filter==='all' || tp.platform===state.filter);
+  list.forEach(tp=>{
+    const card=el('div',{class:'tcard'});
+    card.appendChild(el('div',{class:'ic'},tp.icon));
+    card.appendChild(el('h3',{},L(tp.title)));
+    card.appendChild(el('p',{},L(tp.desc)));
+    const tags=el('div',{class:'tags'});
+    const pcls = tp.platform==='telegram'?'tg':tp.platform==='whatsapp'?'wa':'sc';
+    const plabel = tp.platform==='telegram'?'Telegram':tp.platform==='whatsapp'?'WhatsApp':(state.lang==='ar'?'سكربت':'Script');
+    tags.appendChild(el('span',{class:'tag '+pcls},plabel));
+    tp.langs.forEach(lc=> tags.appendChild(el('span',{class:'tag '+(lc==='python'?'py':'js')}, lc==='python'?'Python':'JavaScript')));
+    card.appendChild(tags);
+    card.onclick=()=>openBuilder(tp);
+    grid.appendChild(card);
+  });
+}
+
+/* ---- Builder ---- */
+function openBuilder(tp){
+  state.tpl=tp;
+  state.platform=tp.platform;
+  state.langCode=tp.langs[0];
+  state.opts={};
+  tp.fields.forEach(f=> state.opts[f.key]=f.def);
+  state.code='';
+  go('build');
+}
+function renderBuild(){
+  if(!state.tpl){
+    const empty=el('div',{class:'empty'});
+    empty.appendChild(el('div',{class:'big'},'🧩'));
+    empty.appendChild(el('p',{},t('choose')));
+    const b=el('button',{class:'btn'},t('nav_home')); b.onclick=()=>go('home');
+    empty.appendChild(b);
+    app.appendChild(empty); return;
+  }
+  const tp=state.tpl;
+  const back=el('button',{class:'btn ghost small'},t('back')); back.onclick=()=>go('home');
+  app.appendChild(back);
+
+  const panel=el('div',{class:'panel'});
+  panel.appendChild(el('h2',{}, tp.icon+' '+L(tp.title)));
+  panel.appendChild(el('p',{class:'sub'}, L(tp.desc)));
+
+  // platform + language selectors
+  const seg=el('div',{class:'segrow'});
+  // language
+  const langField=el('div',{class:'field'});
+  langField.appendChild(el('label',{},t('pick_lang')));
+  const langSeg=el('div',{class:'seg'});
+  tp.langs.forEach(lc=>{
+    const b=el('button',{class: state.langCode===lc?'active':''}, lc==='python'?'🐍 Python':'🟨 JavaScript');
+    b.onclick=()=>{ state.langCode=lc; renderBuild_refresh(); };
+    langSeg.appendChild(b);
+  });
+  langField.appendChild(langSeg);
+  seg.appendChild(langField);
+  panel.appendChild(seg);
+
+  // fields
+  panel.appendChild(el('h4',{style:'margin:16px 0 4px'}, '⚙️ '+t('settings')));
+  tp.fields.forEach(f=>{
+    const field=el('div',{class:'field'});
+    const lbl=el('label',{}, L(f.label)); if(f.hint) lbl.appendChild(el('span',{class:'hint'},'('+L(f.hint)+')'));
+    field.appendChild(lbl);
+    let input;
+    if(f.type==='textarea'){ input=el('textarea',{}); input.value=state.opts[f.key]||''; }
+    else if(f.type==='select'){
+      input=el('select',{});
+      const opts = f.key==='blockLinks' ? [['yes',state.lang==='ar'?'نعم':'Yes'],['no',state.lang==='ar'?'لا':'No']] : [];
+      opts.forEach(([v,lab])=>{ const op=el('option',{value:v},lab); if(state.opts[f.key]===v)op.selected=true; input.appendChild(op); });
+    }
+    else { input=el('input',{type:'text'}); input.value=state.opts[f.key]||''; }
+    input.oninput=()=>{ state.opts[f.key]=input.value; };
+    input.onchange=()=>{ state.opts[f.key]=input.value; };
+    field.appendChild(input);
+    panel.appendChild(field);
+  });
+
+  const actions=el('div',{class:'actions'});
+  const gen=el('button',{class:'btn'}, t('generate')); gen.onclick=()=>{ generate(); renderBuild_refresh(); scrollToResult(); };
+  actions.appendChild(gen);
+  if(state.code){
+    const re=el('button',{class:'btn warn'}, t('regenerate')); re.onclick=()=>{ generate(); renderBuild_refresh(); scrollToResult(); };
+    actions.appendChild(re);
+  }
+  panel.appendChild(actions);
+  app.appendChild(panel);
+
+  if(state.code) app.appendChild(renderResult());
+}
+function renderBuild_refresh(){ render(); }
+function scrollToResult(){ setTimeout(()=>{ const r=document.getElementById('resultBlock'); if(r) r.scrollIntoView({behavior:'smooth',block:'start'}); },50); }
+
+function currentCtx(){
+  return { tpl:state.tpl, platform:state.platform, langCode:state.langCode, opts:state.opts, fname:state.fname, rnd:makeRnd() };
+}
+function fileName(){
+  const base = (state.tpl.id).replace(/[^a-z0-9]+/gi,'_');
+  return base + (state.langCode==='python'?'.py':'.js');
+}
+function generate(){
+  state.fname=fileName();
+  const ctx=currentCtx(); ctx.fname=state.fname;
+  state.code = state.tpl.gen(ctx);
+  state._ctx = ctx;
+}
+
+function renderResult(){
+  const wrap=el('div',{class:'result',id:'resultBlock'});
+  // code header
+  const head=el('div',{class:'codehead'});
+  head.appendChild(el('span',{class:'fname'}, '📄 '+state.fname));
+  const sp=el('div',{class:'sp'});
+  const copyBtn=el('button',{class:'btn small good'}, t('copy'));
+  copyBtn.onclick=()=>copyCode(copyBtn);
+  const dlBtn=el('button',{class:'btn small'}, t('download')); dlBtn.onclick=downloadCode;
+  const saveBtn=el('button',{class:'btn small'}, t('save')); saveBtn.onclick=saveProject;
+  sp.appendChild(copyBtn); sp.appendChild(dlBtn); sp.appendChild(saveBtn);
+  if(state.langCode==='javascript'){
+    const runBtn=el('button',{class:'btn small warn'}, t('run')); runBtn.onclick=()=>runJS(state.code);
+    sp.appendChild(runBtn);
+  }
+  head.appendChild(sp);
+  wrap.appendChild(head);
+
+  const pre=el('pre',{class:'code'});
+  pre.innerHTML = highlight(state.code, state.langCode);
+  wrap.appendChild(pre);
+
+  // run note for bots
+  if(state.platform!=='script'){
+    wrap.appendChild(el('div',{class:'note'}, t('note_run_bot')));
+  }
+  if(state.platform==='whatsapp'){
+    wrap.appendChild(el('div',{class:'note'}, t('note_wa')));
+  }
+
+  // run output placeholder
+  const ro=el('div',{class:'runout hidden',id:'runout'});
+  ro.appendChild(el('div',{class:'rh'}, '🖥️ '+t('run_h')));
+  ro.appendChild(el('pre',{id:'runpre'},''));
+  wrap.appendChild(ro);
+
+  // explanation
+  const steps = buildExplain(state._ctx || currentCtx());
+  const ex=el('div',{class:'explain'});
+  ex.appendChild(el('h4',{}, t('explain_h')));
+  const ol=el('ol',{});
+  steps[state.lang].forEach(s=>{ const li=el('li',{}); li.innerHTML=s; ol.appendChild(li); });
+  ex.appendChild(ol);
+  wrap.appendChild(ex);
+
+  // APK note
+  const apk=el('div',{class:'explain',style:'margin-top:12px'});
+  apk.appendChild(el('h4',{}, t('apk_h')));
+  apk.appendChild(el('p',{style:'margin:0;color:var(--muted)'}, t('apk_p')));
+  wrap.appendChild(apk);
+
+  return wrap;
+}
+
+/* ---- Actions ---- */
+function copyCode(btn){
+  navigator.clipboard.writeText(state.code).then(()=>{
+    toast(t('copied'));
+    if(btn){ const o=btn.textContent; btn.textContent=t('copied'); setTimeout(()=>btn.textContent=o,1200); }
+  }).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=state.code; document.body.appendChild(ta); ta.select();
+    try{document.execCommand('copy');toast(t('copied'));}catch(e){} document.body.removeChild(ta);
+  });
+}
+function downloadCode(){
+  const blob=new Blob([state.code],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=state.fname; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function saveProject(){
+  const list=store.projects;
+  list.unshift({
+    id:'p'+Date.now(),
+    tplId:state.tpl.id,
+    title:L(state.tpl.title),
+    platform:state.platform,
+    langCode:state.langCode,
+    fname:state.fname,
+    code:state.code,
+    date:new Date().toISOString()
+  });
+  store.projects=list.slice(0,100);
+  toast(t('saved_ok'));
+  renderTabs();
+}
+
+/* ---- Run JS (sandboxed) ---- */
+function runJS(code){
+  const ro=document.getElementById('runout');
+  const pre=document.getElementById('runpre');
+  if(!ro||!pre) return;
+  ro.classList.remove('hidden');
+  pre.textContent=t('running');
+  pre.className='';
+
+  const lines=[];
+  let done=false;
+  const iframe=document.createElement('iframe');
+  iframe.style.display='none';
+  iframe.sandbox='allow-scripts';
+  const runnerId='sbrun_'+Date.now();
+  const src =
+    '<script>'+
+    'var __out=[];'+
+    'function post(t,m){parent.postMessage({id:"'+runnerId+'",type:t,msg:m},"*");}'+
+    'console.log=function(){post("log",Array.prototype.map.call(arguments,String).join(" "));};'+
+    'console.error=function(){post("err",Array.prototype.map.call(arguments,String).join(" "));};'+
+    'console.warn=console.log;console.info=console.log;'+
+    'try{('+'function(){'+'"use strict";\n'+code.replace(/<\/script>/gi,'<\\/script>')+'\n})();post("done","");}'+
+    'catch(e){post("err",String(e));post("done","");}'+
+    '<\/script>';
+  iframe.srcdoc=src;
+
+  function onMsg(ev){
+    if(!ev.data||ev.data.id!==runnerId) return;
+    if(ev.data.type==='log') lines.push(ev.data.msg);
+    else if(ev.data.type==='err') lines.push('⚠ '+ev.data.msg);
+    else if(ev.data.type==='done'){ finish(); }
+    if(ev.data.type!=='done'){ pre.textContent = lines.join('\n') || t('no_output'); }
+  }
+  function finish(){
+    if(done) return; done=true;
+    window.removeEventListener('message',onMsg);
+    pre.textContent = lines.join('\n') || t('no_output');
+    setTimeout(()=>{ if(iframe.parentNode) iframe.parentNode.removeChild(iframe); },50);
+  }
+  window.addEventListener('message',onMsg);
+  document.body.appendChild(iframe);
+  setTimeout(()=>{ if(!done){ lines.push('⏱ '+t('run_timeout')); finish(); } }, 3500);
+}
+
+/* ---- Playground ---- */
+function renderPlay(){
+  const panel=el('div',{class:'panel pg'});
+  panel.appendChild(el('h2',{}, '🧪 '+t('play_h')));
+  panel.appendChild(el('p',{class:'sub'}, t('play_p')));
+  const ta=el('textarea',{id:'pgcode'});
+  ta.value = sessionStorage.getItem('sb_pg') || t('play_ph');
+  ta.oninput=()=>sessionStorage.setItem('sb_pg',ta.value);
+  panel.appendChild(ta);
+  const actions=el('div',{class:'actions'});
+  const run=el('button',{class:'btn'}, t('play_run')); run.onclick=()=>runJS(ta.value);
+  const clr=el('button',{class:'btn ghost'}, t('play_clear')); clr.onclick=()=>{ ta.value=''; sessionStorage.setItem('sb_pg',''); const ro=document.getElementById('runout'); if(ro)ro.classList.add('hidden'); };
+  actions.appendChild(run); actions.appendChild(clr);
+  panel.appendChild(actions);
+
+  // output container (shared by runJS via #runout / #runpre)
+  const ro=el('div',{class:'runout hidden',id:'runout'});
+  ro.appendChild(el('div',{class:'rh'}, '🖥️ '+t('run_h')));
+  ro.appendChild(el('pre',{id:'runpre'},''));
+  panel.appendChild(ro);
+
+  app.appendChild(panel);
+}
+
+/* ---- Saved ---- */
+function renderSaved(){
+  const panel=el('div',{class:'panel'});
+  panel.appendChild(el('h2',{}, '💾 '+t('saved_h')));
+  const list=store.projects;
+  if(!list.length){
+    const empty=el('div',{class:'empty'});
+    empty.appendChild(el('div',{class:'big'},'📭'));
+    empty.appendChild(el('p',{},t('saved_empty')));
+    panel.appendChild(empty);
+    app.appendChild(panel); return;
+  }
+  list.forEach(pr=>{
+    const item=el('div',{class:'saved-item'});
+    const icon = TEMPLATES.find(x=>x.id===pr.tplId);
+    item.appendChild(el('div',{style:'font-size:26px'}, icon?icon.icon:'📄'));
+    const meta=el('div',{class:'meta'});
+    meta.appendChild(el('b',{}, pr.title||t('unnamed')));
+    const plabel = pr.platform==='telegram'?'Telegram':pr.platform==='whatsapp'?'WhatsApp':(state.lang==='ar'?'سكربت':'Script');
+    meta.appendChild(el('span',{}, plabel+' · '+(pr.langCode==='python'?'Python':'JavaScript')+' · '+pr.fname+' · '+new Date(pr.date).toLocaleDateString()));
+    item.appendChild(meta);
+    const openB=el('button',{class:'btn small'}, t('open')); openB.onclick=()=>openSaved(pr);
+    const delB=el('button',{class:'btn small ghost'}, t('del')); delB.onclick=()=>{ if(confirm(t('confirm_del'))){ store.projects=store.projects.filter(x=>x.id!==pr.id); toast(t('del_ok')); render(); } };
+    item.appendChild(openB); item.appendChild(delB);
+    panel.appendChild(item);
+  });
+  app.appendChild(panel);
+}
+function openSaved(pr){
+  const tp=TEMPLATES.find(x=>x.id===pr.tplId);
+  if(tp){ state.tpl=tp; }
+  state.platform=pr.platform; state.langCode=pr.langCode; state.fname=pr.fname; state.code=pr.code;
+  state._ctx={ tpl:tp||{title:{ar:pr.title,en:pr.title},desc:{ar:'',en:''},id:pr.tplId}, platform:pr.platform, langCode:pr.langCode, opts:{token:'TOKEN'}, fname:pr.fname };
+  go('build'); scrollToResult();
+}
+
+/* ---- Toast ---- */
+let toastTimer=null;
+function toast(msg){
+  const box=document.getElementById('toast');
+  box.innerHTML='';
+  const t=el('div',{class:'t'},msg);
+  box.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ t.classList.remove('show'); },1800);
+}
+
+/* ---- Boot ---- */
+render();
+</script>
