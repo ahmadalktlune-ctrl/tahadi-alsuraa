@@ -2553,8 +2553,13 @@ const I = {
     save:'💾 حفظ المشروع', saved_ok:'انحفظ المشروع ✓',
     explain_h:'📖 شرح الكود',
     run_h:'مخرجات التشغيل', running:'... يشتغل',
-    play_h:'المختبر — جرّب أي كود جافا سكريبت', play_p:'اكتب أو الصق كود جافا سكريبت وشغّله مباشرة. استعمل console.log لإظهار النتائج.',
+    run_py:'▶️ تشغيل (Python)', py_loading:'... يُحمّل محرك بايثون (أول مرة فقط، قد يستغرق لحظات)',
+    py_note:'أول تشغيل يُحمّل محرك بايثون (~10 ميغا، يحتاج إنترنت). أكواد البوتات التي تستورد مكتبات خارجية (telegram، yt-dlp، PIL...) لا تعمل داخل المتصفح — تحتاج تشغيلاً حقيقياً. أما أكواد بايثون العادية (المكتبة القياسية) فتعمل هنا.',
+    py_fail:'تعذّر تحميل محرك بايثون — تأكد من اتصالك بالإنترنت وحاول مجدداً.',
+    play_lang:'اللغة:',
+    play_h:'المختبر — جرّب أكواد جافا سكريبت وبايثون', play_p:'اكتب أو الصق الكود واختر اللغة ثم شغّله مباشرة. استعمل console.log (أو print في بايثون) لإظهار النتائج.',
     play_run:'▶️ تشغيل', play_clear:'🧹 مسح', play_ph:'// اكتب كودك هنا\nconsole.log("أهلاً من سكربت بوت!");\nfor (let i = 1; i <= 3; i++) console.log("رقم", i);',
+    play_ph_py:'# اكتب كود بايثون هنا\nprint("أهلاً من سكربت بوت!")\nfor i in range(1, 4):\n    print("رقم", i)',
     saved_h:'مشاريعي المحفوظة', saved_empty:'ماكو مشاريع محفوظة بعد. سوِّ كوداً واحفظه ليظهر هنا.',
     open:'فتح', del:'حذف', del_ok:'انحذف ✓', confirm_del:'تريد حذف هذا المشروع؟',
     field_botName:'اسم البوت', field_token:'توكن البوت', field_token_hint:'من BotFather في تلكرام',
@@ -2585,8 +2590,13 @@ const I = {
     save:'💾 Save project', saved_ok:'Project saved ✓',
     explain_h:'📖 Code explanation',
     run_h:'Run output', running:'... running',
-    play_h:'Playground — run any JavaScript', play_p:'Type or paste JavaScript and run it instantly. Use console.log to print results.',
+    run_py:'▶️ Run (Python)', py_loading:'... loading the Python engine (first time only, may take a moment)',
+    py_note:'The first run downloads the Python engine (~10 MB, needs internet). Bot code that imports external libraries (telegram, yt-dlp, PIL…) will not run in the browser — it needs a real runtime. Plain standard-library Python does run here.',
+    py_fail:'Could not load the Python engine — check your internet connection and try again.',
+    play_lang:'Language:',
+    play_h:'Playground — run JavaScript & Python', play_p:'Type or paste code, pick the language, and run it instantly. Use console.log (or print in Python) to show results.',
     play_run:'▶️ Run', play_clear:'🧹 Clear', play_ph:'// Write your code here\nconsole.log("Hello from Script Bot!");\nfor (let i = 1; i <= 3; i++) console.log("number", i);',
+    play_ph_py:'# Write your Python here\nprint("Hello from Script Bot!")\nfor i in range(1, 4):\n    print("number", i)',
     saved_h:'My saved projects', saved_empty:'No saved projects yet. Generate some code and save it to see it here.',
     open:'Open', del:'Delete', del_ok:'Deleted ✓', confirm_del:'Delete this project?',
     field_botName:'Bot name', field_token:'Bot token', field_token_hint:'from BotFather on Telegram',
@@ -4596,6 +4606,9 @@ function renderResult(){
   if(state.langCode==='javascript'){
     const runBtn=el('button',{class:'btn small warn'}, t('run')); runBtn.onclick=()=>runJS(state.code);
     sp.appendChild(runBtn);
+  } else if(state.langCode==='python'){
+    const runBtn=el('button',{class:'btn small warn'}, t('run_py')); runBtn.onclick=()=>runPython(state.code);
+    sp.appendChild(runBtn);
   }
   head.appendChild(sp);
   wrap.appendChild(head);
@@ -4610,6 +4623,9 @@ function renderResult(){
   }
   if(state.platform==='whatsapp'){
     wrap.appendChild(el('div',{class:'note'}, t('note_wa')));
+  }
+  if(state.langCode==='python'){
+    wrap.appendChild(el('div',{class:'note'}, '🐍 '+t('py_note')));
   }
 
   // run output placeholder
@@ -4714,28 +4730,103 @@ function runJS(code){
   setTimeout(()=>{ if(!done){ lines.push('⏱ '+t('run_timeout')); finish(); } }, 3500);
 }
 
+/* ---- Run Python (Pyodide, lazy-loaded) ---- */
+let _pyodidePromise=null;
+function pyodideBase(){
+  try{ const q=new URLSearchParams(location.search).get('pyodide'); if(q) return q; }catch(e){}
+  return 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+}
+function loadPyodideOnce(){
+  if(_pyodidePromise) return _pyodidePromise;
+  const base=pyodideBase();
+  _pyodidePromise=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=base+'pyodide.js';
+    s.onload=async()=>{
+      try{ const py=await loadPyodide({indexURL:base}); resolve(py); }
+      catch(e){ _pyodidePromise=null; reject(e); }
+    };
+    s.onerror=()=>{ _pyodidePromise=null; reject(new Error('script load failed')); };
+    document.head.appendChild(s);
+  });
+  return _pyodidePromise;
+}
+async function runPython(code){
+  const ro=document.getElementById('runout');
+  const pre=document.getElementById('runpre');
+  if(!ro||!pre) return;
+  ro.classList.remove('hidden');
+  pre.className='';
+  pre.textContent=t('py_loading');
+  let py;
+  try{ py=await loadPyodideOnce(); }
+  catch(e){ pre.className='err'; pre.textContent=t('py_fail'); return; }
+  const lines=[];
+  const flush=()=>{ pre.textContent=lines.join('\n')||t('no_output'); };
+  try{ py.setStdout({batched:s=>{ lines.push(s); flush(); }}); }catch(e){}
+  try{ py.setStderr({batched:s=>{ lines.push('⚠ '+s); flush(); }}); }catch(e){}
+  pre.textContent='';
+  try{
+    await py.runPythonAsync(code);
+    if(!lines.length){ pre.textContent=t('no_output'); }
+  }catch(e){
+    lines.push(String(e && e.message ? e.message : e));
+    flush();
+  }
+}
+
 /* ---- Playground ---- */
+let _pgLang = sessionStorage.getItem('sb_pglang') || 'javascript';
 function renderPlay(){
   const panel=el('div',{class:'panel pg'});
   panel.appendChild(el('h2',{}, '🧪 '+t('play_h')));
   panel.appendChild(el('p',{class:'sub'}, t('play_p')));
+
+  // language toggle
+  const langField=el('div',{class:'field'});
+  langField.appendChild(el('label',{}, t('play_lang')));
+  const seg=el('div',{class:'seg'});
   const ta=el('textarea',{id:'pgcode'});
-  ta.value = sessionStorage.getItem('sb_pg') || t('play_ph');
-  ta.oninput=()=>sessionStorage.setItem('sb_pg',ta.value);
+  const defaults={javascript:t('play_ph'), python:t('play_ph_py')};
+  function setLang(lc){
+    const prev=_pgLang;
+    _pgLang=lc; sessionStorage.setItem('sb_pglang',lc);
+    // if editor holds the other language's default (or is empty), swap to this language's default
+    const cur=(ta.value||'').trim();
+    if(!cur || cur===defaults.javascript.trim() || cur===defaults.python.trim()){
+      ta.value=defaults[lc]; sessionStorage.setItem('sb_pg_'+lc, ta.value);
+    } else if(prev!==lc){
+      ta.value = sessionStorage.getItem('sb_pg_'+lc) || defaults[lc];
+    }
+    [...seg.children].forEach(b=> b.classList.toggle('active', b.dataset.lc===lc));
+  }
+  [['javascript','🟨 JavaScript'],['python','🐍 Python']].forEach(([lc,label])=>{
+    const b=el('button',{}, label); b.dataset.lc=lc; b.onclick=()=>setLang(lc); seg.appendChild(b);
+  });
+  langField.appendChild(seg);
+  panel.appendChild(langField);
+
+  ta.value = sessionStorage.getItem('sb_pg_'+_pgLang) || defaults[_pgLang];
+  ta.oninput=()=>sessionStorage.setItem('sb_pg_'+_pgLang, ta.value);
   panel.appendChild(ta);
+
   const actions=el('div',{class:'actions'});
-  const run=el('button',{class:'btn'}, t('play_run')); run.onclick=()=>runJS(ta.value);
-  const clr=el('button',{class:'btn ghost'}, t('play_clear')); clr.onclick=()=>{ ta.value=''; sessionStorage.setItem('sb_pg',''); const ro=document.getElementById('runout'); if(ro)ro.classList.add('hidden'); };
+  const run=el('button',{class:'btn'}, t('play_run'));
+  run.onclick=()=>{ if(_pgLang==='python') runPython(ta.value); else runJS(ta.value); };
+  const clr=el('button',{class:'btn ghost'}, t('play_clear'));
+  clr.onclick=()=>{ ta.value=''; sessionStorage.setItem('sb_pg_'+_pgLang,''); const ro=document.getElementById('runout'); if(ro)ro.classList.add('hidden'); };
   actions.appendChild(run); actions.appendChild(clr);
   panel.appendChild(actions);
 
-  // output container (shared by runJS via #runout / #runpre)
+  // output container (shared by runJS/runPython via #runout / #runpre)
   const ro=el('div',{class:'runout hidden',id:'runout'});
   ro.appendChild(el('div',{class:'rh'}, '🖥️ '+t('run_h')));
   ro.appendChild(el('pre',{id:'runpre'},''));
   panel.appendChild(ro);
 
   app.appendChild(panel);
+  // reflect active language button
+  [...seg.children].forEach(b=> b.classList.toggle('active', b.dataset.lc===_pgLang));
 }
 
 /* ---- QR generator ---- */
