@@ -2407,7 +2407,8 @@ service cloud.firestore {
         let d = request.resource.data;
         return d.keys().hasOnly(['username','avatar','xp','games','wins','correct',
                                  'wrong','joined','history','gems','unlockedCats',
-                                 'bundleType','bundleExpiry'])
+                                 'bundleType','bundleExpiry','lastUpdated','welcomeGemsGiven',
+                                 'dailyBonusAt','adDayStart','adDayCount','srvPing'])
           && (!('username' in d) || (d.username is string && d.username.size() <= 30))
           && (!('avatar'   in d) || (d.avatar is string && d.avatar.size() <= 10))
           && (!('joined'   in d) || (d.joined is string && d.joined.size() <= 30))
@@ -2418,7 +2419,13 @@ service cloud.firestore {
           && (!('wrong'    in d) || (d.wrong is number && d.wrong >= 0 && d.wrong <= 10000000))
           && (!('gems'     in d) || (d.gems is number && d.gems >= 0 && d.gems <= 1000000))
           && (!('history'  in d) || (d.history is list && d.history.size() <= 30))
-          && (!('unlockedCats' in d) || (d.unlockedCats is list && d.unlockedCats.size() <= 100));
+          && (!('unlockedCats' in d) || (d.unlockedCats is list && d.unlockedCats.size() <= 100))
+          && (!('lastUpdated'  in d) || d.lastUpdated is number)
+          && (!('welcomeGemsGiven' in d) || d.welcomeGemsGiven is bool)
+          && (!('dailyBonusAt' in d) || (d.dailyBonusAt is number && d.dailyBonusAt >= 0))
+          && (!('adDayStart'   in d) || (d.adDayStart is number && d.adDayStart >= 0))
+          && (!('adDayCount'   in d) || (d.adDayCount is number && d.adDayCount >= 0 && d.adDayCount <= 50))
+          && (!('srvPing'      in d) || d.srvPing is timestamp);
       }
     }
 
@@ -3432,7 +3439,7 @@ window.addEventListener('offline', updateOnlineStatus);
           <span>🤝</span>فريقان
         </button>
         <button class="mode-btn mode-btn-iq" id="mode-iq" onclick="selectMode('iq')">
-          <span>🧬</span>اختبار IQ
+          <span>🧬</span>اختبار IQ <span id="iq-mode-lock" style="font-size:0.72rem;opacity:0.9">🔒100💎</span>
         </button>
       </div>
     </div>
@@ -3548,12 +3555,12 @@ window.addEventListener('offline', updateOnlineStatus);
 
       <!-- إعلان مكافئ -->
       <div class="shop-section-title" style="margin-top:20px">📺 شاهد إعلان — مجاناً!</div>
-      <div id="rewarded-ad-card" class="bundle-card" onclick="watchRewardedAd()" style="background:linear-gradient(135deg,rgba(0,230,118,0.1),rgba(0,230,118,0.04));border-color:rgba(0,230,118,0.35);">
+      <div id="rewarded-ad-card" class="bundle-card" onclick="showRewardedAd()" style="background:linear-gradient(135deg,rgba(0,230,118,0.1),rgba(0,230,118,0.04));border-color:rgba(0,230,118,0.35);">
         <div class="bundle-icon">📺</div>
-        <div class="bundle-name" style="color:var(--green)">شاهد إعلان قصير</div>
-        <div class="bundle-desc">احصل على 10 جواهر مجاناً مقابل مشاهدة إعلان</div>
+        <div class="bundle-name" style="color:var(--green)">شاهد إعلان واكسب 💎</div>
+        <div class="bundle-desc">احصل على 50 جوهرة مقابل كل إعلان — حتى 10 إعلانات باليوم</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px">
-          <div class="bundle-price" style="font-size:1.1rem">+10 💎</div>
+          <div class="bundle-price" style="font-size:1.1rem">+50 💎</div>
           <div id="ad-cooldown-badge" style="display:none;background:rgba(136,138,170,0.2);color:var(--muted);font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:20px;font-family:'Cairo',sans-serif"></div>
         </div>
       </div>
@@ -3623,9 +3630,7 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🎌</span><div class="cat-info"><div class="cat-name">أنمي</div><div class="cat-count">582 سؤال</div></div></div>
     </button>
-    <button class="cat-btn cat-c-geo cat-premium" id="catbtn-GEOGRAPHY" data-cat="GEOGRAPHY" onclick="trySelectCategory('GEOGRAPHY')">
-      <div class="cat-locked-overlay" id="lock-GEOGRAPHY"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 650💎</span></div>
-      <div class="cat-premium-badge">💎 مميز</div>
+    <button class="cat-btn cat-c-geo" id="catbtn-GEOGRAPHY" data-cat="GEOGRAPHY" onclick="trySelectCategory('GEOGRAPHY')">
       <div class="cat-btn-inner"><span class="cat-emoji">🌍</span><div class="cat-info"><div class="cat-name">جغرافيا</div><div class="cat-count">665 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-history cat-premium" id="catbtn-HISTORY" data-cat="HISTORY" onclick="trySelectCategory('HISTORY')">
@@ -8802,6 +8807,7 @@ function showGameOver() {
   const isTie = state.p1.score === state.p2.score;
   const winner = isTie ? null : (state.p1.score > state.p2.score ? state.p1 : state.p2);
   saveGameResult(winner, state.p1, state.p2, isTie);
+  awardWinGems(winner, isTie);
   if (isTie) {
     document.getElementById('winner-name').textContent = `🤝 تعادل!`;
     document.getElementById('winner-sub').textContent = `كلاكم رائعين بـ ${state.p1.score} نقطة!`;
@@ -9029,16 +9035,22 @@ function clearGameHistory() {
 
 // ══ فترة مجانية محدودة — غيّر هذا التاريخ حسب رغبتك ══
 // الصيغة: new Date('YYYY-MM-DD') أو null لإيقاف الميزة
-const FREE_PERIOD_END = new Date('2027-01-01');   // ← غيّر التاريخ هنا
+// ⚠️ انتهت الفترة المجانية حتى يشتغل اقتصاد الجواهر — رجّع تاريخ مستقبلي إذا تريد فترة مجانية
+const FREE_PERIOD_END = new Date('2025-01-01');
 
-// الفئات المجانية دائماً
-const FREE_CATS = ['BEGINNER_GENIUS','FOOTBALL','SPORTS','GENERAL','ARABIC_CULTURE'];
-// الفئات المدفوعة
+// الفئات المجانية دائماً (6 فئات)
+const FREE_CATS = ['BEGINNER_GENIUS','FOOTBALL','SPORTS','GENERAL','ARABIC_CULTURE','GEOGRAPHY'];
+// الفئات المميزة (8 فئات — كل وحدة 650 جوهرة)
 const PAID_CATS = ['BIG5_LEAGUES',
-                   'MOVIES','ANIME','GEOGRAPHY','HISTORY','SCIENCE',
+                   'MOVIES','ANIME','HISTORY','SCIENCE',
                    'BEAUTY','CARS','MESSI_RONALDO'];
 const GEMS_PER_CAT = 650;
 const CAT_PRICE_USD = '1.99$';
+
+// ── فحص الذكاء IQ: يُفتح بـ100 جوهرة، يُخزن بنفس unlockedCats على Firebase ──
+const IQ_CAT_ID = 'IQ_TEST';
+const IQ_UNLOCK_PRICE = 100;
+function catGemPrice(cat) { return cat === IQ_CAT_ID ? IQ_UNLOCK_PRICE : GEMS_PER_CAT; }
 
 // بيانات الفئات للمتجر
 const CAT_INFO = {
@@ -9070,6 +9082,10 @@ async function loadGems() {
       currentUser.unlockedCats = data.unlockedCats || [];
       currentUser.bundleType = data.bundleType || null;
       currentUser.bundleExpiry = data.bundleExpiry || null;
+      // عدادات المكافآت اليومية — مخزنة بـ Firebase حتى ما تنصفّر بحذف التطبيق
+      currentUser.dailyBonusAt = data.dailyBonusAt || 0;
+      currentUser.adDayStart   = data.adDayStart || 0;
+      currentUser.adDayCount   = data.adDayCount || 0;
     }
   } catch(e) { console.warn('loadGems error:', e); }
   updateGemsUI();
@@ -9189,6 +9205,64 @@ async function giveWelcomeGems() {
   } catch(e) {}
 }
 
+// ══════════════════════════════════════════════
+// ══   مصادر الجواهر: فوز الگيم + الدخول اليومي  ══
+// ══════════════════════════════════════════════
+
+const WIN_GEMS         = 20;                    // جائزة الفوز بگيم كامل
+const DAILY_BONUS_GEMS = 50;                    // مكافأة الدخول اليومي
+const DAY_MS           = 24 * 60 * 60 * 1000;   // 24 ساعة
+
+// ── وقت السيرفر الحقيقي من Firebase ──
+// نكتب serverTimestamp ونقرأه — حتى تغيير ساعة الجهاز ما ينفع للتحايل
+// على المكافآت اليومية. لو فشل الاتصال نرجع لوقت الجهاز كحل أخير.
+async function getServerNow() {
+  try {
+    const ref = fbDb.collection('users').doc(currentUser.uid);
+    await ref.set({ srvPing: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const doc = await _fsTimed(ref.get());
+    const t = doc.exists && doc.data().srvPing;
+    if (t && typeof t.toMillis === 'function') return t.toMillis();
+  } catch(e) { console.warn('getServerNow fallback:', e); }
+  return Date.now();
+}
+
+// ── جائزة الفوز بالگيم: +20 جوهرة ──
+// تنمنح فقط إذا اسم الفائز يطابق اسم الحساب المسجل (حتى ما ياخذها
+// الخصم بوضع لاعبين على نفس الجهاز، وبوضع الفرق ما تنمنح أصلاً)
+function awardWinGems(winner, isTie) {
+  if (isTie || !winner || !currentUser || currentUser.isGuest) return;
+  if ((winner.name || '').trim() !== (currentUser.username || '').trim()) return;
+  currentUser.gems = (currentUser.gems || 0) + WIN_GEMS;
+  updateGemsUI();
+  showGemEarn(`🏆 فوز! +${WIN_GEMS} 💎`);
+  saveGems();
+}
+
+// ── مكافأة الدخول اليومي: +50 جوهرة كل 24 ساعة ──
+// الوقت مخزن بـ Firebase (dailyBonusAt) ويُقارن بوقت السيرفر —
+// لا حذف التطبيق ولا تغيير ساعة الجهاز يعيد المكافأة قبل أوانها
+async function checkDailyBonus() {
+  if (!currentUser || currentUser.isGuest || !currentUser.uid) return;
+  try {
+    const ref = fbDb.collection('users').doc(currentUser.uid);
+    const doc = await _fsTimed(ref.get());
+    const data = doc.exists ? doc.data() : {};
+    const last = data.dailyBonusAt || 0;
+    const now = await getServerNow();
+    if (now - last < DAY_MS) return; // بعده ما مرت 24 ساعة
+    const newGems = (data.gems || 0) + DAILY_BONUS_GEMS;
+    await ref.set({ gems: newGems, dailyBonusAt: now }, { merge: true });
+    currentUser.gems = newGems;
+    currentUser.dailyBonusAt = now;
+    updateGemsUI();
+    setTimeout(() => {
+      showGemEarn(`📅 مكافأة اليوم +${DAILY_BONUS_GEMS} 💎`);
+      showToast(`📅 مكافأة الدخول اليومي: +${DAILY_BONUS_GEMS} جوهرة! تعال باچر وخذ غيرها 🎁`);
+    }, 2500);
+  } catch(e) { console.warn('checkDailyBonus error:', e); }
+}
+
 // ── فحص هل الفترة المجانية نشطة ──
 function isFreePeriodActive() {
   return FREE_PERIOD_END && Date.now() < FREE_PERIOD_END.getTime();
@@ -9221,6 +9295,9 @@ function refreshCatLocks() {
       lockEl.style.display = 'flex';
     }
   });
+  // شارة القفل على زر وضع اختبار IQ
+  const iqLock = document.getElementById('iq-mode-lock');
+  if (iqLock) iqLock.style.display = isCatUnlocked(IQ_CAT_ID) ? 'none' : 'inline';
 }
 
 // ══════════════════════════════════════════════
@@ -9378,11 +9455,12 @@ function renderShopCats() {
   const el = document.getElementById('shop-cats-list');
   let html = '';
 
-  // أولاً الفئات المجانية
+  // أولاً الفئات المجانية (6 فئات)
   html += `<div class="shop-section-title" style="margin-bottom:8px">✅ مجانية دائماً</div>`;
   const freeCatInfo = {
     BEGINNER_GENIUS:{ name:'بداية العبقري', emoji:'🧠', count:'100' },
     FOOTBALL:       { name:'كرة القدم عامة', emoji:'⚽', count:'765' },
+    SPORTS:         { name:'الرياضة العامة', emoji:'🏆', count:'587' },
     GEOGRAPHY:      { name:'جغرافيا', emoji:'🌍', count:'665' },
     GENERAL:        { name:'معلومات عامة', emoji:'🎯', count:'768' },
     ARABIC_CULTURE: { name:'ثقافة عربية', emoji:'🕌', count:'206' },
@@ -9399,7 +9477,25 @@ function renderShopCats() {
     </div>`;
   });
 
-  // الفئات المدفوعة
+  // فحص الذكاء IQ — يُفتح بـ100 جوهرة
+  const iqUnlocked = isCatUnlocked(IQ_CAT_ID);
+  const iqHighlight = shopHighlightCat === IQ_CAT_ID;
+  html += `<div class="shop-section-title" style="margin:16px 0 8px">🧠 فحص الذكاء</div>
+    <div class="cat-shop-item ${iqUnlocked?'unlocked':''}" ${iqHighlight?'style="border-color:var(--accent);box-shadow:0 0 16px rgba(234,97,255,0.3)"':''}>
+      <div class="cat-shop-left">
+        <span class="cat-shop-emoji">🧠</span>
+        <div>
+          <div class="cat-shop-name">اختبار الذكاء IQ</div>
+          <div class="cat-shop-sub">20 سؤال + تقرير شخصية كامل</div>
+        </div>
+      </div>
+      ${iqUnlocked
+        ? `<button class="btn-buy-cat owned">✅ مفتوح</button>`
+        : `<button class="btn-buy-cat gems" onclick="buyWithGems('${IQ_CAT_ID}')">💎 ${IQ_UNLOCK_PRICE}</button>`
+      }
+    </div>`;
+
+  // الفئات المميزة (8 فئات — 650 جوهرة)
   html += `<div class="shop-section-title" style="margin:16px 0 8px">${isFreePeriodActive() ? '🎁 مجانية مؤقتاً' : '🔒 فئات مميزة'}</div>`;
   PAID_CATS.forEach(cat => {
     const info = CAT_INFO[cat];
@@ -9435,10 +9531,11 @@ async function buyWithGems(cat) {
   if (!currentUser || currentUser.isGuest) {
     showToast('⚠️ سجّل حساب لتشتري بالجواهر!'); return;
   }
-  if (!PAID_CATS.includes(cat)) {
+  if (!PAID_CATS.includes(cat) && cat !== IQ_CAT_ID) {
     console.warn('⚠️ محاولة شراء فئة غير موجودة:', cat);
     return;
   }
+  const price = catGemPrice(cat); // 100 لفحص الذكاء، 650 للفئات المميزة
 
   try {
     // ✅ اقرأ الجواهر من Firebase مباشرة (لا تثق بالقيمة المحلية)
@@ -9449,10 +9546,10 @@ async function buyWithGems(cat) {
     const serverUnlocked = serverData.unlockedCats || [];
 
     // تحقق من السيرفر
-    if (serverGems < GEMS_PER_CAT) {
+    if (serverGems < price) {
       currentUser.gems = serverGems; // صحّح القيمة المحلية
       updateGemsUI();
-      showToast(`❌ ما عندك كافي جواهر! عندك ${serverGems} وتحتاج ${GEMS_PER_CAT}`);
+      showToast(`❌ ما عندك كافي جواهر! عندك ${serverGems} وتحتاج ${price} 💎 — اجمعها باللعب أو شاهد إعلانات 📺`);
       return;
     }
 
@@ -9463,7 +9560,7 @@ async function buyWithGems(cat) {
     }
 
     // ✅ اخصم من السيرفر أولاً (Atomic)
-    const newGems = serverGems - GEMS_PER_CAT;
+    const newGems = serverGems - price;
     const newUnlocked = [...serverUnlocked, cat];
     await fbDb.collection('users').doc(currentUser.uid).set({
       gems: newGems,
@@ -9474,7 +9571,7 @@ async function buyWithGems(cat) {
     currentUser.gems = newGems;
     currentUser.unlockedCats = newUnlocked;
     updateGemsUI();
-    showToast(`✅ تم فتح ${CAT_INFO[cat]?.name}!`);
+    showToast(`✅ تم فتح ${cat === IQ_CAT_ID ? 'فحص الذكاء 🧠' : CAT_INFO[cat]?.name}!`);
     haptic('win');
     renderShopCats();
     refreshCatLocks();
@@ -9502,120 +9599,153 @@ function buyGems(amount, price) {
   // TODO: ربط بـ Google Play Billing
 }
 
-// ═══════════════ REWARDED ADS SYSTEM ═══════════════
-const AD_GEMS_REWARD   = 10;
-const AD_COOLDOWN_MS   = 30 * 60 * 1000; // 30 دقيقة بين كل إعلانين
-const AD_DAILY_LIMIT   = 2;              // حد أقصى إعلانين باليوم
-const AD_STORAGE_KEY   = 'tahadi_ads';
+// ═══════════════════════════════════════════════════════════════
+// ═══           نظام الإعلانات (AdMob Placeholders)            ═══
+// ═══════════════════════════════════════════════════════════════
+// الدوال الثلاث (showRewardedAd / showInterstitial / showAppOpen) جاهزة
+// بالمنطق الكامل، وبس مكان عرض الإعلان الفعلي placeholder — بعد تحويل
+// اللعبة APK بـ Capacitor، اربط SDK مال AdMob هنا.
+//
+// ⬇️⬇️ ضع معرفات الوحدات الإعلانية (Ad Unit IDs) هنا بعد إنشائها بحساب AdMob ⬇️⬇️
+const ADMOB_IDS = {
+  APP_OPEN:     'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // ← إعلان فتح التطبيق
+  INTERSTITIAL: 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // ← إعلان بيني (بين الجولات)
+  REWARDED:     'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // ← إعلان المكافأة (جواهر)
+};
 
-function getAdData() {
-  try {
-    const raw = localStorage.getItem(AD_STORAGE_KEY);
-    if (!raw) return { count: 0, lastTs: 0, date: '' };
-    return JSON.parse(raw);
-  } catch(e) { return { count: 0, lastTs: 0, date: '' }; }
+const AD_REWARD_GEMS   = 50;                  // جواهر كل إعلان مكافأة
+const AD_DAILY_LIMIT   = 10;                  // حد أقصى 10 إعلانات باليوم
+// نافذة الـ24 ساعة تبدأ من أول إعلان باليوم (adDayStart) وتتصفّر بعد مرورها
+// كل شي مخزون بـ Firebase (adDayStart / adDayCount) — حذف التطبيق أو
+// تغيير ساعة الجهاز ما يصفّر العداد لأن المقارنة بوقت السيرفر
+
+// ── مشغّل الإعلان الفعلي (placeholder) ──
+// يرجع true إذا اكتملت المشاهدة. حالياً: محاكاة 3 ثواني.
+// عند الربط: حمّل وأعرض الإعلان من ADMOB_IDS.REWARDED وأرجع true فقط
+// من حدث onUserEarnedReward (يعني كمّل المشاهدة فعلاً).
+async function _playRewardedAdPlaceholder() {
+  await new Promise(r => setTimeout(r, 3000)); // محاكاة مدة الإعلان
+  return true;
 }
 
-function saveAdData(data) {
-  try { localStorage.setItem(AD_STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+// ── حالة إعلانات اليوم من Firebase (المصدر الموثوق) ──
+async function _getAdStateFromServer() {
+  const ref = fbDb.collection('users').doc(currentUser.uid);
+  const doc = await _fsTimed(ref.get());
+  const data = doc.exists ? doc.data() : {};
+  const now = await getServerNow();
+  let dayStart = data.adDayStart || 0;
+  let count    = data.adDayCount || 0;
+  // مرت 24 ساعة من أول إعلان؟ → نافذة جديدة
+  if (now - dayStart >= DAY_MS) { dayStart = 0; count = 0; }
+  return { ref, data, now, dayStart, count };
 }
 
-function todayStr() {
-  return new Date().toLocaleDateString('ar-IQ');
-}
-
-// يرجع: null إذا ممكن، أو نص سبب المنع
-function adBlockReason() {
-  const data = getAdData();
-  const today = todayStr();
-  // يوم جديد → صفّر العداد
-  if (data.date !== today) return null;
-  if (data.count >= AD_DAILY_LIMIT) return 'daily';
-  const elapsed = Date.now() - (data.lastTs || 0);
-  if (elapsed < AD_COOLDOWN_MS) return 'cooldown';
-  return null;
-}
-
-function adCooldownRemaining() {
-  const data = getAdData();
-  const elapsed = Date.now() - (data.lastTs || 0);
-  const remaining = AD_COOLDOWN_MS - elapsed;
-  if (remaining <= 0) return '';
-  const mins = Math.ceil(remaining / 60000);
-  return `${mins} دقيقة`;
-}
-
-// تحديث واجهة زر الإعلان في المتجر
-function refreshAdButton() {
-  const card   = document.getElementById('rewarded-ad-card');
-  const badge  = document.getElementById('ad-cooldown-badge');
-  if (!card || !badge) return;
-
-  const reason = adBlockReason();
-
-  if (reason === 'daily') {
-    card.style.opacity = '0.5';
-    card.style.cursor  = 'default';
-    badge.style.display = 'inline-block';
-    badge.textContent   = '✅ وصلت حد اليوم (2/2)';
-  } else if (reason === 'cooldown') {
-    card.style.opacity = '0.6';
-    card.style.cursor  = 'default';
-    badge.style.display = 'inline-block';
-    badge.textContent   = `⏳ متاح بعد ${adCooldownRemaining()}`;
-    // حدّث العداد كل دقيقة
-    clearTimeout(window._adRefreshTimer);
-    window._adRefreshTimer = setTimeout(refreshAdButton, 60000);
-  } else {
-    card.style.opacity = '1';
-    card.style.cursor  = 'pointer';
-    badge.style.display = 'none';
-  }
-}
-
-async function watchRewardedAd() {
+// ═══ إعلان المكافأة: +50 جوهرة، حد أقصى 10 باليوم ═══
+// يُستدعى من زر المتجر "شاهد إعلان واكسب 💎" وأي مكان يجمع بيه اللاعب جواهر
+async function showRewardedAd() {
   if (!currentUser || currentUser.isGuest) {
     showToast('⚠️ سجّل حساب لتستلم الجواهر!'); return;
   }
+  if (window._adInProgress) return; // حماية من الضغط المزدوج
+  window._adInProgress = true;
 
-  const reason = adBlockReason();
-  if (reason === 'daily') {
-    showToast('✅ استلمت كل جواهر اليوم! تعال بكرة 🌙'); return;
-  }
-  if (reason === 'cooldown') {
-    showToast(`⏳ انتظر ${adCooldownRemaining()} قبل الإعلان التالي`); return;
-  }
-
-  // ══ هنا يُضاف AdMob Rewarded Ad لاحقاً ══
-  // حالياً: نحاكي الإعلان بـ loading screen
   const card = document.getElementById('rewarded-ad-card');
-  if (card) {
+  const nameEl = card ? card.querySelector('.bundle-name') : null;
+
+  try {
+    // ✅ الفحص من السيرفر مباشرة (لا نثق بالقيم المحلية)
+    const st = await _getAdStateFromServer();
+    if (st.count >= AD_DAILY_LIMIT) {
+      showToast(`✅ خلصت إعلانات اليوم (${AD_DAILY_LIMIT}/${AD_DAILY_LIMIT})! تعال باچر 🌙`);
+      currentUser.adDayStart = st.dayStart; currentUser.adDayCount = st.count;
+      refreshAdButton();
+      return;
+    }
+
+    if (nameEl) { card.style.opacity = '0.5'; nameEl.textContent = '⏳ جاري تحميل الإعلان...'; }
+
+    // ══ هنا يُعرض إعلان AdMob الحقيقي (ADMOB_IDS.REWARDED) بعد الربط ══
+    const completed = await _playRewardedAdPlaceholder();
+    if (!completed) { showToast('⚠️ ما كملت الإعلان — ما أكو جواهر'); return; }
+
+    // منح الجواهر وتحديث العداد بكتابة وحدة على Firebase
+    const newCount    = st.count + 1;
+    const newDayStart = st.dayStart || st.now; // أول إعلان باليوم يفتح النافذة
+    const newGems     = (st.data.gems || 0) + AD_REWARD_GEMS;
+    await st.ref.set({ gems: newGems, adDayStart: newDayStart, adDayCount: newCount }, { merge: true });
+
+    currentUser.gems = newGems;
+    currentUser.adDayStart = newDayStart;
+    currentUser.adDayCount = newCount;
+    updateGemsUI();
+    showGemEarn(`📺 +${AD_REWARD_GEMS} 💎`);
+    showToast(`✅ حصلت على ${AD_REWARD_GEMS} جوهرة! (${newCount}/${AD_DAILY_LIMIT} اليوم)`);
+    haptic('win');
+  } catch(e) {
+    console.error('showRewardedAd error:', e);
+    showToast('❌ حدث خطأ، حاول مجدداً');
+  } finally {
+    window._adInProgress = false;
+    if (nameEl) { card.style.opacity = '1'; nameEl.textContent = 'شاهد إعلان واكسب 💎'; }
+    refreshAdButton();
+  }
+}
+
+// ═══ الإعلان البيني: كل 3-4 جولات، وفاصل 60 ثانية على الأقل ═══
+const _interstitialState = {
+  roundsSinceAd: 0,
+  lastShownAt: 0,
+  nextAt: 3 + Math.floor(Math.random() * 2), // 3 أو 4 عشوائياً
+  MIN_GAP_MS: 60 * 1000,
+};
+
+// تُستدعى تلقائياً بنهاية كل جولة — تقرر إذا حان وقت الإعلان
+function maybeShowInterstitial() {
+  _interstitialState.roundsSinceAd++;
+  if (_interstitialState.roundsSinceAd < _interstitialState.nextAt) return;
+  if (Date.now() - _interstitialState.lastShownAt < _interstitialState.MIN_GAP_MS) return;
+  showInterstitial();
+  _interstitialState.roundsSinceAd = 0;
+  _interstitialState.lastShownAt = Date.now();
+  _interstitialState.nextAt = 3 + Math.floor(Math.random() * 2); // 3-4 للمرة الجاية
+}
+
+// placeholder — عند الربط: حمّل وأعرض إعلان ADMOB_IDS.INTERSTITIAL هنا
+function showInterstitial() {
+  console.log('📺 [AdMob placeholder] إعلان بيني — يُعرض هنا بعد ربط SDK');
+}
+
+// ═══ إعلان فتح التطبيق: يُستدعى مرة عند تشغيل اللعبة ═══
+// placeholder — عند الربط: حمّل وأعرض إعلان ADMOB_IDS.APP_OPEN هنا
+function showAppOpen() {
+  console.log('📺 [AdMob placeholder] إعلان فتح التطبيق — يُعرض هنا بعد ربط SDK');
+}
+
+// ── تحديث واجهة زر الإعلان في المتجر ──
+function refreshAdButton() {
+  const card  = document.getElementById('rewarded-ad-card');
+  const badge = document.getElementById('ad-cooldown-badge');
+  if (!card || !badge) return;
+
+  // العرض من القيم المحلية (المحمّلة من Firebase بـ loadGems) —
+  // الفحص الحقيقي يصير بالسيرفر داخل showRewardedAd على كل حال
+  let count = (currentUser && currentUser.adDayCount) || 0;
+  const dayStart = (currentUser && currentUser.adDayStart) || 0;
+  if (Date.now() - dayStart >= DAY_MS) count = 0; // انتهت النافذة
+
+  if (count >= AD_DAILY_LIMIT) {
     card.style.opacity = '0.5';
     card.style.cursor  = 'default';
-    card.querySelector('.bundle-name').textContent = '⏳ جاري تحميل الإعلان...';
+    badge.style.display = 'inline-block';
+    const hoursLeft = Math.max(1, Math.ceil((dayStart + DAY_MS - Date.now()) / 3600000));
+    badge.textContent = `✅ حد اليوم (${AD_DAILY_LIMIT}/${AD_DAILY_LIMIT}) — يتجدد خلال ~${hoursLeft} ساعة`;
+  } else {
+    card.style.opacity = '1';
+    card.style.cursor  = 'pointer';
+    badge.style.display = 'inline-block';
+    badge.textContent = `📺 ${count}/${AD_DAILY_LIMIT} اليوم`;
   }
-
-  // محاكاة مشاهدة إعلان 3 ثواني
-  await new Promise(r => setTimeout(r, 3000));
-
-  // منح الجواهر
-  currentUser.gems = (currentUser.gems || 0) + AD_GEMS_REWARD;
-  updateGemsUI();
-  await saveGems();
-
-  // تسجيل وقت الإعلان
-  const data   = getAdData();
-  const today  = todayStr();
-  const count  = (data.date === today ? data.count : 0) + 1;
-  saveAdData({ count, lastTs: Date.now(), date: today });
-
-  // استعادة الزر
-  if (card) card.querySelector('.bundle-name').textContent = 'شاهد إعلان قصير';
-  refreshAdButton();
-
-  showGemEarn(`📺 +${AD_GEMS_REWARD} 💎`);
-  showToast(`✅ شكراً! حصلت على ${AD_GEMS_REWARD} جواهر`);
-  haptic('win');
 }
 
 
@@ -10045,6 +10175,7 @@ function endRound() {
   if (state._endRoundCalled) return;
   state._endRoundCalled = true;
   clearInterval(state.timer);
+  maybeShowInterstitial(); // إعلان بيني كل 3-4 جولات (فاصل 60 ثانية على الأقل)
   if (state.soloMode) {
     if (state.currentRound >= state.maxRounds) {
       showSoloGameOver();
@@ -10169,6 +10300,7 @@ function afterLogin() {
   loadGems().then(() => {
     giveWelcomeGems();
     refreshCatLocks();
+    checkDailyBonus(); // مكافأة الدخول اليومي +50 (مرة كل 24 ساعة)
   });
   // التحميل المسبق لأسئلة Firestore — صار يشتغل من تحميل الصفحة للجميع
   // (شوف startQuestionsPrefetch)، هنا بس ضمان إضافي لو فشل أول مرة
@@ -12087,6 +12219,12 @@ let iqState = {
 };
 
 async function startIQTest() {
+  // 🔒 فحص الذكاء يحتاج فتح بـ100 جوهرة (يُخزن بـ unlockedCats على Firebase)
+  if (!isCatUnlocked(IQ_CAT_ID)) {
+    showToast(`🔒 فحص الذكاء مقفل — افتحه بـ${IQ_UNLOCK_PRICE} 💎 من المتجر`);
+    openShop('cats', IQ_CAT_ID);
+    return;
+  }
   if (iqState._starting) return;
   iqState._starting = true;
   try {
@@ -13276,7 +13414,11 @@ document.addEventListener('click', function(e) {
   setTimeout(() => { bar.style.width = '100%'; }, 100);
   setTimeout(() => {
     splash.style.opacity = '0';
-    setTimeout(() => { splash.style.display = 'none'; }, 600);
+    setTimeout(() => {
+      splash.style.display = 'none';
+      // إعلان فتح التطبيق (AdMob App Open) — يُعرض بعد اختفاء شاشة البداية
+      try { showAppOpen(); } catch(e) {}
+    }, 600);
   }, 2200);
 })();
 </script>
