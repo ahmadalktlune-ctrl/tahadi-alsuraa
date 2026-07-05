@@ -9171,8 +9171,7 @@ async function giveWelcomeGems() {
 // ══════════════════════════════════════════════
 
 const WIN_GEMS          = 20;                    // جائزة الفوز بگيم كامل
-const DAILY_BONUS_GEMS  = 50;                    // مكافأة الدخول اليومي
-const STREAK_BONUS_GEMS = 20;                    // مكافأة إضافية للمواظب (دخول كل يوم بلا انقطاع)
+const DAILY_BONUS_GEMS  = 20;                    // مكافأة الدخول اليومي (الـ50 هدية التسجيل لمرة وحدة — giveWelcomeGems)
 const DAY_MS            = 24 * 60 * 60 * 1000;   // 24 ساعة
 
 // ── وقت السيرفر الحقيقي من Firebase ──
@@ -9201,9 +9200,9 @@ function awardWinGems(winner, isTie) {
   saveGems();
 }
 
-// ── مكافأة الدخول اليومي: +50 جوهرة كل 24 ساعة ──
-// وإذا اللاعب مواظب (دخل بالـ48 ساعة الماضية هم = ما گطع ولا يوم)
-// ياخذ +20 إضافية وسلسلة أيامه (loginStreak) تكبر
+// ── مكافأة الدخول اليومي: +20 جوهرة كل 24 ساعة ──
+// (هدية التسجيل +50 تنمنح مرة وحدة بس عند ربط الحساب — giveWelcomeGems)
+// سلسلة المواظبة (loginStreak) تنحسب للعرض بس، بدون جواهر إضافية
 // الوقت مخزن بـ Firebase (dailyBonusAt) ويُقارن بوقت السيرفر —
 // لا حذف التطبيق ولا تغيير ساعة الجهاز يعيد المكافأة قبل أوانها
 async function checkDailyBonus() {
@@ -9219,7 +9218,7 @@ async function checkDailyBonus() {
     // مواظب؟ آخر مكافأة قبل أقل من 48 ساعة = ما گطع يوم كامل
     const consecutive = last > 0 && (now - last) < 2 * DAY_MS;
     const streak = consecutive ? (data.loginStreak || 1) + 1 : 1;
-    const bonus = DAILY_BONUS_GEMS + (consecutive ? STREAK_BONUS_GEMS : 0);
+    const bonus = DAILY_BONUS_GEMS;
 
     const newGems = (data.gems || 0) + bonus;
     await ref.set({ gems: newGems, dailyBonusAt: now, loginStreak: streak }, { merge: true });
@@ -9230,8 +9229,8 @@ async function checkDailyBonus() {
     setTimeout(() => {
       showGemEarn(`📅 مكافأة اليوم +${bonus} 💎`);
       showToast(consecutive
-        ? `🔥 مواظب ${streak} أيام! ${DAILY_BONUS_GEMS}+${STREAK_BONUS_GEMS} = +${bonus} جوهرة 💎`
-        : `📅 مكافأة الدخول اليومي: +${bonus} جوهرة! ادخل باچر وخذ +${DAILY_BONUS_GEMS + STREAK_BONUS_GEMS} 🎁`);
+        ? `🔥 مواظب ${streak} أيام! مكافأة الدخول اليومي +${bonus} جوهرة 💎`
+        : `📅 مكافأة الدخول اليومي: +${bonus} جوهرة! ادخل باچر وخذ غيرها 🎁`);
     }, 2500);
   } catch(e) { console.warn('checkDailyBonus error:', e); }
 }
@@ -10274,7 +10273,7 @@ function afterLogin() {
   loadGems().then(() => {
     giveWelcomeGems();
     refreshCatLocks();
-    checkDailyBonus(); // مكافأة الدخول اليومي +50 (مرة كل 24 ساعة)
+    checkDailyBonus(); // مكافأة الدخول اليومي +20 (مرة كل 24 ساعة)
   });
   // التحميل المسبق لأسئلة Firestore — صار يشتغل من تحميل الصفحة للجميع
   // (شوف startQuestionsPrefetch)، هنا بس ضمان إضافي لو فشل أول مرة
