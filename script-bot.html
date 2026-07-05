@@ -149,6 +149,26 @@
   .explain code{background:var(--code-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:12.5px;color:#8fd3ff;direction:ltr;display:inline-block}
   .note{border-inline-start:3px solid var(--warn);padding:8px 12px;background:rgba(255,178,62,.08);border-radius:8px;margin-top:10px;font-size:13.5px;color:var(--muted)}
 
+  /* Guide */
+  .guide-wrap{max-width:840px;margin:0 auto}
+  .guide-wrap h2{font-size:22px;margin:8px 0 4px}
+  .guide-wrap h3{font-size:18px;margin:20px 0 6px;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .guide-wrap h4{font-size:15px;margin:14px 0 4px}
+  .guide-wrap p{margin:6px 0;color:var(--text)}
+  .guide-wrap ol,.guide-wrap ul{padding-inline-start:22px;margin:6px 0}
+  .guide-wrap li{margin:7px 0}
+  .guide-wrap code{background:var(--code-bg);color:#8fd3ff;padding:2px 8px;border-radius:6px;font-family:ui-monospace,monospace;font-size:12.5px;direction:ltr;display:inline-block;margin:1px 0}
+  .guide-wrap .plat{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:12px 0;background:var(--bg2)}
+  .guide-wrap .plat > b{font-size:15px}
+  .guide-wrap .tip{border-inline-start:3px solid var(--good);background:rgba(47,210,122,.08);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13.5px}
+  .guide-wrap .warnbox{border-inline-start:3px solid var(--warn);background:rgba(255,178,62,.08);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13.5px}
+  .guide-wrap .toc{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .guide-wrap .toc a{background:var(--card2);border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700}
+  .guide-wrap .toc a:hover{border-color:var(--accent)}
+  .guide-wrap .sec{scroll-margin-top:80px}
+  .badge{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:11.5px;font-weight:700;margin-inline-end:6px}
+  .badge.tg{color:#5eb3ff}.badge.wa{color:#43d97f}.badge.mob{color:#ffb45e}.badge.pc{color:#c58bff}
+
   .runout{margin-top:12px;background:#05070f;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
   .runout .rh{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--line);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
   .runout pre{margin:0;padding:12px 14px;font-family:ui-monospace,monospace;font-size:12.5px;color:#cfe;direction:ltr;text-align:left;max-height:280px;overflow:auto;white-space:pre-wrap}
@@ -2536,7 +2556,8 @@ const I = {
   ar: {
     dir:'rtl',
     brandSub:'صانع البوتات والسكربتات',
-    nav_home:'الرئيسية', nav_build:'الإنشاء', nav_play:'المختبر', nav_qr:'رمز QR', nav_saved:'مشاريعي',
+    nav_home:'الرئيسية', nav_build:'الإنشاء', nav_play:'المختبر', nav_qr:'رمز QR', nav_guide:'الدليل', nav_saved:'مشاريعي',
+    guide_cta:'📘 دليل التشغيل الكامل (موبايل + لابتوب)',
     lang_btn:'English', theme_dark:'🌙', theme_light:'☀️',
     export_zip:'📦 تصدير ZIP', zip_ok:'تم تصدير الحزمة ✓',
     qr_h:'مولّد رمز QR', qr_p:'حوّل رابط بوتك أو أي نص إلى رمز QR قابل للمسح — شاركه مع عملائك ليفتحوا البوت بسرعة.',
@@ -2573,7 +2594,8 @@ const I = {
   en: {
     dir:'ltr',
     brandSub:'Bot & Script Generator',
-    nav_home:'Home', nav_build:'Build', nav_play:'Playground', nav_qr:'QR Code', nav_saved:'My Projects',
+    nav_home:'Home', nav_build:'Build', nav_play:'Playground', nav_qr:'QR Code', nav_guide:'Guide', nav_saved:'My Projects',
+    guide_cta:'📘 Full run guide (mobile + laptop)',
     lang_btn:'العربية', theme_dark:'🌙', theme_light:'☀️',
     export_zip:'📦 Export ZIP', zip_ok:'Package exported ✓',
     qr_h:'QR Code Generator', qr_p:'Turn your bot link or any text into a scannable QR code — share it so customers can open your bot instantly.',
@@ -4428,7 +4450,7 @@ function applyChrome(){
 function renderTabs(){
   const tabs=document.getElementById('tabs');
   tabs.innerHTML='';
-  const items=[['home','nav_home'],['build','nav_build'],['play','nav_play'],['qr','nav_qr'],['saved','nav_saved']];
+  const items=[['home','nav_home'],['build','nav_build'],['play','nav_play'],['qr','nav_qr'],['guide','nav_guide'],['saved','nav_saved']];
   items.forEach(([v,key])=>{
     const b=el('button',{class: state.view===v?'active':''}, t(key));
     b.onclick=()=>go(v);
@@ -4449,6 +4471,7 @@ function render(){
   if(state.view==='build') return renderBuild();
   if(state.view==='play') return renderPlay();
   if(state.view==='qr') return renderQR();
+  if(state.view==='guide') return renderGuide();
   if(state.view==='saved') return renderSaved();
 }
 
@@ -4649,6 +4672,12 @@ function renderResult(){
   apk.appendChild(el('p',{style:'margin:0;color:var(--muted)'}, t('apk_p')));
   wrap.appendChild(apk);
 
+  // CTA to the full run guide
+  const gcta=el('div',{style:'margin-top:14px'});
+  const gbtn=el('button',{class:'btn'}, t('guide_cta')); gbtn.onclick=()=>go('guide');
+  gcta.appendChild(gbtn);
+  wrap.appendChild(gcta);
+
   return wrap;
 }
 
@@ -4827,6 +4856,251 @@ function renderPlay(){
   app.appendChild(panel);
   // reflect active language button
   [...seg.children].forEach(b=> b.classList.toggle('active', b.dataset.lc===_pgLang));
+}
+
+/* ---- Run Guide (detailed) ---- */
+var GUIDE_AR = [
+'<h2>📘 دليل التشغيل الكامل</h2>',
+'<p>هنا نشرح خطوة بخطوة كيف تحوّل الكود الذي أنشأته إلى بوت تلكرام أو واتساب يعمل فعلاً — على <b>اللابتوب</b> وعلى <b>الموبايل</b>. اتبع القسم الذي يخصّك بالترتيب ولن تخربط.</p>',
+'<div class="toc">',
+'  <a href="#g-tg-token">1) تلكرام: التوكن</a>',
+'  <a href="#g-tg-pc">2) تلكرام على اللابتوب</a>',
+'  <a href="#g-tg-mob">3) تلكرام على الموبايل</a>',
+'  <a href="#g-wa-pc">4) واتساب على اللابتوب</a>',
+'  <a href="#g-wa-mob">5) واتساب على الموبايل</a>',
+'  <a href="#g-scripts">6) السكربتات</a>',
+'  <a href="#g-247">7) تشغيل دائم 24/7</a>',
+'  <a href="#g-fix">8) حل المشاكل</a>',
+'</div>',
+
+'<h3 id="g-tg-token" class="sec"><span class="badge tg">تلكرام</span> 1) إنشاء البوت والحصول على التوكن</h3>',
+'<p>هذه الخطوة واحدة على الموبايل واللابتوب، وتُعمل مرة واحدة فقط:</p>',
+'<ol>',
+'  <li>افتح تطبيق <b>تلكرام</b> وابحث في الأعلى عن <code>@BotFather</code> (الحساب الرسمي بعلامة زرقاء).</li>',
+'  <li>اضغط <b>Start</b>، ثم أرسل الأمر <code>/newbot</code>.</li>',
+'  <li>سيطلب منك <b>اسم البوت</b> (أي اسم، مثل: متجري). أرسله.</li>',
+'  <li>ثم يطلب <b>معرّف البوت (username)</b> ويجب أن ينتهي بكلمة <code>bot</code> (مثل: <code>my_store_bot</code>).</li>',
+'  <li>سيعطيك رسالة فيها <b>التوكن</b> — سطر طويل شكله مثل: <code>123456789:AAH...xyz</code>. <b>انسخه</b>.</li>',
+'  <li>ارجع لتطبيق سكربت بوت، الصق التوكن في خانة «توكن البوت»، ثم أنشئ الكود وحمّله.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ التوكن مثل كلمة السر — لا تنشره لأحد. أي شخص يملكه يتحكم ببوتك.</div>',
+
+'<h3 id="g-tg-pc" class="sec"><span class="badge tg">تلكرام</span> <span class="badge pc">لابتوب</span> 2) التشغيل على الكمبيوتر</h3>',
+'<p><b>إذا اخترت لغة Python:</b></p>',
+'<ol>',
+'  <li>نزّل بايثون من <code>python.org/downloads</code> وثبّته. <b>مهم جداً على ويندوز:</b> علّم مربع <b>«Add Python to PATH»</b> في أول شاشة قبل التثبيت.</li>',
+'  <li>افتح نافذة الأوامر: ويندوز اكتب <code>cmd</code> في قائمة ابدأ، ماك افتح <b>Terminal</b>.</li>',
+'  <li>ثبّت المكتبة (تظهر لك في صفحة الشرح داخل التطبيق)، مثلاً: <code>pip install python-telegram-bot</code></li>',
+'  <li>احفظ الكود بملف اسمه <code>bot.py</code> (أو استعمل زر «تحميل» في التطبيق).</li>',
+'  <li>في نافذة الأوامر انتقل لمكان الملف: <code>cd Downloads</code> (حسب مجلد التحميل).</li>',
+'  <li>شغّل البوت: <code>python bot.py</code></li>',
+'  <li>لمّا تشوف رسالة مثل <code>...is running</code> يعني البوت أصبح شغّالاً. افتح تلكرام وكلّم بوتك وأرسل <code>/start</code>.</li>',
+'</ol>',
+'<p><b>إذا اخترت لغة JavaScript:</b></p>',
+'<ol>',
+'  <li>نزّل <b>Node.js</b> من <code>nodejs.org</code> (النسخة LTS) وثبّته.</li>',
+'  <li>افتح نافذة الأوامر (cmd / Terminal).</li>',
+'  <li>ثبّت المكتبة، مثلاً: <code>npm install node-telegram-bot-api</code></li>',
+'  <li>احفظ الكود بملف <code>bot.js</code>، ثم شغّله: <code>node bot.js</code></li>',
+'</ol>',
+'<div class="tip">💡 البوت يبقى شغّالاً ما دامت نافذة الأوامر مفتوحة. إذا سكّرتها يتوقف البوت. لجعله يعمل دائماً شوف قسم «تشغيل دائم 24/7».</div>',
+
+'<h3 id="g-tg-mob" class="sec"><span class="badge tg">تلكرام</span> <span class="badge mob">موبايل</span> 3) التشغيل على الأندرويد</h3>',
+'<p><b>الطريقة الأسهل — لغة Python عبر تطبيق Pydroid 3:</b></p>',
+'<ol>',
+'  <li>ثبّت تطبيق <b>«Pydroid 3»</b> من متجر Play.</li>',
+'  <li>افتحه، ومن القائمة الجانبية اختر <b>Pip</b>، واكتب اسم المكتبة (مثل <code>python-telegram-bot</code>) واضغط Install.</li>',
+'  <li>ارجع للمحرّر (أيقونة الورقة)، الصق الكود الذي حمّلته من التطبيق.</li>',
+'  <li>اضغط زر التشغيل <b>▶️</b> بالأسفل. البوت الآن شغّال ما دام Pydroid مفتوحاً.</li>',
+'</ol>',
+'<p><b>طريقة المتقدمين — عبر Termux (Python أو JavaScript):</b></p>',
+'<ol>',
+'  <li>ثبّت <b>Termux</b> من متجر <b>F-Droid</b> (النسخة في Play قديمة).</li>',
+'  <li>حدّث الحزم: <code>pkg update</code></li>',
+'  <li>لبايثون: <code>pkg install python</code> ثم <code>pip install python-telegram-bot</code></li>',
+'  <li>لجافا سكريبت: <code>pkg install nodejs</code> ثم <code>npm install node-telegram-bot-api</code></li>',
+'  <li>احفظ الكود بملف (مثلاً بمحرّر <code>nano bot.py</code>)، ثم شغّله: <code>python bot.py</code> أو <code>node bot.js</code></li>',
+'</ol>',
+'<div class="warnbox">📱 أصحاب <b>آيفون</b>: تشغيل البوت على الآيفون صعب. الأفضل استعمال لابتوب أو استضافة مجانية (قسم 7).</div>',
+
+'<h3 id="g-wa-pc" class="sec"><span class="badge wa">واتساب</span> <span class="badge pc">لابتوب</span> 4) واتساب على الكمبيوتر</h3>',
+'<p>بوت واتساب يعمل بلغة JavaScript فقط (مكتبة whatsapp-web.js)، والأفضل تشغيله على لابتوب:</p>',
+'<ol>',
+'  <li>نزّل <b>Node.js</b> من <code>nodejs.org</code> وثبّته.</li>',
+'  <li>افتح نافذة الأوامر وثبّت المكتبات: <code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>احفظ الكود بملف <code>bot.js</code> ثم شغّله: <code>node bot.js</code></li>',
+'  <li>سيظهر <b>رمز QR</b> داخل نافذة الأوامر.</li>',
+'  <li>على هاتفك: افتح <b>واتساب ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز</b>، ثم وجّه الكاميرا نحو رمز الـ QR في الشاشة لمسحه.</li>',
+'  <li>بعد المسح يتصل البوت ويبدأ الرد. اتركه شغّالاً (النافذة مفتوحة).</li>',
+'</ol>',
+'<div class="tip">💡 استعمل رقم واتساب مخصّص للبوت إن أمكن، وتجنّب الإرسال الجماعي المزعج حتى لا يُحظر الرقم.</div>',
+
+'<h3 id="g-wa-mob" class="sec"><span class="badge wa">واتساب</span> <span class="badge mob">موبايل</span> 5) واتساب على الموبايل (متقدّم)</h3>',
+'<p>ممكن لكنه ثقيل لأنه يحتاج متصفح Chromium داخل Termux:</p>',
+'<ol>',
+'  <li>ثبّت <b>Termux</b> من F-Droid، ثم: <code>pkg update</code></li>',
+'  <li><code>pkg install nodejs</code></li>',
+'  <li>ثبّت المتصفح: <code>pkg install chromium</code></li>',
+'  <li><code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>شغّل: <code>node bot.js</code> وامسح رمز الـ QR كما في طريقة اللابتوب.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ الطريقة تستهلك بطارية وذاكرة. للاستخدام الجدّي ننصح باللابتوب أو استضافة.</div>',
+
+'<h3 id="g-scripts" class="sec"><span class="badge pc">سكربت</span> 6) تشغيل السكربتات (ترتيب ملفات، كلمات سر، سحب بيانات)</h3>',
+'<p>السكربتات أدوات تُشغّل مرة وتعطي نتيجة (ليست بوتات دائمة):</p>',
+'<ol>',
+'  <li>ثبّت بايثون أو Node.js كما في الأعلى.</li>',
+'  <li>ثبّت المكتبات المذكورة في صفحة الشرح (بعض السكربتات لا تحتاج أي مكتبة).</li>',
+'  <li>احفظ الكود وشغّله: <code>python script.py</code> أو <code>node script.js</code></li>',
+'  <li>سكربتات بايثون البسيطة يمكنك أيضاً تجربتها فوراً داخل التطبيق بزر «تشغيل (Python)».</li>',
+'</ol>',
+
+'<h3 id="g-247" class="sec">☁️ 7) كيف يبقى البوت شغّالاً 24 ساعة؟</h3>',
+'<p>عند إغلاق النافذة أو الموبايل يتوقف البوت. لجعله دائم التشغيل، ارفعه على استضافة (بعضها مجاني):</p>',
+'<ul>',
+'  <li><b>Railway</b> أو <b>Render</b>: ترفع ملفاتك وتشتغل على السحابة. مناسبة للمبتدئين.</li>',
+'  <li><b>Replit</b>: تكتب الكود مباشرة في المتصفح وتشغّله.</li>',
+'  <li><b>VPS</b> (خادم افتراضي مثل Hetzner / DigitalOcean): تحكّم كامل، برسوم شهرية بسيطة.</li>',
+'</ul>',
+'<p>الفكرة العامة: ترفع ملف الكود + ملف يذكر المكتبات (<code>requirements.txt</code> لبايثون أو <code>package.json</code> لجافا سكريبت)، وتضبط أمر التشغيل <code>python bot.py</code> أو <code>node bot.js</code>.</p>',
+
+'<h3 id="g-fix" class="sec">🛠️ 8) حل المشاكل الشائعة</h3>',
+'<ul>',
+'  <li><b>«python» أو «node» غير معروف:</b> لم يُثبّت البرنامج أو نسيت «Add to PATH». أعد التثبيت وأعد فتح نافذة الأوامر.</li>',
+'  <li><b>ModuleNotFoundError / Cannot find module:</b> لم تُثبّت المكتبة — نفّذ أمر <code>pip install</code> أو <code>npm install</code> المذكور في الشرح.</li>',
+'  <li><b>البوت لا يرد:</b> تأكد أن النافذة ما زالت مفتوحة، وأن التوكن صحيح ومنسوخ كاملاً بدون فراغات.</li>',
+'  <li><b>Unauthorized / توكن خاطئ:</b> انسخ التوكن من جديد من BotFather (قد يكون ناقصاً).</li>',
+'  <li><b>رمز QR انتهى (واتساب):</b> أوقف البوت وشغّله من جديد وامسح الرمز بسرعة.</li>',
+'  <li><b>ffmpeg غير موجود (بوت التحميل):</b> ثبّت ffmpeg على جهازك (ويندوز: من ffmpeg.org، أو <code>pkg install ffmpeg</code> في Termux، أو <code>brew install ffmpeg</code> على ماك).</li>',
+'</ul>',
+'<div class="tip">✅ نصيحة أخيرة: ابدأ ببوت بسيط (رد آلي)، شغّله على اللابتوب حتى تتقنه، وبعدها انتقل للاستضافة والمميزات الأكبر.</div>'
+].join('\n');
+
+var GUIDE_EN = [
+'<h2>📘 Full Run Guide</h2>',
+'<p>This explains, step by step, how to turn the code you generated into a real Telegram or WhatsApp bot — on a <b>laptop</b> and on a <b>phone</b>. Follow the section that fits you, in order, and you won\'t get lost.</p>',
+'<div class="toc">',
+'  <a href="#g-tg-token">1) Telegram: token</a>',
+'  <a href="#g-tg-pc">2) Telegram on laptop</a>',
+'  <a href="#g-tg-mob">3) Telegram on mobile</a>',
+'  <a href="#g-wa-pc">4) WhatsApp on laptop</a>',
+'  <a href="#g-wa-mob">5) WhatsApp on mobile</a>',
+'  <a href="#g-scripts">6) Scripts</a>',
+'  <a href="#g-247">7) Run 24/7</a>',
+'  <a href="#g-fix">8) Troubleshooting</a>',
+'</div>',
+
+'<h3 id="g-tg-token" class="sec"><span class="badge tg">Telegram</span> 1) Create the bot and get the token</h3>',
+'<p>Same on phone and laptop, done once:</p>',
+'<ol>',
+'  <li>Open <b>Telegram</b> and search for <code>@BotFather</code> (official, blue check).</li>',
+'  <li>Press <b>Start</b>, then send <code>/newbot</code>.</li>',
+'  <li>It asks for a <b>bot name</b> (any name). Send it.</li>',
+'  <li>Then it asks for a <b>username</b> that must end with <code>bot</code> (e.g. <code>my_store_bot</code>).</li>',
+'  <li>You get a <b>token</b> — a long line like <code>123456789:AAH...xyz</code>. <b>Copy it.</b></li>',
+'  <li>Back in Script Bot, paste it into the “Bot token” field, then generate and download the code.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ The token is like a password — never share it. Anyone with it controls your bot.</div>',
+
+'<h3 id="g-tg-pc" class="sec"><span class="badge tg">Telegram</span> <span class="badge pc">Laptop</span> 2) Run on a computer</h3>',
+'<p><b>If you chose Python:</b></p>',
+'<ol>',
+'  <li>Install Python from <code>python.org/downloads</code>. <b>On Windows, tick “Add Python to PATH”</b> on the first screen.</li>',
+'  <li>Open a terminal: Windows type <code>cmd</code> in Start; Mac open <b>Terminal</b>.</li>',
+'  <li>Install the library shown on the app\'s explanation page, e.g. <code>pip install python-telegram-bot</code></li>',
+'  <li>Save the code as <code>bot.py</code> (or use the app\'s Download button).</li>',
+'  <li>Go to the file\'s folder: <code>cd Downloads</code></li>',
+'  <li>Run it: <code>python bot.py</code></li>',
+'  <li>When you see <code>...is running</code>, the bot is live. Open Telegram, message your bot, send <code>/start</code>.</li>',
+'</ol>',
+'<p><b>If you chose JavaScript:</b></p>',
+'<ol>',
+'  <li>Install <b>Node.js</b> (LTS) from <code>nodejs.org</code>.</li>',
+'  <li>Open a terminal.</li>',
+'  <li>Install the library, e.g. <code>npm install node-telegram-bot-api</code></li>',
+'  <li>Save as <code>bot.js</code>, then run: <code>node bot.js</code></li>',
+'</ol>',
+'<div class="tip">💡 The bot stays up while the terminal window is open. Close it and the bot stops. See section 7 to keep it always on.</div>',
+
+'<h3 id="g-tg-mob" class="sec"><span class="badge tg">Telegram</span> <span class="badge mob">Mobile</span> 3) Run on Android</h3>',
+'<p><b>Easiest — Python via the Pydroid 3 app:</b></p>',
+'<ol>',
+'  <li>Install <b>“Pydroid 3”</b> from the Play Store.</li>',
+'  <li>Open it, choose <b>Pip</b> from the side menu, type the library (e.g. <code>python-telegram-bot</code>) and press Install.</li>',
+'  <li>Back in the editor, paste the code you downloaded.</li>',
+'  <li>Press <b>▶️</b>. The bot runs while Pydroid is open.</li>',
+'</ol>',
+'<p><b>Advanced — via Termux (Python or JavaScript):</b></p>',
+'<ol>',
+'  <li>Install <b>Termux</b> from <b>F-Droid</b> (the Play version is outdated).</li>',
+'  <li><code>pkg update</code></li>',
+'  <li>Python: <code>pkg install python</code> then <code>pip install python-telegram-bot</code></li>',
+'  <li>JavaScript: <code>pkg install nodejs</code> then <code>npm install node-telegram-bot-api</code></li>',
+'  <li>Save the code (e.g. <code>nano bot.py</code>), then run <code>python bot.py</code> or <code>node bot.js</code></li>',
+'</ol>',
+'<div class="warnbox">📱 <b>iPhone</b>: running a bot on iOS is hard. Use a laptop or free hosting (section 7).</div>',
+
+'<h3 id="g-wa-pc" class="sec"><span class="badge wa">WhatsApp</span> <span class="badge pc">Laptop</span> 4) WhatsApp on a computer</h3>',
+'<p>WhatsApp bots run on JavaScript only (whatsapp-web.js), best on a laptop:</p>',
+'<ol>',
+'  <li>Install <b>Node.js</b> from <code>nodejs.org</code>.</li>',
+'  <li>Install the libraries: <code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>Save the code as <code>bot.js</code>, then run <code>node bot.js</code></li>',
+'  <li>A <b>QR code</b> appears in the terminal.</li>',
+'  <li>On your phone: <b>WhatsApp → Settings → Linked Devices → Link a Device</b>, then scan the QR on screen.</li>',
+'  <li>Once scanned, the bot connects and starts replying. Keep it running.</li>',
+'</ol>',
+'<div class="tip">💡 Use a dedicated WhatsApp number for the bot if possible, and avoid spammy bulk sending so the number isn\'t banned.</div>',
+
+'<h3 id="g-wa-mob" class="sec"><span class="badge wa">WhatsApp</span> <span class="badge mob">Mobile</span> 5) WhatsApp on mobile (advanced)</h3>',
+'<p>Possible but heavy — it needs Chromium inside Termux:</p>',
+'<ol>',
+'  <li>Install <b>Termux</b> from F-Droid, then <code>pkg update</code></li>',
+'  <li><code>pkg install nodejs</code></li>',
+'  <li><code>pkg install chromium</code></li>',
+'  <li><code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>Run <code>node bot.js</code> and scan the QR as on laptop.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ This drains battery and memory. For serious use prefer a laptop or hosting.</div>',
+
+'<h3 id="g-scripts" class="sec"><span class="badge pc">Script</span> 6) Running scripts (file organizer, passwords, scraper)</h3>',
+'<p>Scripts are one-shot tools, not always-on bots:</p>',
+'<ol>',
+'  <li>Install Python or Node.js as above.</li>',
+'  <li>Install any libraries listed on the explanation page (some need none).</li>',
+'  <li>Save and run: <code>python script.py</code> or <code>node script.js</code></li>',
+'  <li>Simple Python scripts can also be tried instantly in the app via the “Run (Python)” button.</li>',
+'</ol>',
+
+'<h3 id="g-247" class="sec">☁️ 7) How to keep the bot running 24/7</h3>',
+'<p>The bot stops when you close the window or phone. To keep it always on, deploy it to a host (some are free):</p>',
+'<ul>',
+'  <li><b>Railway</b> or <b>Render</b>: upload your files, runs in the cloud. Beginner-friendly.</li>',
+'  <li><b>Replit</b>: write and run code right in the browser.</li>',
+'  <li><b>VPS</b> (Hetzner / DigitalOcean): full control for a small monthly fee.</li>',
+'</ul>',
+'<p>General idea: upload the code file + a dependencies file (<code>requirements.txt</code> for Python or <code>package.json</code> for JavaScript), and set the start command <code>python bot.py</code> or <code>node bot.js</code>.</p>',
+
+'<h3 id="g-fix" class="sec">🛠️ 8) Troubleshooting</h3>',
+'<ul>',
+'  <li><b>“python”/“node” not recognized:</b> not installed, or you skipped “Add to PATH”. Reinstall and reopen the terminal.</li>',
+'  <li><b>ModuleNotFoundError / Cannot find module:</b> the library isn\'t installed — run the <code>pip install</code> / <code>npm install</code> command from the explanation.</li>',
+'  <li><b>Bot doesn\'t reply:</b> is the window still open? Is the token correct and fully copied with no spaces?</li>',
+'  <li><b>Unauthorized / bad token:</b> re-copy the token from BotFather (it may be incomplete).</li>',
+'  <li><b>QR expired (WhatsApp):</b> stop the bot, run it again, and scan quickly.</li>',
+'  <li><b>ffmpeg not found (downloader bot):</b> install ffmpeg (Windows: ffmpeg.org, Termux: <code>pkg install ffmpeg</code>, Mac: <code>brew install ffmpeg</code>).</li>',
+'</ul>',
+'<div class="tip">✅ Final tip: start with a simple auto-reply bot, run it on a laptop until you\'re comfortable, then move to hosting and bigger features.</div>'
+].join('\n');
+
+function renderGuide(){
+  const panel=el('div',{class:'panel guide-wrap'});
+  panel.innerHTML = state.lang==='ar' ? GUIDE_AR : GUIDE_EN;
+  app.appendChild(panel);
+  // smooth-scroll TOC links within the SPA
+  panel.querySelectorAll('.toc a').forEach(a=>{
+    a.onclick=(e)=>{ e.preventDefault(); const id=a.getAttribute('href').slice(1); const el2=document.getElementById(id); if(el2) el2.scrollIntoView({behavior:'smooth',block:'start'}); };
+  });
 }
 
 /* ---- QR generator ---- */
