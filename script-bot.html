@@ -1,0 +1,5248 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+<meta name="theme-color" content="#0b1020" />
+<title>Script Bot — سكربت بوت</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#111834; --card:#151d3b; --card2:#1b244a;
+    --text:#eaf0ff; --muted:#9aa6d4; --line:#26305c;
+    --accent:#6d8bff; --accent2:#a06bff; --good:#2fd27a; --warn:#ffb23e; --bad:#ff5c72;
+    --code-bg:#0c1226; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"]{
+    --bg:#eef2fb; --bg2:#e6ecf9; --card:#ffffff; --card2:#f3f6ff;
+    --text:#141a33; --muted:#5a6690; --line:#dbe2f5;
+    --accent:#3f5bd6; --accent2:#7c3aed; --good:#12a35a; --warn:#c77700; --bad:#d63a52;
+    --code-bg:#0c1226; --shadow:0 10px 34px rgba(30,50,120,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 700px at 80% -10%, rgba(160,107,255,.18), transparent 60%),
+               radial-gradient(1000px 600px at -10% 10%, rgba(109,139,255,.18), transparent 55%),
+               var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",Tahoma,system-ui,-apple-system,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+    min-height:100vh; line-height:1.6;
+  }
+  a{color:var(--accent);text-decoration:none}
+  .container{max-width:1100px;margin:0 auto;padding:0 16px}
+
+  /* Header */
+  header.appbar{
+    position:sticky;top:0;z-index:50;
+    background:linear-gradient(180deg, rgba(11,16,32,.92), rgba(11,16,32,.72));
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  :root[data-theme="light"] header.appbar{background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72))}
+  .appbar .row{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;cursor:pointer;user-select:none}
+  .brand .logo{
+    width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:20px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 18px rgba(109,139,255,.5)
+  }
+  .brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.5px}
+  nav.tabs{display:flex;gap:6px;margin-inline-start:auto;flex-wrap:wrap}
+  nav.tabs button, .iconbtn{
+    background:var(--card);border:1px solid var(--line);color:var(--text);
+    padding:9px 14px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;transition:.15s
+  }
+  nav.tabs button:hover,.iconbtn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  nav.tabs button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .iconbtn{padding:9px 12px}
+
+  /* Hero */
+  .hero{padding:46px 0 22px;text-align:center}
+  .hero h1{font-size:clamp(28px,5vw,46px);margin:0 0 10px;line-height:1.15;
+    background:linear-gradient(120deg,var(--text),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:clamp(15px,2.2vw,19px);max-width:680px;margin:0 auto 18px}
+  .hero .cta{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn{
+    border:none;cursor:pointer;font-weight:700;font-size:15px;padding:12px 22px;border-radius:13px;transition:.15s;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 22px rgba(109,139,255,.35)
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(109,139,255,.5)}
+  .btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:none}
+  .btn.small{padding:9px 15px;font-size:13px;border-radius:11px}
+  .btn.good{background:linear-gradient(135deg,#2fd27a,#12a35a)}
+  .btn.warn{background:linear-gradient(135deg,#ffb23e,#ff7a2f)}
+
+  .stats{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:22px;color:var(--muted)}
+  .stats .s b{color:var(--text);font-size:22px;display:block}
+  .stats .s span{font-size:13px}
+
+  /* Filters */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:26px 0 6px}
+  .chip{
+    background:var(--card);border:1px solid var(--line);color:var(--muted);
+    padding:8px 15px;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;transition:.15s
+  }
+  .chip:hover{color:var(--text);border-color:var(--accent)}
+  .chip.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+
+  /* Cards grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:22px 0 60px}
+  .tcard{
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--line);border-radius:var(--radius);padding:18px;cursor:pointer;
+    transition:.18s;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:8px
+  }
+  .tcard:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:var(--shadow)}
+  .tcard .ic{font-size:30px}
+  .tcard h3{margin:2px 0 0;font-size:18px}
+  .tcard p{margin:0;color:var(--muted);font-size:13.5px;flex:1}
+  .tcard .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .tag{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);color:var(--muted);font-weight:600}
+  .tag.tg{color:#5eb3ff;border-color:#2a4d78}
+  .tag.wa{color:#43d97f;border-color:#1f5c3a}
+  .tag.sc{color:#ffb45e;border-color:#6b4a1f}
+  .tag.py{color:#ffd15e}
+  .tag.js{color:#f7df6e}
+
+  /* Builder */
+  .panel{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin:22px 0}
+  .panel h2{margin:0 0 4px;font-size:22px}
+  .panel .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+  .field{margin:14px 0}
+  .field label{display:block;font-weight:700;margin-bottom:6px;font-size:14px}
+  .field .hint{color:var(--muted);font-size:12.5px;font-weight:400;margin-inline-start:6px}
+  .field input,.field textarea,.field select{
+    width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);
+    padding:11px 13px;border-radius:11px;font-size:14px;font-family:inherit;transition:.15s
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,139,255,.18)}
+  .field textarea{min-height:84px;resize:vertical}
+  .segrow{display:flex;flex-wrap:wrap;gap:16px}
+  .segrow .field{flex:1;min-width:180px;margin:8px 0}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{
+    background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:9px 15px;border-radius:11px;
+    cursor:pointer;font-weight:700;font-size:13.5px;transition:.15s;display:flex;align-items:center;gap:6px
+  }
+  .seg button:hover{border-color:var(--accent)}
+  .seg button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .seg button:disabled{opacity:.35;cursor:not-allowed}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+  /* Result */
+  .result{margin-top:6px}
+  .codehead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;padding:9px 12px}
+  .codehead .fname{font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--muted)}
+  .codehead .sp{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+  pre.code{
+    margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:0 0 12px 12px;
+    padding:16px;overflow:auto;max-height:520px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.65;direction:ltr;text-align:left;color:#d7e0ff
+  }
+  /* syntax colors */
+  .tok-com{color:#6b7aa8;font-style:italic}
+  .tok-str{color:#7ee0a0}
+  .tok-key{color:#c58bff;font-weight:700}
+  .tok-num{color:#ffcf6b}
+  .tok-fn{color:#6fb7ff}
+
+  .explain{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:16px}
+  .explain h4{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .explain ol{margin:0;padding-inline-start:20px}
+  .explain li{margin:7px 0;color:var(--text)}
+  .explain code{background:var(--code-bg);padding:2px 7px;border-radius:6px;font-family:ui-monospace,monospace;font-size:12.5px;color:#8fd3ff;direction:ltr;display:inline-block}
+  .note{border-inline-start:3px solid var(--warn);padding:8px 12px;background:rgba(255,178,62,.08);border-radius:8px;margin-top:10px;font-size:13.5px;color:var(--muted)}
+
+  /* Guide */
+  .guide-wrap{max-width:840px;margin:0 auto}
+  .guide-wrap h2{font-size:22px;margin:8px 0 4px}
+  .guide-wrap h3{font-size:18px;margin:20px 0 6px;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .guide-wrap h4{font-size:15px;margin:14px 0 4px}
+  .guide-wrap p{margin:6px 0;color:var(--text)}
+  .guide-wrap ol,.guide-wrap ul{padding-inline-start:22px;margin:6px 0}
+  .guide-wrap li{margin:7px 0}
+  .guide-wrap code{background:var(--code-bg);color:#8fd3ff;padding:2px 8px;border-radius:6px;font-family:ui-monospace,monospace;font-size:12.5px;direction:ltr;display:inline-block;margin:1px 0}
+  .guide-wrap .plat{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:12px 0;background:var(--bg2)}
+  .guide-wrap .plat > b{font-size:15px}
+  .guide-wrap .tip{border-inline-start:3px solid var(--good);background:rgba(47,210,122,.08);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13.5px}
+  .guide-wrap .warnbox{border-inline-start:3px solid var(--warn);background:rgba(255,178,62,.08);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13.5px}
+  .guide-wrap .toc{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .guide-wrap .toc a{background:var(--card2);border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700}
+  .guide-wrap .toc a:hover{border-color:var(--accent)}
+  .guide-wrap .sec{scroll-margin-top:80px}
+  .badge{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:11.5px;font-weight:700;margin-inline-end:6px}
+  .badge.tg{color:#5eb3ff}.badge.wa{color:#43d97f}.badge.mob{color:#ffb45e}.badge.pc{color:#c58bff}
+
+  .runout{margin-top:12px;background:#05070f;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
+  .runout .rh{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--line);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
+  .runout pre{margin:0;padding:12px 14px;font-family:ui-monospace,monospace;font-size:12.5px;color:#cfe;direction:ltr;text-align:left;max-height:280px;overflow:auto;white-space:pre-wrap}
+  .runout .err{color:var(--bad)}
+  .runout .ok{color:var(--good)}
+
+  /* Saved */
+  .saved-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin:10px 0}
+  .saved-item .meta{flex:1;min-width:0}
+  .saved-item .meta b{display:block;font-size:15px}
+  .saved-item .meta span{color:var(--muted);font-size:12.5px}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px}
+  .empty .big{font-size:52px;margin-bottom:10px}
+
+  /* Playground */
+  .pg textarea{width:100%;min-height:220px;background:var(--code-bg);color:#d7e0ff;border:1px solid var(--line);border-radius:12px;padding:14px;font-family:ui-monospace,monospace;font-size:13px;direction:ltr;text-align:left}
+
+  /* Toast */
+  #toast{position:fixed;inset-inline:0;bottom:24px;display:flex;justify-content:center;z-index:100;pointer-events:none}
+  #toast .t{background:var(--card2);border:1px solid var(--accent);color:var(--text);padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);font-weight:700;opacity:0;transform:translateY(14px);transition:.25s}
+  #toast .t.show{opacity:1;transform:translateY(0)}
+
+  footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--muted);font-size:13px;margin-top:40px}
+  .hidden{display:none !important}
+  @media (max-width:560px){
+    .hero{padding:30px 0 12px}
+    nav.tabs{width:100%;margin-inline-start:0}
+    .brand{font-size:18px}
+  }
+</style>
+
+<header class="appbar">
+  <div class="row">
+    <div class="brand" onclick="go('home')">
+      <div class="logo">🤖</div>
+      <div>Script Bot <small id="brandSub">صانع البوتات والسكربتات</small></div>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+
+<main id="app" class="container"></main>
+
+<footer>
+  <div class="container">
+    <div id="footText">Script Bot — يولّد بوتات وسكربتات جاهزة بدون إنترنت وبدون ذكاء اصطناعي.</div>
+    <div style="margin-top:6px;opacity:.7">v1.0 · 100% offline · Telegram · WhatsApp · Python · JavaScript</div>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* qrcode-generator library (MIT) — Copyright (c) 2009 Kazuhiko Arase — https://github.com/kazuhikoarase/qrcode-generator */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+try{ qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"]; }catch(e){}
+</script>
+
+<script>
+/* =========================================================================
+   Script Bot — single-file, offline, no-AI code generator
+   ========================================================================= */
+"use strict";
+
+/* ---------------- State ---------------- */
+const store = {
+  get lang(){ return localStorage.getItem('sb_lang') || 'ar'; },
+  set lang(v){ localStorage.setItem('sb_lang', v); },
+  get theme(){ return localStorage.getItem('sb_theme') || 'dark'; },
+  set theme(v){ localStorage.setItem('sb_theme', v); },
+  get projects(){ try{ return JSON.parse(localStorage.getItem('sb_projects')||'[]'); }catch(e){ return []; } },
+  set projects(v){ localStorage.setItem('sb_projects', JSON.stringify(v)); }
+};
+const state = {
+  lang: store.lang,
+  view: 'home',
+  filter: 'all',
+  tpl: null,          // selected template object
+  platform: null,
+  langCode: null,     // 'python' | 'javascript'
+  opts: {},
+  code: '',
+  fname: ''
+};
+
+/* ---------------- i18n ---------------- */
+const I = {
+  ar: {
+    dir:'rtl',
+    brandSub:'صانع البوتات والسكربتات',
+    nav_home:'الرئيسية', nav_build:'الإنشاء', nav_play:'المختبر', nav_qr:'رمز QR', nav_guide:'الدليل', nav_saved:'مشاريعي',
+    guide_cta:'📘 دليل التشغيل الكامل (موبايل + لابتوب)',
+    lang_btn:'English', theme_dark:'🌙', theme_light:'☀️',
+    export_zip:'📦 تصدير ZIP', zip_ok:'تم تصدير الحزمة ✓',
+    qr_h:'مولّد رمز QR', qr_p:'حوّل رابط بوتك أو أي نص إلى رمز QR قابل للمسح — شاركه مع عملائك ليفتحوا البوت بسرعة.',
+    qr_label:'النص أو الرابط', qr_ph:'https://t.me/MyBot', qr_make:'🔳 توليد الرمز', qr_dl:'⬇️ تحميل PNG', qr_empty:'اكتب نصاً ثم اضغط توليد.',
+    qr_hint_wa:'💡 عند تشغيل بوت واتساب سيظهر رمز QR في نافذة الأوامر (Terminal) لمسحه بهاتفك مرة واحدة. أما هذا المولّد فهو لصنع رمز لرابط بوتك ومشاركته.',
+    hero_h:'اصنع بوتك وسكربتك بضغطة زر',
+    hero_p:'اختر نوع البوت أو السكربت، عبّئ التفاصيل، واحصل على كود جاهز يشتغل — لتلكرام وواتساب، بلغة بايثون أو جافا سكريبت. بدون إنترنت وبدون ذكاء اصطناعي.',
+    hero_cta:'ابدأ الآن', hero_cta2:'جرّب المختبر',
+    st_tpl:'قالب جاهز', st_off:'يعمل بدون نت', st_free:'مجاني بالكامل', st_uniq:'كود فريد لكل مرة',
+    f_all:'الكل', f_telegram:'تلكرام', f_whatsapp:'واتساب', f_script:'سكربتات',
+    choose:'اختر قالباً لتبدأ', pick_platform:'المنصّة', pick_lang:'لغة الكود',
+    settings:'الإعدادات', generate:'⚡ توليد الكود', regenerate:'🔀 نسخة مختلفة', back:'← رجوع',
+    copy:'📋 نسخ', copied:'تم النسخ ✓', download:'⬇️ تحميل', run:'▶️ تشغيل (JS)',
+    save:'💾 حفظ المشروع', saved_ok:'انحفظ المشروع ✓',
+    explain_h:'📖 شرح الكود',
+    run_h:'مخرجات التشغيل', running:'... يشتغل',
+    run_py:'▶️ تشغيل (Python)', py_loading:'... يُحمّل محرك بايثون (أول مرة فقط، قد يستغرق لحظات)',
+    py_note:'أول تشغيل يُحمّل محرك بايثون (~10 ميغا، يحتاج إنترنت). أكواد البوتات التي تستورد مكتبات خارجية (telegram، yt-dlp، PIL...) لا تعمل داخل المتصفح — تحتاج تشغيلاً حقيقياً. أما أكواد بايثون العادية (المكتبة القياسية) فتعمل هنا.',
+    py_fail:'تعذّر تحميل محرك بايثون — تأكد من اتصالك بالإنترنت وحاول مجدداً.',
+    play_lang:'اللغة:',
+    play_h:'المختبر — جرّب أكواد جافا سكريبت وبايثون', play_p:'اكتب أو الصق الكود واختر اللغة ثم شغّله مباشرة. استعمل console.log (أو print في بايثون) لإظهار النتائج.',
+    play_run:'▶️ تشغيل', play_clear:'🧹 مسح', play_ph:'// اكتب كودك هنا\nconsole.log("أهلاً من سكربت بوت!");\nfor (let i = 1; i <= 3; i++) console.log("رقم", i);',
+    play_ph_py:'# اكتب كود بايثون هنا\nprint("أهلاً من سكربت بوت!")\nfor i in range(1, 4):\n    print("رقم", i)',
+    saved_h:'مشاريعي المحفوظة', saved_empty:'ماكو مشاريع محفوظة بعد. سوِّ كوداً واحفظه ليظهر هنا.',
+    open:'فتح', del:'حذف', del_ok:'انحذف ✓', confirm_del:'تريد حذف هذا المشروع؟',
+    field_botName:'اسم البوت', field_token:'توكن البوت', field_token_hint:'من BotFather في تلكرام',
+    unnamed:'بدون اسم', by_platform:'المنصّة', by_lang:'اللغة',
+    note_wa:'واتساب يشتغل بـ Node.js فقط عبر مكتبة whatsapp-web.js (تمسح رمز QR بهاتفك لأول مرة).',
+    note_run_bot:'كود البوت يحتاج بيئة تشغيل حقيقية (Node.js / Python) لأنه يتصل بالإنترنت والمكتبات — ما يشتغل داخل المتصفح. استعمل التعليمات بالأسفل. زر التشغيل هنا للسكربتات الجافا سكريبت البسيطة فقط.',
+    no_output:'(لا توجد مخرجات — استعمل console.log)',
+    run_done:'تم التنفيذ', run_timeout:'توقف التنفيذ (قد يكون هناك حلقة لا نهائية).',
+    apk_h:'📱 تحويله إلى تطبيق APK', apk_p:'هذا الملف مكتفٍ ذاتياً ويعمل بدون إنترنت، لذا يمكن تغليفه كتطبيق أندرويد ونشره على Google Play.',
+  },
+  en: {
+    dir:'ltr',
+    brandSub:'Bot & Script Generator',
+    nav_home:'Home', nav_build:'Build', nav_play:'Playground', nav_qr:'QR Code', nav_guide:'Guide', nav_saved:'My Projects',
+    guide_cta:'📘 Full run guide (mobile + laptop)',
+    lang_btn:'العربية', theme_dark:'🌙', theme_light:'☀️',
+    export_zip:'📦 Export ZIP', zip_ok:'Package exported ✓',
+    qr_h:'QR Code Generator', qr_p:'Turn your bot link or any text into a scannable QR code — share it so customers can open your bot instantly.',
+    qr_label:'Text or link', qr_ph:'https://t.me/MyBot', qr_make:'🔳 Generate', qr_dl:'⬇️ Download PNG', qr_empty:'Type something, then press Generate.',
+    qr_hint_wa:'💡 When you run a WhatsApp bot, a QR code appears in the terminal to scan with your phone once. This generator is for creating a QR of your bot link to share.',
+    hero_h:'Build your bot & script in one click',
+    hero_p:'Pick a bot or script type, fill in the details, and get working code — for Telegram and WhatsApp, in Python or JavaScript. Fully offline, no AI required.',
+    hero_cta:'Get started', hero_cta2:'Open Playground',
+    st_tpl:'ready templates', st_off:'works offline', st_free:'100% free', st_uniq:'unique code each time',
+    f_all:'All', f_telegram:'Telegram', f_whatsapp:'WhatsApp', f_script:'Scripts',
+    choose:'Pick a template to start', pick_platform:'Platform', pick_lang:'Language',
+    settings:'Settings', generate:'⚡ Generate code', regenerate:'🔀 Different variant', back:'← Back',
+    copy:'📋 Copy', copied:'Copied ✓', download:'⬇️ Download', run:'▶️ Run (JS)',
+    save:'💾 Save project', saved_ok:'Project saved ✓',
+    explain_h:'📖 Code explanation',
+    run_h:'Run output', running:'... running',
+    run_py:'▶️ Run (Python)', py_loading:'... loading the Python engine (first time only, may take a moment)',
+    py_note:'The first run downloads the Python engine (~10 MB, needs internet). Bot code that imports external libraries (telegram, yt-dlp, PIL…) will not run in the browser — it needs a real runtime. Plain standard-library Python does run here.',
+    py_fail:'Could not load the Python engine — check your internet connection and try again.',
+    play_lang:'Language:',
+    play_h:'Playground — run JavaScript & Python', play_p:'Type or paste code, pick the language, and run it instantly. Use console.log (or print in Python) to show results.',
+    play_run:'▶️ Run', play_clear:'🧹 Clear', play_ph:'// Write your code here\nconsole.log("Hello from Script Bot!");\nfor (let i = 1; i <= 3; i++) console.log("number", i);',
+    play_ph_py:'# Write your Python here\nprint("Hello from Script Bot!")\nfor i in range(1, 4):\n    print("number", i)',
+    saved_h:'My saved projects', saved_empty:'No saved projects yet. Generate some code and save it to see it here.',
+    open:'Open', del:'Delete', del_ok:'Deleted ✓', confirm_del:'Delete this project?',
+    field_botName:'Bot name', field_token:'Bot token', field_token_hint:'from BotFather on Telegram',
+    unnamed:'Untitled', by_platform:'Platform', by_lang:'Language',
+    note_wa:'WhatsApp runs on Node.js only via the whatsapp-web.js library (scan a QR code with your phone the first time).',
+    note_run_bot:'Bot code needs a real runtime (Node.js / Python) because it connects to the internet and libraries — it cannot run inside the browser. Use the instructions below. The Run button here is for simple JavaScript scripts only.',
+    no_output:'(no output — use console.log)',
+    run_done:'Finished', run_timeout:'Execution stopped (possible infinite loop).',
+    apk_h:'📱 Turn it into an APK', apk_p:'This file is self-contained and works offline, so it can be wrapped as an Android app and published to Google Play.',
+  }
+};
+function t(k){ return (I[state.lang] && I[state.lang][k]) || (I.ar[k]) || k; }
+function L(obj){ return (obj && (obj[state.lang] || obj.ar || obj.en)) || ''; }
+
+/* ---------------- Randomizer (unique code each time) ---------------- */
+function makeRnd(){
+  const P = a => a[(Math.random()*a.length)|0];
+  const id = (Math.random().toString(36).slice(2,8) + Math.random().toString(36).slice(2,4)).toUpperCase();
+  return {
+    id,
+    date: new Date().toISOString().slice(0,10),
+    P,
+    greet: P(['sendWelcome','greetUser','welcomeUser','sayHello','onStart']),
+    help:  P(['sendHelp','showHelp','helpMenu','displayHelp']),
+    handle:P(['handleMessage','onMessage','processMessage','routeMessage','dispatch']),
+    reply: P(['reply','response','answer','result','out']),
+    botv:  P(['bot','client','app','tg','engine']),
+    logv:  P(['log','trace','report','record']),
+    kw:    P(['hi','hello','hey','start','menu']),
+    tone:  P(['friendly','clear','helpful'])
+  };
+}
+
+/* ---------------- Header banner for generated code ---------------- */
+function banner(c, r, ctx){
+  const name = ctx.opts.botName || 'ScriptBot';
+  const plat = ctx.platform === 'telegram' ? 'Telegram' : ctx.platform === 'whatsapp' ? 'WhatsApp' : 'Script';
+  const lang = ctx.langCode === 'python' ? 'Python' : 'JavaScript';
+  return [
+    c + ' ============================================================',
+    c + '  ' + name,
+    c + '  ' + ctx.tpl.title.en + '  (' + plat + ' · ' + lang + ')',
+    c + '  Generated by Script Bot  ·  Build #' + r.id + '  ·  ' + r.date,
+    c + '  This build is unique — regenerate for a different variant.',
+    c + ' ============================================================'
+  ].join('\n');
+}
+
+/* ============================================================
+   TEMPLATES
+   Each: id, icon, platform, langs[], cat{}, title{}, desc{},
+         fields[], gen(ctx), note{}
+   ============================================================ */
+function F(key,type,label,def,hint){ return {key,type,label,def:def||'',hint:hint||null}; }
+const baseBot = (extra)=>[
+  F('botName','text',{ar:'اسم البوت',en:'Bot name'},'MyBot'),
+  F('token','text',{ar:'توكن البوت',en:'Bot token'},'PASTE_YOUR_TOKEN_HERE',{ar:'من BotFather',en:'from BotFather'}),
+  ...(extra||[])
+];
+
+const TEMPLATES = [
+  /* 1. Telegram Customer Service */
+  {
+    id:'tg-customer', icon:'🎧', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'خدمة العملاء',en:'Customer Service'},
+    title:{ar:'بوت خدمة العملاء',en:'Customer Service Bot'},
+    desc:{ar:'يستقبل استفسارات العملاء ويرد بردود جاهزة وأسئلة شائعة، ويحوّل للموظف عند الحاجة.',en:'Handles customer questions with canned replies & FAQs, and hands off to a human when needed.'},
+    fields:baseBot([
+      F('company','text',{ar:'اسم النشاط/الشركة',en:'Business name'},'My Store'),
+      F('faq','textarea',{ar:'أسئلة شائعة (سؤال=جواب في كل سطر)',en:'FAQ (question=answer per line)'},'ساعات العمل؟=من 9 صباحاً حتى 9 مساءً\nالتوصيل؟=خلال 24 ساعة\nهل يوجد ضمان؟=نعم، سنة كاملة'),
+      F('agent','text',{ar:'معرف موظف الدعم (اختياري)',en:'Support agent @username (optional)'},'@support')
+    ]),
+    gen:genCustomer
+  },
+  /* 2. Telegram Welcome / Auto-reply */
+  {
+    id:'tg-welcome', icon:'👋', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'ترحيب',en:'Welcome'},
+    title:{ar:'بوت ترحيب ورد آلي',en:'Welcome & Auto-reply Bot'},
+    desc:{ar:'يرحّب بالأعضاء الجدد ويرد تلقائياً على كلمات مفتاحية معيّنة.',en:'Greets new members and auto-replies to specific keywords.'},
+    fields:baseBot([
+      F('welcome','textarea',{ar:'رسالة الترحيب',en:'Welcome message'},'أهلاً {name}! نورت المجموعة 🌟'),
+      F('rules','text',{ar:'رابط/نص القوانين (اختياري)',en:'Rules text/link (optional)'},'يرجى احترام الجميع وعدم نشر الإعلانات.'),
+      F('keywords','textarea',{ar:'ردود تلقائية (كلمة=رد في كل سطر)',en:'Auto-replies (keyword=reply per line)'},'السعر=تواصل معنا للأسعار 💰\nالعنوان=بغداد - شارع الرشيد')
+    ]),
+    gen:genWelcome
+  },
+  /* 3. Telegram Group Moderation */
+  {
+    id:'tg-mod', icon:'🛡️', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'إدارة المجموعات',en:'Moderation'},
+    title:{ar:'بوت إدارة وحماية المجموعات',en:'Group Moderation Bot'},
+    desc:{ar:'يحذف الروابط والسبام، ويوفّر أوامر طرد وكتم للمشرفين.',en:'Deletes links/spam and gives admins ban & mute commands.'},
+    fields:baseBot([
+      F('banWords','text',{ar:'كلمات ممنوعة (مفصولة بفاصلة)',en:'Banned words (comma separated)'},'اعلان,سبام,رابط مخالف'),
+      F('blockLinks','select',{ar:'حذف الروابط تلقائياً؟',en:'Auto-delete links?'},'yes')
+    ]),
+    gen:genMod
+  },
+  /* 4. Telegram Store / Orders */
+  {
+    id:'tg-store', icon:'🛒', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'متجر',en:'Store'},
+    title:{ar:'بوت متجر وطلبات',en:'Store & Orders Bot'},
+    desc:{ar:'يعرض المنتجات بأزرار، يستقبل الطلبات ويرسلها لصاحب المتجر.',en:'Shows products as buttons, takes orders and forwards them to the owner.'},
+    fields:baseBot([
+      F('company','text',{ar:'اسم المتجر',en:'Store name'},'My Shop'),
+      F('products','textarea',{ar:'المنتجات (اسم=سعر في كل سطر)',en:'Products (name=price per line)'},'قميص=15000\nبنطلون=25000\nحذاء=40000'),
+      F('ownerId','text',{ar:'معرف صاحب المتجر الرقمي',en:'Owner numeric chat ID'},'123456789',{ar:'رقمك من @userinfobot',en:'your id from @userinfobot'})
+    ]),
+    gen:genStore
+  },
+  /* 5. Telegram Reminder */
+  {
+    id:'tg-reminder', icon:'⏰', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تذكير',en:'Reminder'},
+    title:{ar:'بوت تذكير ومواعيد',en:'Reminder Bot'},
+    desc:{ar:'يذكّر المستخدم بمهمة بعد وقت محدد عبر أمر بسيط.',en:'Reminds the user of a task after a set delay via a simple command.'},
+    fields:baseBot(),
+    gen:genReminder
+  },
+  /* 6. Telegram Broadcast / Notifications */
+  {
+    id:'tg-broadcast', icon:'📢', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'بث وإشعارات',en:'Broadcast'},
+    title:{ar:'بوت بث وإشعارات',en:'Broadcast Bot'},
+    desc:{ar:'يجمع المشتركين ويسمح للمشرف ببثّ رسالة للجميع دفعة واحدة.',en:'Collects subscribers and lets the admin broadcast a message to everyone.'},
+    fields:baseBot([
+      F('adminId','text',{ar:'معرف المشرف الرقمي',en:'Admin numeric ID'},'123456789')
+    ]),
+    gen:genBroadcast
+  },
+  /* 7. Telegram FAQ / Quiz */
+  {
+    id:'tg-quiz', icon:'❓', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'أسئلة',en:'Quiz'},
+    title:{ar:'بوت اختبار وأسئلة',en:'Quiz Bot'},
+    desc:{ar:'يطرح أسئلة اختيار من متعدد ويحسب النتيجة.',en:'Asks multiple-choice questions and scores the user.'},
+    fields:baseBot([
+      F('questions','textarea',{ar:'الأسئلة (سؤال | خيار1,خيار2,خيار3 | رقم الإجابة الصحيحة)',en:'Questions (q | opt1,opt2,opt3 | correct index)'},'عاصمة العراق؟ | بغداد,البصرة,أربيل | 1\n2+2 يساوي؟ | 3,4,5 | 2')
+    ]),
+    gen:genQuiz
+  },
+  /* 8. WhatsApp Auto-reply */
+  {
+    id:'wa-autoreply', icon:'💬', platform:'whatsapp', langs:['javascript'],
+    cat:{ar:'رد آلي',en:'Auto-reply'},
+    title:{ar:'بوت رد آلي للواتساب',en:'WhatsApp Auto-reply Bot'},
+    desc:{ar:'يرد تلقائياً على رسائل واتساب حسب كلمات مفتاحية.',en:'Auto-replies to WhatsApp messages based on keywords.'},
+    fields:[
+      F('botName','text',{ar:'اسم البوت',en:'Bot name'},'WaBot'),
+      F('welcome','text',{ar:'رسالة الترحيب',en:'Welcome message'},'أهلاً بك! كيف أقدر أساعدك؟'),
+      F('keywords','textarea',{ar:'ردود تلقائية (كلمة=رد في كل سطر)',en:'Auto-replies (keyword=reply per line)'},'السعر=راسلنا للأسعار\nالعنوان=بغداد\nشكرا=العفو، بخدمتك 🌟')
+    ],
+    gen:genWaAuto
+  },
+  /* 9. WhatsApp Customer Service */
+  {
+    id:'wa-customer', icon:'🎫', platform:'whatsapp', langs:['javascript'],
+    cat:{ar:'خدمة العملاء',en:'Customer Service'},
+    title:{ar:'بوت خدمة عملاء للواتساب',en:'WhatsApp Customer Service Bot'},
+    desc:{ar:'قائمة خيارات رقمية للعملاء مع ردود جاهزة وأسئلة شائعة.',en:'A numbered menu for customers with canned replies & FAQs.'},
+    fields:[
+      F('botName','text',{ar:'اسم البوت',en:'Bot name'},'CareBot'),
+      F('company','text',{ar:'اسم النشاط',en:'Business name'},'My Store'),
+      F('menu','textarea',{ar:'خيارات القائمة (عنوان=رد في كل سطر)',en:'Menu options (title=reply per line)'},'ساعات العمل=من 9 صباحاً حتى 9 مساءً\nالتوصيل=خلال 24 ساعة داخل المدينة\nطرق الدفع=نقداً أو تحويل')
+    ],
+    gen:genWaCare
+  },
+  /* 10. Script: File Organizer */
+  {
+    id:'sc-fileorg', icon:'🗂️', platform:'script', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'سكربت ترتيب الملفات',en:'File Organizer Script'},
+    desc:{ar:'يرتّب ملفات مجلد حسب النوع (صور، فيديو، مستندات...) في مجلدات فرعية.',en:'Sorts a folder\'s files by type (images, videos, docs…) into subfolders.'},
+    fields:[
+      F('folder','text',{ar:'مسار المجلد',en:'Folder path'},'./downloads')
+    ],
+    gen:genFileOrg
+  },
+  /* 11. Script: Web Scraper */
+  {
+    id:'sc-scraper', icon:'🕸️', platform:'script', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'سكربت سحب بيانات من موقع',en:'Web Scraper Script'},
+    desc:{ar:'يجلب عناوين ونصوص من صفحة ويب ويحفظها في ملف.',en:'Fetches titles/text from a web page and saves them to a file.'},
+    fields:[
+      F('url','text',{ar:'رابط الموقع',en:'Website URL'},'https://example.com'),
+      F('selector','text',{ar:'العنصر المطلوب (CSS selector)',en:'Target element (CSS selector)'},'h2')
+    ],
+    gen:genScraper
+  },
+  /* 12. Telegram Poll / Voting */
+  {
+    id:'tg-poll', icon:'🗳️', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تصويت',en:'Voting'},
+    title:{ar:'بوت تصويت واستطلاع',en:'Poll & Voting Bot'},
+    desc:{ar:'ينشئ استطلاع رأي بخيارات جاهزة عبر أمر بسيط.',en:'Creates a poll with ready options via a simple command.'},
+    fields:baseBot([
+      F('question','text',{ar:'سؤال الاستطلاع',en:'Poll question'},'شنو رأيك بالخدمة؟'),
+      F('choices','textarea',{ar:'الخيارات (خيار في كل سطر)',en:'Options (one per line)'},'ممتازة\nجيدة\nتحتاج تحسين')
+    ]),
+    gen:genPoll
+  },
+  /* 13. Telegram Number Game */
+  {
+    id:'tg-game', icon:'🎮', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'ألعاب',en:'Games'},
+    title:{ar:'بوت لعبة تخمين الرقم',en:'Number Guessing Game Bot'},
+    desc:{ar:'لعبة يخمّن فيها المستخدم رقماً عشوائياً بين 1 و100.',en:'A game where the user guesses a random number between 1 and 100.'},
+    fields:baseBot(),
+    gen:genGame
+  },
+  /* 14. Telegram Calculator */
+  {
+    id:'tg-calc', icon:'🧮', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'بوت آلة حاسبة',en:'Calculator Bot'},
+    desc:{ar:'يحسب أي عملية حسابية يرسلها المستخدم (جمع، طرح، ضرب، قسمة).',en:'Evaluates any arithmetic expression the user sends (+, −, ×, ÷).'},
+    fields:baseBot(),
+    gen:genCalc
+  },
+  /* 15. Script: Password Generator */
+  {
+    id:'sc-password', icon:'🔐', platform:'script', langs:['python','javascript'],
+    cat:{ar:'أدوات',en:'Utility'},
+    title:{ar:'سكربت مولّد كلمات السر',en:'Password Generator Script'},
+    desc:{ar:'يولّد كلمات سر قوية وعشوائية بالطول والعدد الذي تحدده.',en:'Generates strong random passwords with the length and count you choose.'},
+    fields:[
+      F('length','text',{ar:'طول كلمة السر',en:'Password length'},'16'),
+      F('count','text',{ar:'عدد الكلمات المطلوبة',en:'How many passwords'},'5')
+    ],
+    gen:genPassword
+  },
+  /* 16. Telegram Translation */
+  {
+    id:'tg-translate', icon:'🌍', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'ترجمة',en:'Translation'},
+    title:{ar:'بوت ترجمة',en:'Translation Bot'},
+    desc:{ar:'يترجم أي رسالة يرسلها المستخدم إلى اللغة التي تحددها — بدون مفتاح API (مكتبة مجانية).',en:'Translates any message the user sends into a target language — no API key (free library).'},
+    fields:baseBot([
+      F('target','text',{ar:'اللغة الهدف (رمز: en, ar, tr, fr...)',en:'Target language (code: en, ar, tr, fr…)'},'en')
+    ]),
+    gen:genTranslate
+  },
+  /* 17. Telegram Video Downloader */
+  {
+    id:'tg-downloader', icon:'📥', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تحميل',en:'Downloader'},
+    title:{ar:'بوت تحميل فيديوهات',en:'Video Downloader Bot'},
+    desc:{ar:'يحمّل الفيديوهات من يوتيوب وإنستغرام وتيكتوك (بدون علامة مائية) عبر رابط — بدون مفتاح API باستخدام أداة yt-dlp المجانية.',en:'Downloads videos from YouTube, Instagram & TikTok (no watermark) from a link — no API key, using the free yt-dlp tool.'},
+    fields:baseBot(),
+    gen:genDownloader
+  },
+  /* 18. Telegram Images to PDF */
+  {
+    id:'tg-img2pdf', icon:'📄', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تحويل',en:'Convert'},
+    title:{ar:'بوت تحويل الصور إلى PDF',en:'Images to PDF Bot'},
+    desc:{ar:'يجمع الصور التي يرسلها المستخدم ويحوّلها إلى ملف PDF واحد عبر أمر /done.',en:'Collects the images a user sends and merges them into a single PDF with /done.'},
+    fields:baseBot(),
+    gen:genImagesToPdf
+  }
+];
+
+/* ============================================================
+   CODE GENERATORS
+   Convention: return code as a string. Generated code must NOT
+   contain backticks (` ) — we use quotes/concatenation instead.
+   ============================================================ */
+function parsePairs(text, sep){
+  sep = sep || '=';
+  return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const i = l.indexOf(sep);
+    if(i<0) return [l, ''];
+    return [l.slice(0,i).trim(), l.slice(i+1).trim()];
+  });
+}
+function pyDict(pairs){
+  return '{\n' + pairs.map(([k,v])=>'    '+JSON.stringify(k)+': '+JSON.stringify(v)).join(',\n') + '\n}';
+}
+function jsObj(pairs){
+  return '{\n' + pairs.map(([k,v])=>'  '+JSON.stringify(k)+': '+JSON.stringify(v)).join(',\n') + '\n}';
+}
+
+/* ---- 1. Customer Service ---- */
+function genCustomer(ctx){
+  const r = ctx.rnd, o = ctx.opts;
+  const faq = parsePairs(o.faq);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'COMPANY = '+JSON.stringify(o.company||o.botName),
+'AGENT = '+JSON.stringify(o.agent||''),
+'',
+c+' Frequently asked questions',
+'FAQ = '+pyDict(faq),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(',
+'        f"مرحباً بك في خدمة عملاء {COMPANY} 👋\\n"',
+'        "اكتب سؤالك وسأحاول مساعدتك، أو /help لعرض المواضيع."',
+'    )',
+'',
+'async def '+r.help+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    topics = "\\n".join("• " + q for q in FAQ)',
+'    await update.message.reply_text("المواضيع المتاحة:\\n" + topics)',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    text = (update.message.text or "").strip().lower()',
+'    for question, answer in FAQ.items():',
+'        if question.lower() in text or text in question.lower():',
+'            await update.message.reply_text(answer)',
+'            return',
+'    reply = "لم أجد إجابة جاهزة لسؤالك."',
+'    if AGENT:',
+'        reply += f" يمكنك التواصل مع الدعم: {AGENT}"',
+'    await update.message.reply_text(reply)',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("help", '+r.help+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Customer service bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  // JS
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const COMPANY = '+JSON.stringify(o.company||o.botName)+';',
+'const AGENT = '+JSON.stringify(o.agent||'')+';',
+'const FAQ = '+jsObj(faq)+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "مرحباً بك في خدمة عملاء " + COMPANY + " 👋\\nاكتب سؤالك أو /help.");',
+'});',
+'',
+r.botv+'.onText(/\\/help/, (msg) => {',
+'  const topics = Object.keys(FAQ).map(q => "• " + q).join("\\n");',
+'  '+r.botv+'.sendMessage(msg.chat.id, "المواضيع المتاحة:\\n" + topics);',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  if (!msg.text || msg.text.startsWith("/")) return;',
+'  const text = msg.text.toLowerCase();',
+'  for (const question of Object.keys(FAQ)) {',
+'    if (text.includes(question.toLowerCase())) {',
+'      '+r.botv+'.sendMessage(msg.chat.id, FAQ[question]);',
+'      return;',
+'    }',
+'  }',
+'  let '+r.reply+' = "لم أجد إجابة جاهزة لسؤالك.";',
+'  if (AGENT) '+r.reply+' += " تواصل مع الدعم: " + AGENT;',
+'  '+r.botv+'.sendMessage(msg.chat.id, '+r.reply+');',
+'});',
+'',
+'console.log("Customer service bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 2. Welcome / Auto-reply ---- */
+function genWelcome(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const kw=parsePairs(o.keywords);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'WELCOME = '+JSON.stringify(o.welcome||'أهلاً {name}!'),
+'RULES = '+JSON.stringify(o.rules||''),
+'KEYWORDS = '+pyDict(kw),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    for member in update.message.new_chat_members:',
+'        name = member.first_name',
+'        await update.message.reply_text(WELCOME.replace("{name}", name))',
+'        if RULES:',
+'            await update.message.reply_text("📋 القوانين:\\n" + RULES)',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    text = (update.message.text or "").lower()',
+'    for word, answer in KEYWORDS.items():',
+'        if word.lower() in text:',
+'            await update.message.reply_text(answer)',
+'            return',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Welcome bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const WELCOME = '+JSON.stringify(o.welcome||'أهلاً {name}!')+';',
+'const RULES = '+JSON.stringify(o.rules||'')+';',
+'const KEYWORDS = '+jsObj(kw)+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.on("new_chat_members", (msg) => {',
+'  msg.new_chat_members.forEach((m) => {',
+'    '+r.botv+'.sendMessage(msg.chat.id, WELCOME.replace("{name}", m.first_name));',
+'    if (RULES) '+r.botv+'.sendMessage(msg.chat.id, "📋 القوانين:\\n" + RULES);',
+'  });',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  if (!msg.text) return;',
+'  const text = msg.text.toLowerCase();',
+'  for (const word of Object.keys(KEYWORDS)) {',
+'    if (text.includes(word.toLowerCase())) {',
+'      '+r.botv+'.sendMessage(msg.chat.id, KEYWORDS[word]);',
+'      return;',
+'    }',
+'  }',
+'});',
+'',
+'console.log("Welcome bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 3. Moderation ---- */
+function genMod(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const words=String(o.banWords||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const blockLinks=(o.blockLinks||'yes')==='yes';
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'BANNED_WORDS = '+JSON.stringify(words),
+'BLOCK_LINKS = '+(blockLinks?'True':'False'),
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    msg = update.message',
+'    text = (msg.text or "").lower()',
+'    if BLOCK_LINKS and ("http://" in text or "https://" in text or "t.me/" in text):',
+'        await msg.delete()',
+'        return',
+'    for word in BANNED_WORDS:',
+'        if word.lower() in text:',
+'            await msg.delete()',
+'            return',
+'',
+'async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.message.reply_to_message:',
+'        user = update.message.reply_to_message.from_user',
+'        await context.bot.ban_chat_member(update.message.chat_id, user.id)',
+'        await update.message.reply_text(f"🚫 تم طرد {user.first_name}")',
+'',
+'async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    from telegram import ChatPermissions',
+'    if update.message.reply_to_message:',
+'        user = update.message.reply_to_message.from_user',
+'        await context.bot.restrict_chat_member(update.message.chat_id, user.id, ChatPermissions(can_send_messages=False))',
+'        await update.message.reply_text(f"🔇 تم كتم {user.first_name}")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("ban", ban))',
+'    '+r.botv+'.add_handler(CommandHandler("mute", mute))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Moderation bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const BANNED_WORDS = '+JSON.stringify(words)+';',
+'const BLOCK_LINKS = '+(blockLinks?'true':'false')+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.on("message", async (msg) => {',
+'  const text = (msg.text || "").toLowerCase();',
+'  if (BLOCK_LINKS && /(https?:\\/\\/|t\\.me\\/)/.test(text)) {',
+'    return '+r.botv+'.deleteMessage(msg.chat.id, msg.message_id).catch(() => {});',
+'  }',
+'  if (BANNED_WORDS.some((w) => text.includes(w.toLowerCase()))) {',
+'    '+r.botv+'.deleteMessage(msg.chat.id, msg.message_id).catch(() => {});',
+'  }',
+'});',
+'',
+r.botv+'.onText(/\\/ban/, (msg) => {',
+'  if (!msg.reply_to_message) return;',
+'  const u = msg.reply_to_message.from;',
+'  '+r.botv+'.banChatMember(msg.chat.id, u.id)',
+'    .then(() => '+r.botv+'.sendMessage(msg.chat.id, "🚫 تم طرد " + u.first_name));',
+'});',
+'',
+r.botv+'.onText(/\\/mute/, (msg) => {',
+'  if (!msg.reply_to_message) return;',
+'  const u = msg.reply_to_message.from;',
+'  '+r.botv+'.restrictChatMember(msg.chat.id, u.id, { can_send_messages: false })',
+'    .then(() => '+r.botv+'.sendMessage(msg.chat.id, "🔇 تم كتم " + u.first_name));',
+'});',
+'',
+'console.log("Moderation bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 4. Store ---- */
+function genStore(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const products=parsePairs(o.products);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup',
+'from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'STORE = '+JSON.stringify(o.company||o.botName),
+'OWNER_ID = '+String(parseInt(o.ownerId)||0),
+'PRODUCTS = '+pyDict(products),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    buttons = [[InlineKeyboardButton(f"{name} - {price}", callback_data=name)] for name, price in PRODUCTS.items()]',
+'    await update.message.reply_text(',
+'        f"🛒 أهلاً بك في {STORE}\\nاختر منتجاً للطلب:",',
+'        reply_markup=InlineKeyboardMarkup(buttons)',
+'    )',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    query = update.callback_query',
+'    await query.answer()',
+'    product = query.data',
+'    price = PRODUCTS.get(product, "")',
+'    user = query.from_user',
+'    await query.edit_message_text(f"✅ تم استلام طلبك: {product} ({price})\\nسنتواصل معك قريباً.")',
+'    if OWNER_ID:',
+'        await context.bot.send_message(OWNER_ID, f"🔔 طلب جديد: {product} ({price})\\nمن: {user.first_name} (@{user.username})")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CallbackQueryHandler('+r.handle+'))',
+'    print("Store bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const STORE = '+JSON.stringify(o.company||o.botName)+';',
+'const OWNER_ID = '+String(parseInt(o.ownerId)||0)+';',
+'const PRODUCTS = '+jsObj(products)+';',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  const keyboard = Object.keys(PRODUCTS).map((name) => [{ text: name + " - " + PRODUCTS[name], callback_data: name }]);',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🛒 أهلاً بك في " + STORE + "\\nاختر منتجاً للطلب:", { reply_markup: { inline_keyboard: keyboard } });',
+'});',
+'',
+r.botv+'.on("callback_query", (q) => {',
+'  const product = q.data;',
+'  const price = PRODUCTS[product] || "";',
+'  '+r.botv+'.answerCallbackQuery(q.id);',
+'  '+r.botv+'.sendMessage(q.message.chat.id, "✅ تم استلام طلبك: " + product + " (" + price + ")\\nسنتواصل معك قريباً.");',
+'  if (OWNER_ID) '+r.botv+'.sendMessage(OWNER_ID, "🔔 طلب جديد: " + product + " (" + price + ")\\nمن: " + q.from.first_name);',
+'});',
+'',
+'console.log("Store bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 5. Reminder ---- */
+function genReminder(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import asyncio',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(',
+'        "⏰ بوت التذكير\\n"',
+'        "استخدم: /remind <عدد الثواني> <النص>\\n"',
+'        "مثال: /remind 60 شرب الماء"',
+'    )',
+'',
+'async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    try:',
+'        seconds = int(context.args[0])',
+'        text = " ".join(context.args[1:]) or "تذكير!"',
+'    except (IndexError, ValueError):',
+'        await update.message.reply_text("الصيغة: /remind <ثواني> <النص>")',
+'        return',
+'    await update.message.reply_text(f"✅ سأذكّرك بعد {seconds} ثانية.")',
+'    await asyncio.sleep(seconds)',
+'    await update.message.reply_text(f"🔔 تذكير: {text}")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("remind", remind))',
+'    print("Reminder bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "⏰ بوت التذكير\\nاستخدم: /remind <ثواني> <النص>\\nمثال: /remind 60 شرب الماء");',
+'});',
+'',
+r.botv+'.onText(/\\/remind (\\d+) (.+)/, (msg, match) => {',
+'  const seconds = parseInt(match[1]);',
+'  const text = match[2];',
+'  '+r.botv+'.sendMessage(msg.chat.id, "✅ سأذكّرك بعد " + seconds + " ثانية.");',
+'  setTimeout(() => {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "🔔 تذكير: " + text);',
+'  }, seconds * 1000);',
+'});',
+'',
+'console.log("Reminder bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 6. Broadcast ---- */
+function genBroadcast(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const admin=String(parseInt(o.adminId)||0);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import json, os',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'ADMIN_ID = '+admin,
+'DB = "subscribers.json"',
+'',
+'def load_subs():',
+'    if os.path.exists(DB):',
+'        with open(DB) as f:',
+'            return json.load(f)',
+'    return []',
+'',
+'def save_subs(subs):',
+'    with open(DB, "w") as f:',
+'        json.dump(subs, f)',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    subs = load_subs()',
+'    if update.effective_chat.id not in subs:',
+'        subs.append(update.effective_chat.id)',
+'        save_subs(subs)',
+'    await update.message.reply_text("✅ تم اشتراكك، ستصلك الإشعارات.")',
+'',
+'async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.effective_user.id != ADMIN_ID:',
+'        return',
+'    message = " ".join(context.args)',
+'    if not message:',
+'        await update.message.reply_text("اكتب: /broadcast <الرسالة>")',
+'        return',
+'    subs = load_subs()',
+'    sent = 0',
+'    for chat_id in subs:',
+'        try:',
+'            await context.bot.send_message(chat_id, "📢 " + message)',
+'            sent += 1',
+'        except Exception:',
+'            pass',
+'    await update.message.reply_text(f"تم الإرسال إلى {sent} مشترك.")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("broadcast", broadcast))',
+'    print("Broadcast bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const fs = require("fs");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const ADMIN_ID = '+admin+';',
+'const DB = "subscribers.json";',
+'',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+'function loadSubs() { try { return JSON.parse(fs.readFileSync(DB)); } catch (e) { return []; } }',
+'function saveSubs(s) { fs.writeFileSync(DB, JSON.stringify(s)); }',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  const subs = loadSubs();',
+'  if (!subs.includes(msg.chat.id)) { subs.push(msg.chat.id); saveSubs(subs); }',
+'  '+r.botv+'.sendMessage(msg.chat.id, "✅ تم اشتراكك، ستصلك الإشعارات.");',
+'});',
+'',
+r.botv+'.onText(/\\/broadcast (.+)/, (msg, match) => {',
+'  if (msg.from.id !== ADMIN_ID) return;',
+'  const subs = loadSubs();',
+'  subs.forEach((id) => '+r.botv+'.sendMessage(id, "📢 " + match[1]).catch(() => {}));',
+'  '+r.botv+'.sendMessage(msg.chat.id, "تم الإرسال إلى " + subs.length + " مشترك.");',
+'});',
+'',
+'console.log("Broadcast bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 7. Quiz ---- */
+function parseQuiz(text){
+  return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const parts=l.split('|').map(s=>s.trim());
+    const q=parts[0]||'';
+    const opts=(parts[1]||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const correct=parseInt(parts[2])||1;
+    return {q,opts,correct};
+  });
+}
+function genQuiz(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const qs=parseQuiz(o.questions);
+  const qsJson=JSON.stringify(qs,null,2);
+  if(ctx.langCode==='python'){
+    const c='#';
+    const pyq=JSON.stringify(qs).replace(/"q":/g,'"q":').replace(/true/g,'True').replace(/false/g,'False');
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'QUESTIONS = '+pyList(qs),
+'',
+'user_state = {}',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    user_state[update.effective_chat.id] = {"index": 0, "score": 0}',
+'    await ask(update, context)',
+'',
+'async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    st = user_state[chat]',
+'    if st["index"] >= len(QUESTIONS):',
+'        await context.bot.send_message(chat, f"🏁 انتهى الاختبار! نتيجتك: {st[\'score\']}/{len(QUESTIONS)}")',
+'        return',
+'    q = QUESTIONS[st["index"]]',
+'    opts = "\\n".join(f"{i+1}. {opt}" for i, opt in enumerate(q["opts"]))',
+'    await context.bot.send_message(chat, f"❓ {q[\'q\']}\\n{opts}\\n\\nأرسل رقم الإجابة.")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    if chat not in user_state:',
+'        return',
+'    st = user_state[chat]',
+'    q = QUESTIONS[st["index"]]',
+'    try:',
+'        answer = int(update.message.text.strip())',
+'    except ValueError:',
+'        return',
+'    if answer == q["correct"]:',
+'        st["score"] += 1',
+'        await update.message.reply_text("✅ صحيح!")',
+'    else:',
+'        await update.message.reply_text(f"❌ خطأ. الصحيح: {q[\'correct\']}")',
+'    st["index"] += 1',
+'    await ask(update, context)',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Quiz bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const QUESTIONS = '+qsJson+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'const userState = {};',
+'',
+'function ask(chatId) {',
+'  const st = userState[chatId];',
+'  if (st.index >= QUESTIONS.length) {',
+'    '+r.botv+'.sendMessage(chatId, "🏁 انتهى الاختبار! نتيجتك: " + st.score + "/" + QUESTIONS.length);',
+'    return;',
+'  }',
+'  const q = QUESTIONS[st.index];',
+'  const opts = q.opts.map((o, i) => (i + 1) + ". " + o).join("\\n");',
+'  '+r.botv+'.sendMessage(chatId, "❓ " + q.q + "\\n" + opts + "\\n\\nأرسل رقم الإجابة.");',
+'}',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  userState[msg.chat.id] = { index: 0, score: 0 };',
+'  ask(msg.chat.id);',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const st = userState[msg.chat.id];',
+'  if (!st || !msg.text || msg.text.startsWith("/")) return;',
+'  const answer = parseInt(msg.text.trim());',
+'  if (!answer) return;',
+'  const q = QUESTIONS[st.index];',
+'  if (answer === q.correct) { st.score++; '+r.botv+'.sendMessage(msg.chat.id, "✅ صحيح!"); }',
+'  else '+r.botv+'.sendMessage(msg.chat.id, "❌ خطأ. الصحيح: " + q.correct);',
+'  st.index++;',
+'  ask(msg.chat.id);',
+'});',
+'',
+'console.log("Quiz bot is running...");'
+  ].join('\n');
+}
+function pyList(qs){
+  return '[\n' + qs.map(q=>'    {"q": '+JSON.stringify(q.q)+', "opts": '+JSON.stringify(q.opts)+', "correct": '+q.correct+'}').join(',\n') + '\n]';
+}
+
+/* ---- 8. WhatsApp Auto-reply ---- */
+function genWaAuto(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const kw=parsePairs(o.keywords);
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const { Client, LocalAuth } = require("whatsapp-web.js");',
+'const qrcode = require("qrcode-terminal");',
+'',
+'const WELCOME = '+JSON.stringify(o.welcome||'أهلاً بك!')+';',
+'const KEYWORDS = '+jsObj(kw)+';',
+'',
+'const '+r.botv+' = new Client({ authStrategy: new LocalAuth() });',
+'',
+r.botv+'.on("qr", (qr) => {',
+'  qrcode.generate(qr, { small: true });',
+'  console.log("امسح رمز QR أعلاه بتطبيق واتساب.");',
+'});',
+'',
+r.botv+'.on("ready", () => console.log("WhatsApp bot is ready!"));',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const text = (msg.body || "").toLowerCase();',
+'  if (["hi", "مرحبا", "السلام", "اهلا"].some((g) => text.includes(g))) {',
+'    return msg.reply(WELCOME);',
+'  }',
+'  for (const word of Object.keys(KEYWORDS)) {',
+'    if (text.includes(word.toLowerCase())) {',
+'      return msg.reply(KEYWORDS[word]);',
+'    }',
+'  }',
+'});',
+'',
+r.botv+'.initialize();'
+  ].join('\n');
+}
+
+/* ---- 9. WhatsApp Customer Service ---- */
+function genWaCare(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const menu=parsePairs(o.menu);
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const { Client, LocalAuth } = require("whatsapp-web.js");',
+'const qrcode = require("qrcode-terminal");',
+'',
+'const COMPANY = '+JSON.stringify(o.company||o.botName)+';',
+'const MENU = '+jsArr(menu)+';',
+'',
+'const '+r.botv+' = new Client({ authStrategy: new LocalAuth() });',
+'',
+r.botv+'.on("qr", (qr) => { qrcode.generate(qr, { small: true }); console.log("امسح رمز QR."); });',
+r.botv+'.on("ready", () => console.log("WhatsApp customer service is ready!"));',
+'',
+'function menuText() {',
+'  let m = "🤝 أهلاً بك في خدمة عملاء " + COMPANY + "\\nاختر رقماً:\\n";',
+'  MENU.forEach((item, i) => { m += (i + 1) + ". " + item.title + "\\n"; });',
+'  return m;',
+'}',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const text = (msg.body || "").trim();',
+'  const num = parseInt(text);',
+'  if (num >= 1 && num <= MENU.length) {',
+'    return msg.reply(MENU[num - 1].reply);',
+'  }',
+'  return msg.reply(menuText());',
+'});',
+'',
+r.botv+'.initialize();'
+  ].join('\n');
+}
+function jsArr(pairs){
+  return '[\n' + pairs.map(([k,v])=>'  { title: '+JSON.stringify(k)+', reply: '+JSON.stringify(v)+' }').join(',\n') + '\n]';
+}
+
+/* ---- 10. File Organizer ---- */
+function genFileOrg(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import os, shutil',
+'',
+'FOLDER = '+JSON.stringify(o.folder||'.'),
+'',
+'CATEGORIES = {',
+'    "Images": [".jpg", ".jpeg", ".png", ".gif", ".webp"],',
+'    "Videos": [".mp4", ".mov", ".avi", ".mkv"],',
+'    "Documents": [".pdf", ".doc", ".docx", ".txt", ".xlsx"],',
+'    "Audio": [".mp3", ".wav", ".ogg"],',
+'    "Archives": [".zip", ".rar", ".7z"],',
+'}',
+'',
+'def '+r.handle+'(folder):',
+'    moved = 0',
+'    for filename in os.listdir(folder):',
+'        path = os.path.join(folder, filename)',
+'        if not os.path.isfile(path):',
+'            continue',
+'        ext = os.path.splitext(filename)[1].lower()',
+'        for category, extensions in CATEGORIES.items():',
+'            if ext in extensions:',
+'                dest = os.path.join(folder, category)',
+'                os.makedirs(dest, exist_ok=True)',
+'                shutil.move(path, os.path.join(dest, filename))',
+'                moved += 1',
+'                print(f"نُقل: {filename} -> {category}")',
+'                break',
+'    print(f"✅ تم ترتيب {moved} ملف.")',
+'',
+'if __name__ == "__main__":',
+'    '+r.handle+'(FOLDER)'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const fs = require("fs");',
+'const path = require("path");',
+'',
+'const FOLDER = '+JSON.stringify(o.folder||'.')+';',
+'',
+'const CATEGORIES = {',
+'  Images: [".jpg", ".jpeg", ".png", ".gif", ".webp"],',
+'  Videos: [".mp4", ".mov", ".avi", ".mkv"],',
+'  Documents: [".pdf", ".doc", ".docx", ".txt", ".xlsx"],',
+'  Audio: [".mp3", ".wav", ".ogg"],',
+'  Archives: [".zip", ".rar", ".7z"],',
+'};',
+'',
+'function '+r.handle+'(folder) {',
+'  let moved = 0;',
+'  for (const filename of fs.readdirSync(folder)) {',
+'    const filePath = path.join(folder, filename);',
+'    if (!fs.statSync(filePath).isFile()) continue;',
+'    const ext = path.extname(filename).toLowerCase();',
+'    for (const [category, exts] of Object.entries(CATEGORIES)) {',
+'      if (exts.includes(ext)) {',
+'        const dest = path.join(folder, category);',
+'        fs.mkdirSync(dest, { recursive: true });',
+'        fs.renameSync(filePath, path.join(dest, filename));',
+'        moved++;',
+'        console.log("نُقل: " + filename + " -> " + category);',
+'        break;',
+'      }',
+'    }',
+'  }',
+'  console.log("✅ تم ترتيب " + moved + " ملف.");',
+'}',
+'',
+r.handle+'(FOLDER);'
+  ].join('\n');
+}
+
+/* ---- 11. Web Scraper ---- */
+function genScraper(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import requests',
+'from bs4 import BeautifulSoup',
+'',
+'URL = '+JSON.stringify(o.url||'https://example.com'),
+'SELECTOR = '+JSON.stringify(o.selector||'h2'),
+'',
+'def '+r.handle+'():',
+'    response = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"})',
+'    soup = BeautifulSoup(response.text, "html.parser")',
+'    elements = soup.select(SELECTOR)',
+'    results = [el.get_text(strip=True) for el in elements if el.get_text(strip=True)]',
+'    with open("results.txt", "w", encoding="utf-8") as f:',
+'        for i, item in enumerate(results, 1):',
+'            line = f"{i}. {item}"',
+'            print(line)',
+'            f.write(line + "\\n")',
+'    print(f"✅ تم حفظ {len(results)} عنصر في results.txt")',
+'',
+'if __name__ == "__main__":',
+'    '+r.handle+'()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+c+' يحتاج: npm install axios cheerio',
+'const axios = require("axios");',
+'const cheerio = require("cheerio");',
+'const fs = require("fs");',
+'',
+'const URL = '+JSON.stringify(o.url||'https://example.com')+';',
+'const SELECTOR = '+JSON.stringify(o.selector||'h2')+';',
+'',
+'async function '+r.handle+'() {',
+'  const { data } = await axios.get(URL, { headers: { "User-Agent": "Mozilla/5.0" } });',
+'  const $ = cheerio.load(data);',
+'  const results = [];',
+'  $(SELECTOR).each((i, el) => {',
+'    const text = $(el).text().trim();',
+'    if (text) results.push(text);',
+'  });',
+'  const out = results.map((t, i) => (i + 1) + ". " + t).join("\\n");',
+'  fs.writeFileSync("results.txt", out);',
+'  console.log(out);',
+'  console.log("✅ تم حفظ " + results.length + " عنصر في results.txt");',
+'}',
+'',
+r.handle+'();'
+  ].join('\n');
+}
+
+/* ---- 12. Poll / Voting ---- */
+function genPoll(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const choices=String(o.choices||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'QUESTION = '+JSON.stringify(o.question||'سؤالك؟'),
+'CHOICES = '+JSON.stringify(choices),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🗳️ أرسل /poll لبدء التصويت.")',
+'',
+'async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await context.bot.send_poll(',
+'        update.effective_chat.id,',
+'        QUESTION,',
+'        CHOICES,',
+'        is_anonymous=False,',
+'        allows_multiple_answers=False,',
+'    )',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("poll", poll))',
+'    print("Poll bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const QUESTION = '+JSON.stringify(o.question||'سؤالك؟')+';',
+'const CHOICES = '+JSON.stringify(choices)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🗳️ أرسل /poll لبدء التصويت.");',
+'});',
+'',
+r.botv+'.onText(/\\/poll/, (msg) => {',
+'  '+r.botv+'.sendPoll(msg.chat.id, QUESTION, CHOICES, { is_anonymous: false, allows_multiple_answers: false });',
+'});',
+'',
+'console.log("Poll bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 13. Number Guessing Game ---- */
+function genGame(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import random',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'games = {}',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    games[chat] = {"number": random.randint(1, 100), "tries": 0}',
+'    await update.message.reply_text("🎮 خمّن رقماً بين 1 و 100! أرسل تخمينك.")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    if chat not in games:',
+'        await update.message.reply_text("أرسل /start لبدء اللعبة.")',
+'        return',
+'    try:',
+'        guess = int(update.message.text.strip())',
+'    except ValueError:',
+'        return',
+'    game = games[chat]',
+'    game["tries"] += 1',
+'    if guess < game["number"]:',
+'        await update.message.reply_text("⬆️ الرقم أكبر.")',
+'    elif guess > game["number"]:',
+'        await update.message.reply_text("⬇️ الرقم أصغر.")',
+'    else:',
+'        await update.message.reply_text(f"🎉 صحيح! خمّنته بـ {game[\'tries\']} محاولة. /start للعب مجدداً.")',
+'        del games[chat]',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Game bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'const games = {};',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  games[msg.chat.id] = { number: Math.floor(Math.random() * 100) + 1, tries: 0 };',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🎮 خمّن رقماً بين 1 و 100! أرسل تخمينك.");',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const game = games[msg.chat.id];',
+'  if (!game || !msg.text || msg.text.startsWith("/")) return;',
+'  const guess = parseInt(msg.text.trim());',
+'  if (!guess) return;',
+'  game.tries++;',
+'  if (guess < game.number) '+r.botv+'.sendMessage(msg.chat.id, "⬆️ الرقم أكبر.");',
+'  else if (guess > game.number) '+r.botv+'.sendMessage(msg.chat.id, "⬇️ الرقم أصغر.");',
+'  else {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "🎉 صحيح! خمّنته بـ " + game.tries + " محاولة. /start للعب مجدداً.");',
+'    delete games[msg.chat.id];',
+'  }',
+'});',
+'',
+'console.log("Game bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 14. Calculator ---- */
+function genCalc(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import re',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🧮 أرسل أي عملية حسابية، مثال: 12 * (3 + 4)")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    expr = (update.message.text or "").strip()',
+'    '+c+' allow only safe arithmetic characters',
+'    if not re.fullmatch(r"[0-9+\\-*/(). ]+", expr):',
+'        await update.message.reply_text("أرسل أرقاماً وعمليات حسابية فقط.")',
+'        return',
+'    try:',
+'        result = eval(expr, {"__builtins__": {}}, {})',
+'        await update.message.reply_text(f"= {result}")',
+'    except Exception:',
+'        await update.message.reply_text("تعذّر حساب هذه العملية.")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Calculator bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const TelegramBot = require("node-telegram-bot-api");',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🧮 أرسل أي عملية حسابية، مثال: 12 * (3 + 4)");',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  if (!msg.text || msg.text.startsWith("/")) return;',
+'  const expr = msg.text.trim();',
+'  '+c+' allow only safe arithmetic characters',
+'  if (!/^[0-9+\\-*/(). ]+$/.test(expr)) {',
+'    return '+r.botv+'.sendMessage(msg.chat.id, "أرسل أرقاماً وعمليات حسابية فقط.");',
+'  }',
+'  try {',
+'    const result = Function("\\"use strict\\"; return (" + expr + ");")();',
+'    '+r.botv+'.sendMessage(msg.chat.id, "= " + result);',
+'  } catch (e) {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "تعذّر حساب هذه العملية.");',
+'  }',
+'});',
+'',
+'console.log("Calculator bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 15. Password Generator ---- */
+function genPassword(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const length=parseInt(o.length)||16;
+  const count=parseInt(o.count)||5;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+'import secrets, string',
+'',
+'LENGTH = '+length,
+'COUNT = '+count,
+'',
+'def '+r.handle+'(length):',
+'    alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"',
+'    return "".join(secrets.choice(alphabet) for _ in range(length))',
+'',
+'if __name__ == "__main__":',
+'    print(f"🔐 {COUNT} كلمة سر بطول {LENGTH}:")',
+'    for i in range(COUNT):',
+'        print(f"{i + 1}. {'+r.handle+'(LENGTH)}")'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+'const crypto = require("crypto");',
+'',
+'const LENGTH = '+length+';',
+'const COUNT = '+count+';',
+'',
+'function '+r.handle+'(length) {',
+'  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";',
+'  let out = "";',
+'  for (let i = 0; i < length; i++) {',
+'    out += alphabet[crypto.randomInt(alphabet.length)];',
+'  }',
+'  return out;',
+'}',
+'',
+'console.log("🔐 " + COUNT + " كلمة سر بطول " + LENGTH + ":");',
+'for (let i = 0; i < COUNT; i++) {',
+'  console.log((i + 1) + ". " + '+r.handle+'(LENGTH));',
+'}'
+  ].join('\n');
+}
+
+/* ---- 16. Translation ---- */
+function genTranslate(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  const target=(o.target||'en').trim();
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+c+' يحتاج: pip install python-telegram-bot deep-translator',
+'from deep_translator import GoogleTranslator',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'TARGET = '+JSON.stringify(target),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(f"🌍 أرسل أي نص وسأترجمه إلى ({TARGET}).")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    text = update.message.text or ""',
+'    try:',
+'        translated = GoogleTranslator(source="auto", target=TARGET).translate(text)',
+'        await update.message.reply_text(translated)',
+'    except Exception:',
+'        await update.message.reply_text("تعذّرت الترجمة، حاول مرة أخرى.")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Translation bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+c+' يحتاج: npm install node-telegram-bot-api @vitalets/google-translate-api',
+'const TelegramBot = require("node-telegram-bot-api");',
+'const { translate } = require("@vitalets/google-translate-api");',
+'',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const TARGET = '+JSON.stringify(target)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🌍 أرسل أي نص وسأترجمه إلى (" + TARGET + ").");',
+'});',
+'',
+r.botv+'.on("message", async (msg) => {',
+'  if (!msg.text || msg.text.startsWith("/")) return;',
+'  try {',
+'    const '+r.reply+' = await translate(msg.text, { to: TARGET });',
+'    '+r.botv+'.sendMessage(msg.chat.id, '+r.reply+'.text);',
+'  } catch (e) {',
+'    '+r.botv+'.sendMessage(msg.chat.id, "تعذّرت الترجمة، حاول مرة أخرى.");',
+'  }',
+'});',
+'',
+'console.log("Translation bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 17. Video Downloader (YouTube / Instagram / TikTok) — quality + MP3 ---- */
+function genDownloader(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+c+' يحتاج: pip install python-telegram-bot yt-dlp   (ويحتاج ffmpeg مثبّتاً على الجهاز)',
+'import os',
+'import yt_dlp',
+'from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup',
+'from telegram.ext import (Application, CommandHandler, CallbackQueryHandler,',
+'                          MessageHandler, filters, ContextTypes)',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'pending = {}   '+c+' chat_id -> url',
+'',
+'FORMATS = {',
+'    "best": "mp4/bestvideo+bestaudio/best",',
+'    "720": "bestvideo[height<=720]+bestaudio/best[height<=720]",',
+'    "360": "bestvideo[height<=360]+bestaudio/best[height<=360]",',
+'}',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("📥 أرسل رابط فيديو من يوتيوب أو إنستغرام أو تيكتوك.")',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    url = (update.message.text or "").strip()',
+'    if not url.startswith("http"):',
+'        await update.message.reply_text("أرسل رابطاً صحيحاً يبدأ بـ http.")',
+'        return',
+'    pending[update.effective_chat.id] = url',
+'    keyboard = [',
+'        [InlineKeyboardButton("🎬 أفضل جودة", callback_data="best"),',
+'         InlineKeyboardButton("📺 720p", callback_data="720")],',
+'        [InlineKeyboardButton("📱 360p", callback_data="360"),',
+'         InlineKeyboardButton("🎵 صوت MP3", callback_data="mp3")],',
+'    ]',
+'    await update.message.reply_text("اختر الجودة:", reply_markup=InlineKeyboardMarkup(keyboard))',
+'',
+'async def on_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    query = update.callback_query',
+'    await query.answer()',
+'    chat = query.message.chat.id',
+'    url = pending.get(chat)',
+'    if not url:',
+'        await query.edit_message_text("انتهت صلاحية الرابط، أرسله من جديد.")',
+'        return',
+'    choice = query.data',
+'    await query.edit_message_text("⏳ جاري التحميل...")',
+'    filename = None',
+'    if choice == "mp3":',
+'        ydl_opts = {',
+'            "outtmpl": "dl_%(id)s.%(ext)s",',
+'            "format": "bestaudio/best",',
+'            "quiet": True, "noplaylist": True,',
+'            "postprocessors": [{"key": "FFmpegExtractAudio",',
+'                                "preferredcodec": "mp3", "preferredquality": "192"}],',
+'        }',
+'    else:',
+'        ydl_opts = {',
+'            "outtmpl": "dl_%(id)s.%(ext)s",',
+'            "format": FORMATS.get(choice, FORMATS["best"]),',
+'            "quiet": True, "noplaylist": True,',
+'        }',
+'    try:',
+'        with yt_dlp.YoutubeDL(ydl_opts) as ydl:',
+'            info = ydl.extract_info(url, download=True)',
+'            filename = ydl.prepare_filename(info)',
+'        if choice == "mp3":',
+'            filename = os.path.splitext(filename)[0] + ".mp3"',
+'        if os.path.getsize(filename) > 50 * 1024 * 1024:',
+'            await context.bot.send_message(chat, "⚠️ الملف أكبر من 50 ميغابايت (حد تلكرام).")',
+'        elif choice == "mp3":',
+'            with open(filename, "rb") as audio:',
+'                await context.bot.send_audio(chat, audio)',
+'        else:',
+'            with open(filename, "rb") as video:',
+'                await context.bot.send_video(chat, video)',
+'    except Exception as error:',
+'        await context.bot.send_message(chat, "تعذّر التحميل: " + str(error)[:120])',
+'    finally:',
+'        pending.pop(chat, None)',
+'        if filename and os.path.exists(filename):',
+'            os.remove(filename)',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CallbackQueryHandler(on_choice))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Downloader bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+c+' يحتاج: npm install node-telegram-bot-api youtube-dl-exec   (ويحتاج ffmpeg مثبّتاً على الجهاز)',
+'const TelegramBot = require("node-telegram-bot-api");',
+'const youtubedl = require("youtube-dl-exec");',
+'const fs = require("fs");',
+'',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'const pending = {};',
+'',
+'const FORMATS = {',
+'  best: "mp4/bestvideo+bestaudio/best",',
+'  "720": "bestvideo[height<=720]+bestaudio/best[height<=720]",',
+'  "360": "bestvideo[height<=360]+bestaudio/best[height<=360]",',
+'};',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "📥 أرسل رابط فيديو من يوتيوب أو إنستغرام أو تيكتوك.");',
+'});',
+'',
+r.botv+'.on("message", (msg) => {',
+'  const url = (msg.text || "").trim();',
+'  if (!url.startsWith("http")) return;',
+'  pending[msg.chat.id] = url;',
+'  '+r.botv+'.sendMessage(msg.chat.id, "اختر الجودة:", { reply_markup: { inline_keyboard: [',
+'    [{ text: "🎬 أفضل جودة", callback_data: "best" }, { text: "📺 720p", callback_data: "720" }],',
+'    [{ text: "📱 360p", callback_data: "360" }, { text: "🎵 صوت MP3", callback_data: "mp3" }],',
+'  ] } });',
+'});',
+'',
+r.botv+'.on("callback_query", async (q) => {',
+'  const chat = q.message.chat.id;',
+'  const url = pending[chat];',
+'  '+r.botv+'.answerCallbackQuery(q.id);',
+'  if (!url) { '+r.botv+'.sendMessage(chat, "انتهت صلاحية الرابط، أرسله من جديد."); return; }',
+'  const choice = q.data;',
+'  '+r.botv+'.editMessageText("⏳ جاري التحميل...", { chat_id: chat, message_id: q.message.message_id });',
+'  const file = "dl_" + Date.now() + (choice === "mp3" ? ".mp3" : ".mp4");',
+'  try {',
+'    if (choice === "mp3") {',
+'      await youtubedl(url, { output: file, extractAudio: true, audioFormat: "mp3", noPlaylist: true });',
+'    } else {',
+'      await youtubedl(url, { output: file, format: FORMATS[choice] || FORMATS.best, noPlaylist: true });',
+'    }',
+'    if (fs.statSync(file).size > 50 * 1024 * 1024) {',
+'      '+r.botv+'.sendMessage(chat, "⚠️ الملف أكبر من 50 ميغابايت (حد تلكرام).");',
+'    } else if (choice === "mp3") {',
+'      await '+r.botv+'.sendAudio(chat, file);',
+'    } else {',
+'      await '+r.botv+'.sendVideo(chat, file);',
+'    }',
+'  } catch (error) {',
+'    '+r.botv+'.sendMessage(chat, "تعذّر التحميل.");',
+'  } finally {',
+'    delete pending[chat];',
+'    if (fs.existsSync(file)) fs.unlinkSync(file);',
+'  }',
+'});',
+'',
+'console.log("Downloader bot is running...");'
+  ].join('\n');
+}
+
+/* ---- 18. Images to PDF ---- */
+function genImagesToPdf(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+c+' يحتاج: pip install python-telegram-bot pillow',
+'import os',
+'from PIL import Image',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'albums = {}   '+c+' chat_id -> [image paths]',
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(',
+'        "🖼️ أرسل الصور واحدة تلو الأخرى، ثم /done لإنشاء ملف PDF.\\n"',
+'        "/cancel للإلغاء."',
+'    )',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    photo = update.message.photo[-1]',
+'    file = await context.bot.get_file(photo.file_id)',
+'    path = f"img_{chat}_{len(albums.get(chat, []))}.jpg"',
+'    await file.download_to_drive(path)',
+'    albums.setdefault(chat, []).append(path)',
+'    await update.message.reply_text(f"✅ أُضيفت الصورة ({len(albums[chat])}). أرسل المزيد أو /done.")',
+'',
+'async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    paths = albums.get(chat, [])',
+'    if not paths:',
+'        await update.message.reply_text("لم ترسل أي صورة بعد.")',
+'        return',
+'    images = [Image.open(p).convert("RGB") for p in paths]',
+'    pdf_path = f"album_{chat}.pdf"',
+'    images[0].save(pdf_path, save_all=True, append_images=images[1:])',
+'    with open(pdf_path, "rb") as doc:',
+'        await context.bot.send_document(chat, doc, filename="images.pdf")',
+'    for p in paths:',
+'        if os.path.exists(p):',
+'            os.remove(p)',
+'    if os.path.exists(pdf_path):',
+'        os.remove(pdf_path)',
+'    albums.pop(chat, None)',
+'',
+'async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    for p in albums.get(chat, []):',
+'        if os.path.exists(p):',
+'            os.remove(p)',
+'    albums.pop(chat, None)',
+'    await update.message.reply_text("أُلغيت العملية.")',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(CommandHandler("done", done))',
+'    '+r.botv+'.add_handler(CommandHandler("cancel", cancel))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.PHOTO, '+r.handle+'))',
+'    print("Image to PDF bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+c+' يحتاج: npm install node-telegram-bot-api pdfkit axios',
+'const TelegramBot = require("node-telegram-bot-api");',
+'const PDFDocument = require("pdfkit");',
+'const axios = require("axios");',
+'const fs = require("fs");',
+'',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'const albums = {};   '+c+' chat_id -> [image buffers]',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "🖼️ أرسل الصور ثم /done لإنشاء ملف PDF. /cancel للإلغاء.");',
+'});',
+'',
+r.botv+'.on("photo", async (msg) => {',
+'  const chat = msg.chat.id;',
+'  const photo = msg.photo[msg.photo.length - 1];',
+'  const link = await '+r.botv+'.getFileLink(photo.file_id);',
+'  const res = await axios.get(link, { responseType: "arraybuffer" });',
+'  (albums[chat] = albums[chat] || []).push(Buffer.from(res.data));',
+'  '+r.botv+'.sendMessage(chat, "✅ أُضيفت الصورة (" + albums[chat].length + "). أرسل المزيد أو /done.");',
+'});',
+'',
+r.botv+'.onText(/\\/done/, (msg) => {',
+'  const chat = msg.chat.id;',
+'  const imgs = albums[chat] || [];',
+'  if (!imgs.length) { '+r.botv+'.sendMessage(chat, "لم ترسل أي صورة بعد."); return; }',
+'  const pdfPath = "album_" + chat + ".pdf";',
+'  const doc = new PDFDocument({ autoFirstPage: false });',
+'  const stream = fs.createWriteStream(pdfPath);',
+'  doc.pipe(stream);',
+'  imgs.forEach((buf) => {',
+'    const img = doc.openImage(buf);',
+'    doc.addPage({ size: [img.width, img.height] });',
+'    doc.image(img, 0, 0);',
+'  });',
+'  doc.end();',
+'  stream.on("finish", async () => {',
+'    await '+r.botv+'.sendDocument(chat, pdfPath, {}, { filename: "images.pdf" });',
+'    if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);',
+'    delete albums[chat];',
+'  });',
+'});',
+'',
+r.botv+'.onText(/\\/cancel/, (msg) => {',
+'  delete albums[msg.chat.id];',
+'  '+r.botv+'.sendMessage(msg.chat.id, "أُلغيت العملية.");',
+'});',
+'',
+'console.log("Image to PDF bot is running...");'
+  ].join('\n');
+}
+
+/* ============================================================
+   EXPLANATIONS (bilingual, built from platform + language)
+   ============================================================ */
+function buildExplain(ctx){
+  const o=ctx.opts, p=ctx.platform, lang=ctx.langCode;
+  const steps={ar:[],en:[]};
+  const push=(ar,en)=>{ steps.ar.push(ar); steps.en.push(en); };
+
+  // What it does
+  push('هذا الكود ينفّذ: '+L(ctx.tpl.desc), 'What it does: '+ctx.tpl.desc.en);
+
+  // Install
+  if(ctx.tpl.id==='tg-img2pdf'&&lang==='python'){
+    push('ثبّت المكتبات: <code>pip install python-telegram-bot pillow</code>','Install: <code>pip install python-telegram-bot pillow</code>');
+  } else if(ctx.tpl.id==='tg-img2pdf'&&lang==='javascript'){
+    push('ثبّت المكتبات: <code>npm install node-telegram-bot-api pdfkit axios</code>','Install: <code>npm install node-telegram-bot-api pdfkit axios</code>');
+  } else if(ctx.tpl.id==='tg-downloader'&&lang==='python'){
+    push('ثبّت المكتبات: <code>pip install python-telegram-bot yt-dlp</code> — وتأكد أن <code>ffmpeg</code> مثبّت على جهازك.','Install: <code>pip install python-telegram-bot yt-dlp</code> — and make sure <code>ffmpeg</code> is installed on your machine.');
+  } else if(ctx.tpl.id==='tg-downloader'&&lang==='javascript'){
+    push('ثبّت المكتبات: <code>npm install node-telegram-bot-api youtube-dl-exec</code> — وتأكد أن <code>ffmpeg</code> مثبّت على جهازك.','Install: <code>npm install node-telegram-bot-api youtube-dl-exec</code> — and make sure <code>ffmpeg</code> is installed on your machine.');
+  } else if(ctx.tpl.id==='tg-translate'&&lang==='python'){
+    push('ثبّت المكتبات: <code>pip install python-telegram-bot deep-translator</code>','Install: <code>pip install python-telegram-bot deep-translator</code>');
+  } else if(ctx.tpl.id==='tg-translate'&&lang==='javascript'){
+    push('ثبّت المكتبات: <code>npm install node-telegram-bot-api @vitalets/google-translate-api</code>','Install: <code>npm install node-telegram-bot-api @vitalets/google-translate-api</code>');
+  } else if(p==='telegram'&&lang==='python'){
+    push('ثبّت المكتبة: <code>pip install python-telegram-bot</code>','Install: <code>pip install python-telegram-bot</code>');
+  } else if(p==='telegram'&&lang==='javascript'){
+    push('ثبّت المكتبة: <code>npm install node-telegram-bot-api</code>','Install: <code>npm install node-telegram-bot-api</code>');
+  } else if(p==='whatsapp'){
+    push('ثبّت المكتبات: <code>npm install whatsapp-web.js qrcode-terminal</code>','Install: <code>npm install whatsapp-web.js qrcode-terminal</code>');
+  } else if(p==='script'&&lang==='python'&&ctx.tpl.id==='sc-scraper'){
+    push('ثبّت المكتبات: <code>pip install requests beautifulsoup4</code>','Install: <code>pip install requests beautifulsoup4</code>');
+  } else if(p==='script'&&lang==='javascript'&&ctx.tpl.id==='sc-scraper'){
+    push('ثبّت المكتبات: <code>npm install axios cheerio</code>','Install: <code>npm install axios cheerio</code>');
+  } else if(p==='script'){
+    push('لا يحتاج مكتبات إضافية — يعمل بالمكتبات القياسية.','No extra libraries needed — uses the standard library.');
+  }
+
+  // Token
+  if(p==='telegram'){
+    push('احصل على التوكن من <code>@BotFather</code> في تلكرام وضعه مكان <code>'+ (o.token||'TOKEN') +'</code>.',
+         'Get your token from <code>@BotFather</code> on Telegram and replace <code>'+(o.token||'TOKEN')+'</code>.');
+  } else if(p==='whatsapp'){
+    push('عند التشغيل سيظهر رمز QR — امسحه من واتساب (الأجهزة المرتبطة) مرة واحدة.',
+         'On first run a QR code appears — scan it from WhatsApp (Linked Devices) once.');
+  }
+
+  // Save & run
+  const fname = ctx.fname;
+  push('احفظ الكود في ملف باسم <code>'+fname+'</code>.','Save the code to a file named <code>'+fname+'</code>.');
+  if(lang==='python') push('شغّله: <code>python '+fname+'</code>','Run it: <code>python '+fname+'</code>');
+  else push('شغّله: <code>node '+fname+'</code>','Run it: <code>node '+fname+'</code>');
+
+  // Customize
+  push('عدّل القيم في أعلى الملف (الرسائل، الكلمات المفتاحية...) لتغيير سلوك '+(p==='script'?'السكربت':'البوت')+'.',
+       'Edit the values at the top of the file (messages, keywords…) to change how the '+(p==='script'?'script':'bot')+' behaves.');
+
+  return steps;
+}
+
+/* ============================================================
+   SYNTAX HIGHLIGHTING
+   ============================================================ */
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+const PY_KW = 'def|class|import|from|return|if|elif|else|for|while|in|and|or|not|is|True|False|None|async|await|with|as|try|except|finally|lambda|pass|break|continue|global|yield|raise|print';
+const JS_KW = 'const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|typeof|instanceof|of|in|async|await|try|catch|finally|throw|class|extends|super|require|module|exports|true|false|null|undefined|console';
+function highlight(code, lang){
+  const esc = escapeHtml(code);
+  let re, kw;
+  if(lang==='python'){
+    kw = PY_KW;
+    re = new RegExp(
+      '(#[^\\n]*)' +                                   // 1 comment
+      '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\')' + // 2 string
+      '|\\b(' + kw + ')\\b' +                          // 3 keyword
+      '|\\b(\\d+\\.?\\d*)\\b' +                        // 4 number
+      '|([A-Za-z_]\\w*)(?=\\s*\\()',                   // 5 function
+      'g');
+  } else {
+    kw = JS_KW;
+    re = new RegExp(
+      '(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)' +       // 1 comment
+      '|("(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\')' + // 2 string
+      '|\\b(' + kw + ')\\b' +                          // 3 keyword
+      '|\\b(\\d+\\.?\\d*)\\b' +                        // 4 number
+      '|([A-Za-z_$]\\w*)(?=\\s*\\()',                  // 5 function
+      'g');
+  }
+  return esc.replace(re, function(m, com, str, key, num, fn){
+    if(com) return '<span class="tok-com">'+com+'</span>';
+    if(str) return '<span class="tok-str">'+str+'</span>';
+    if(key) return '<span class="tok-key">'+key+'</span>';
+    if(num) return '<span class="tok-num">'+num+'</span>';
+    if(fn)  return '<span class="tok-fn">'+fn+'</span>';
+    return m;
+  });
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const app = document.getElementById('app');
+const el = (tag, attrs, html)=>{ const e=document.createElement(tag); if(attrs) for(const k in attrs){ if(k==='class')e.className=attrs[k]; else if(k==='html')e.innerHTML=attrs[k]; else e.setAttribute(k,attrs[k]); } if(html!=null)e.innerHTML=html; return e; };
+
+function applyChrome(){
+  document.documentElement.setAttribute('dir', t('dir'));
+  document.documentElement.setAttribute('lang', state.lang);
+  document.documentElement.setAttribute('data-theme', store.theme);
+  document.getElementById('brandSub').textContent = t('brandSub');
+  document.getElementById('footText').textContent = state.lang==='ar'
+    ? 'Script Bot — يولّد بوتات وسكربتات جاهزة بدون إنترنت وبدون ذكاء اصطناعي.'
+    : 'Script Bot — generates ready bots & scripts, offline and without AI.';
+  renderTabs();
+}
+function renderTabs(){
+  const tabs=document.getElementById('tabs');
+  tabs.innerHTML='';
+  const items=[['home','nav_home'],['build','nav_build'],['play','nav_play'],['qr','nav_qr'],['guide','nav_guide'],['saved','nav_saved']];
+  items.forEach(([v,key])=>{
+    const b=el('button',{class: state.view===v?'active':''}, t(key));
+    b.onclick=()=>go(v);
+    tabs.appendChild(b);
+  });
+  const langBtn=el('button',{}, t('lang_btn')); langBtn.onclick=toggleLang; tabs.appendChild(langBtn);
+  const themeBtn=el('button',{}, store.theme==='dark'?t('theme_light'):t('theme_dark')); themeBtn.onclick=toggleTheme; tabs.appendChild(themeBtn);
+}
+function toggleLang(){ state.lang = state.lang==='ar'?'en':'ar'; store.lang=state.lang; render(); }
+function toggleTheme(){ store.theme = store.theme==='dark'?'light':'dark'; render(); }
+
+function go(view){ state.view=view; render(); window.scrollTo(0,0); }
+
+function render(){
+  applyChrome();
+  app.innerHTML='';
+  if(state.view==='home') return renderHome();
+  if(state.view==='build') return renderBuild();
+  if(state.view==='play') return renderPlay();
+  if(state.view==='qr') return renderQR();
+  if(state.view==='guide') return renderGuide();
+  if(state.view==='saved') return renderSaved();
+}
+
+/* ---- Home ---- */
+function renderHome(){
+  const hero=el('section',{class:'hero'});
+  hero.appendChild(el('h1',{},t('hero_h')));
+  hero.appendChild(el('p',{},t('hero_p')));
+  const cta=el('div',{class:'cta'});
+  const b1=el('button',{class:'btn'},t('hero_cta')); b1.onclick=()=>{ document.getElementById('grid').scrollIntoView({behavior:'smooth'}); };
+  const b2=el('button',{class:'btn ghost'},t('hero_cta2')); b2.onclick=()=>go('play');
+  cta.appendChild(b1); cta.appendChild(b2); hero.appendChild(cta);
+  const stats=el('div',{class:'stats'});
+  [['18',t('st_tpl')],['100%',t('st_off')],['0$',t('st_free')],['∞',t('st_uniq')]].forEach(([n,l])=>{
+    const s=el('div',{class:'s'}); s.appendChild(el('b',{},n)); s.appendChild(el('span',{},l)); stats.appendChild(s);
+  });
+  hero.appendChild(stats);
+  app.appendChild(hero);
+
+  const filters=el('div',{class:'filters'});
+  [['all','f_all'],['telegram','f_telegram'],['whatsapp','f_whatsapp'],['script','f_script']].forEach(([f,key])=>{
+    const c=el('button',{class:'chip'+(state.filter===f?' active':'')},t(key));
+    c.onclick=()=>{ state.filter=f; renderHome_refresh(); };
+    filters.appendChild(c);
+  });
+  app.appendChild(filters);
+
+  const grid=el('div',{class:'grid',id:'grid'});
+  app.appendChild(grid);
+  fillGrid(grid);
+}
+function renderHome_refresh(){ render(); document.getElementById('grid') && document.querySelector('.filters').scrollIntoView({behavior:'smooth',block:'start'}); }
+function fillGrid(grid){
+  grid.innerHTML='';
+  const list = TEMPLATES.filter(tp=> state.filter==='all' || tp.platform===state.filter);
+  list.forEach(tp=>{
+    const card=el('div',{class:'tcard'});
+    card.appendChild(el('div',{class:'ic'},tp.icon));
+    card.appendChild(el('h3',{},L(tp.title)));
+    card.appendChild(el('p',{},L(tp.desc)));
+    const tags=el('div',{class:'tags'});
+    const pcls = tp.platform==='telegram'?'tg':tp.platform==='whatsapp'?'wa':'sc';
+    const plabel = tp.platform==='telegram'?'Telegram':tp.platform==='whatsapp'?'WhatsApp':(state.lang==='ar'?'سكربت':'Script');
+    tags.appendChild(el('span',{class:'tag '+pcls},plabel));
+    tp.langs.forEach(lc=> tags.appendChild(el('span',{class:'tag '+(lc==='python'?'py':'js')}, lc==='python'?'Python':'JavaScript')));
+    card.appendChild(tags);
+    card.onclick=()=>openBuilder(tp);
+    grid.appendChild(card);
+  });
+}
+
+/* ---- Builder ---- */
+function openBuilder(tp){
+  state.tpl=tp;
+  state.platform=tp.platform;
+  state.langCode=tp.langs[0];
+  state.opts={};
+  tp.fields.forEach(f=> state.opts[f.key]=f.def);
+  state.code='';
+  go('build');
+}
+function renderBuild(){
+  if(!state.tpl){
+    const empty=el('div',{class:'empty'});
+    empty.appendChild(el('div',{class:'big'},'🧩'));
+    empty.appendChild(el('p',{},t('choose')));
+    const b=el('button',{class:'btn'},t('nav_home')); b.onclick=()=>go('home');
+    empty.appendChild(b);
+    app.appendChild(empty); return;
+  }
+  const tp=state.tpl;
+  const back=el('button',{class:'btn ghost small'},t('back')); back.onclick=()=>go('home');
+  app.appendChild(back);
+
+  const panel=el('div',{class:'panel'});
+  panel.appendChild(el('h2',{}, tp.icon+' '+L(tp.title)));
+  panel.appendChild(el('p',{class:'sub'}, L(tp.desc)));
+
+  // platform + language selectors
+  const seg=el('div',{class:'segrow'});
+  // language
+  const langField=el('div',{class:'field'});
+  langField.appendChild(el('label',{},t('pick_lang')));
+  const langSeg=el('div',{class:'seg'});
+  tp.langs.forEach(lc=>{
+    const b=el('button',{class: state.langCode===lc?'active':''}, lc==='python'?'🐍 Python':'🟨 JavaScript');
+    b.onclick=()=>{ state.langCode=lc; renderBuild_refresh(); };
+    langSeg.appendChild(b);
+  });
+  langField.appendChild(langSeg);
+  seg.appendChild(langField);
+  panel.appendChild(seg);
+
+  // fields
+  panel.appendChild(el('h4',{style:'margin:16px 0 4px'}, '⚙️ '+t('settings')));
+  tp.fields.forEach(f=>{
+    const field=el('div',{class:'field'});
+    const lbl=el('label',{}, L(f.label)); if(f.hint) lbl.appendChild(el('span',{class:'hint'},'('+L(f.hint)+')'));
+    field.appendChild(lbl);
+    let input;
+    if(f.type==='textarea'){ input=el('textarea',{}); input.value=state.opts[f.key]||''; }
+    else if(f.type==='select'){
+      input=el('select',{});
+      const opts = f.key==='blockLinks' ? [['yes',state.lang==='ar'?'نعم':'Yes'],['no',state.lang==='ar'?'لا':'No']] : [];
+      opts.forEach(([v,lab])=>{ const op=el('option',{value:v},lab); if(state.opts[f.key]===v)op.selected=true; input.appendChild(op); });
+    }
+    else { input=el('input',{type:'text'}); input.value=state.opts[f.key]||''; }
+    input.oninput=()=>{ state.opts[f.key]=input.value; };
+    input.onchange=()=>{ state.opts[f.key]=input.value; };
+    field.appendChild(input);
+    panel.appendChild(field);
+  });
+
+  const actions=el('div',{class:'actions'});
+  const gen=el('button',{class:'btn'}, t('generate')); gen.onclick=()=>{ generate(); renderBuild_refresh(); scrollToResult(); };
+  actions.appendChild(gen);
+  if(state.code){
+    const re=el('button',{class:'btn warn'}, t('regenerate')); re.onclick=()=>{ generate(); renderBuild_refresh(); scrollToResult(); };
+    actions.appendChild(re);
+  }
+  panel.appendChild(actions);
+  app.appendChild(panel);
+
+  if(state.code) app.appendChild(renderResult());
+}
+function renderBuild_refresh(){ render(); }
+function scrollToResult(){ setTimeout(()=>{ const r=document.getElementById('resultBlock'); if(r) r.scrollIntoView({behavior:'smooth',block:'start'}); },50); }
+
+function currentCtx(){
+  return { tpl:state.tpl, platform:state.platform, langCode:state.langCode, opts:state.opts, fname:state.fname, rnd:makeRnd() };
+}
+function fileName(){
+  const base = (state.tpl.id).replace(/[^a-z0-9]+/gi,'_');
+  return base + (state.langCode==='python'?'.py':'.js');
+}
+function generate(){
+  state.fname=fileName();
+  const ctx=currentCtx(); ctx.fname=state.fname;
+  state.code = state.tpl.gen(ctx);
+  state._ctx = ctx;
+}
+
+function renderResult(){
+  const wrap=el('div',{class:'result',id:'resultBlock'});
+  // code header
+  const head=el('div',{class:'codehead'});
+  head.appendChild(el('span',{class:'fname'}, '📄 '+state.fname));
+  const sp=el('div',{class:'sp'});
+  const copyBtn=el('button',{class:'btn small good'}, t('copy'));
+  copyBtn.onclick=()=>copyCode(copyBtn);
+  const dlBtn=el('button',{class:'btn small'}, t('download')); dlBtn.onclick=downloadCode;
+  const zipBtn=el('button',{class:'btn small'}, t('export_zip')); zipBtn.onclick=exportZip;
+  const saveBtn=el('button',{class:'btn small'}, t('save')); saveBtn.onclick=saveProject;
+  sp.appendChild(copyBtn); sp.appendChild(dlBtn); sp.appendChild(zipBtn); sp.appendChild(saveBtn);
+  if(state.langCode==='javascript'){
+    const runBtn=el('button',{class:'btn small warn'}, t('run')); runBtn.onclick=()=>runJS(state.code);
+    sp.appendChild(runBtn);
+  } else if(state.langCode==='python'){
+    const runBtn=el('button',{class:'btn small warn'}, t('run_py')); runBtn.onclick=()=>runPython(state.code);
+    sp.appendChild(runBtn);
+  }
+  head.appendChild(sp);
+  wrap.appendChild(head);
+
+  const pre=el('pre',{class:'code'});
+  pre.innerHTML = highlight(state.code, state.langCode);
+  wrap.appendChild(pre);
+
+  // run note for bots
+  if(state.platform!=='script'){
+    wrap.appendChild(el('div',{class:'note'}, t('note_run_bot')));
+  }
+  if(state.platform==='whatsapp'){
+    wrap.appendChild(el('div',{class:'note'}, t('note_wa')));
+  }
+  if(state.langCode==='python'){
+    wrap.appendChild(el('div',{class:'note'}, '🐍 '+t('py_note')));
+  }
+
+  // run output placeholder
+  const ro=el('div',{class:'runout hidden',id:'runout'});
+  ro.appendChild(el('div',{class:'rh'}, '🖥️ '+t('run_h')));
+  ro.appendChild(el('pre',{id:'runpre'},''));
+  wrap.appendChild(ro);
+
+  // explanation
+  const steps = buildExplain(state._ctx || currentCtx());
+  const ex=el('div',{class:'explain'});
+  ex.appendChild(el('h4',{}, t('explain_h')));
+  const ol=el('ol',{});
+  steps[state.lang].forEach(s=>{ const li=el('li',{}); li.innerHTML=s; ol.appendChild(li); });
+  ex.appendChild(ol);
+  wrap.appendChild(ex);
+
+  // APK note
+  const apk=el('div',{class:'explain',style:'margin-top:12px'});
+  apk.appendChild(el('h4',{}, t('apk_h')));
+  apk.appendChild(el('p',{style:'margin:0;color:var(--muted)'}, t('apk_p')));
+  wrap.appendChild(apk);
+
+  // CTA to the full run guide
+  const gcta=el('div',{style:'margin-top:14px'});
+  const gbtn=el('button',{class:'btn'}, t('guide_cta')); gbtn.onclick=()=>go('guide');
+  gcta.appendChild(gbtn);
+  wrap.appendChild(gcta);
+
+  return wrap;
+}
+
+/* ---- Actions ---- */
+function copyCode(btn){
+  navigator.clipboard.writeText(state.code).then(()=>{
+    toast(t('copied'));
+    if(btn){ const o=btn.textContent; btn.textContent=t('copied'); setTimeout(()=>btn.textContent=o,1200); }
+  }).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=state.code; document.body.appendChild(ta); ta.select();
+    try{document.execCommand('copy');toast(t('copied'));}catch(e){} document.body.removeChild(ta);
+  });
+}
+function downloadCode(){
+  const blob=new Blob([state.code],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=state.fname; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function saveProject(){
+  const list=store.projects;
+  list.unshift({
+    id:'p'+Date.now(),
+    tplId:state.tpl.id,
+    title:L(state.tpl.title),
+    platform:state.platform,
+    langCode:state.langCode,
+    fname:state.fname,
+    code:state.code,
+    date:new Date().toISOString()
+  });
+  store.projects=list.slice(0,100);
+  toast(t('saved_ok'));
+  renderTabs();
+}
+
+/* ---- Run JS (sandboxed) ---- */
+function runJS(code){
+  const ro=document.getElementById('runout');
+  const pre=document.getElementById('runpre');
+  if(!ro||!pre) return;
+  ro.classList.remove('hidden');
+  pre.textContent=t('running');
+  pre.className='';
+
+  const lines=[];
+  let done=false;
+  const iframe=document.createElement('iframe');
+  iframe.style.display='none';
+  iframe.sandbox='allow-scripts';
+  const runnerId='sbrun_'+Date.now();
+  const src =
+    '<script>'+
+    'var __out=[];'+
+    'function post(t,m){parent.postMessage({id:"'+runnerId+'",type:t,msg:m},"*");}'+
+    'console.log=function(){post("log",Array.prototype.map.call(arguments,String).join(" "));};'+
+    'console.error=function(){post("err",Array.prototype.map.call(arguments,String).join(" "));};'+
+    'console.warn=console.log;console.info=console.log;'+
+    'try{('+'function(){'+'"use strict";\n'+code.replace(/<\/script>/gi,'<\\/script>')+'\n})();post("done","");}'+
+    'catch(e){post("err",String(e));post("done","");}'+
+    '<\/script>';
+  iframe.srcdoc=src;
+
+  function onMsg(ev){
+    if(!ev.data||ev.data.id!==runnerId) return;
+    if(ev.data.type==='log') lines.push(ev.data.msg);
+    else if(ev.data.type==='err') lines.push('⚠ '+ev.data.msg);
+    else if(ev.data.type==='done'){ finish(); }
+    if(ev.data.type!=='done'){ pre.textContent = lines.join('\n') || t('no_output'); }
+  }
+  function finish(){
+    if(done) return; done=true;
+    window.removeEventListener('message',onMsg);
+    pre.textContent = lines.join('\n') || t('no_output');
+    setTimeout(()=>{ if(iframe.parentNode) iframe.parentNode.removeChild(iframe); },50);
+  }
+  window.addEventListener('message',onMsg);
+  document.body.appendChild(iframe);
+  setTimeout(()=>{ if(!done){ lines.push('⏱ '+t('run_timeout')); finish(); } }, 3500);
+}
+
+/* ---- Run Python (Pyodide, lazy-loaded) ---- */
+let _pyodidePromise=null;
+function pyodideBase(){
+  try{ const q=new URLSearchParams(location.search).get('pyodide'); if(q) return q; }catch(e){}
+  return 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+}
+function loadPyodideOnce(){
+  if(_pyodidePromise) return _pyodidePromise;
+  const base=pyodideBase();
+  _pyodidePromise=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=base+'pyodide.js';
+    s.onload=async()=>{
+      try{ const py=await loadPyodide({indexURL:base}); resolve(py); }
+      catch(e){ _pyodidePromise=null; reject(e); }
+    };
+    s.onerror=()=>{ _pyodidePromise=null; reject(new Error('script load failed')); };
+    document.head.appendChild(s);
+  });
+  return _pyodidePromise;
+}
+async function runPython(code){
+  const ro=document.getElementById('runout');
+  const pre=document.getElementById('runpre');
+  if(!ro||!pre) return;
+  ro.classList.remove('hidden');
+  pre.className='';
+  pre.textContent=t('py_loading');
+  let py;
+  try{ py=await loadPyodideOnce(); }
+  catch(e){ pre.className='err'; pre.textContent=t('py_fail'); return; }
+  const lines=[];
+  const flush=()=>{ pre.textContent=lines.join('\n')||t('no_output'); };
+  try{ py.setStdout({batched:s=>{ lines.push(s); flush(); }}); }catch(e){}
+  try{ py.setStderr({batched:s=>{ lines.push('⚠ '+s); flush(); }}); }catch(e){}
+  pre.textContent='';
+  try{
+    await py.runPythonAsync(code);
+    if(!lines.length){ pre.textContent=t('no_output'); }
+  }catch(e){
+    lines.push(String(e && e.message ? e.message : e));
+    flush();
+  }
+}
+
+/* ---- Playground ---- */
+let _pgLang = sessionStorage.getItem('sb_pglang') || 'javascript';
+function renderPlay(){
+  const panel=el('div',{class:'panel pg'});
+  panel.appendChild(el('h2',{}, '🧪 '+t('play_h')));
+  panel.appendChild(el('p',{class:'sub'}, t('play_p')));
+
+  // language toggle
+  const langField=el('div',{class:'field'});
+  langField.appendChild(el('label',{}, t('play_lang')));
+  const seg=el('div',{class:'seg'});
+  const ta=el('textarea',{id:'pgcode'});
+  const defaults={javascript:t('play_ph'), python:t('play_ph_py')};
+  function setLang(lc){
+    const prev=_pgLang;
+    _pgLang=lc; sessionStorage.setItem('sb_pglang',lc);
+    // if editor holds the other language's default (or is empty), swap to this language's default
+    const cur=(ta.value||'').trim();
+    if(!cur || cur===defaults.javascript.trim() || cur===defaults.python.trim()){
+      ta.value=defaults[lc]; sessionStorage.setItem('sb_pg_'+lc, ta.value);
+    } else if(prev!==lc){
+      ta.value = sessionStorage.getItem('sb_pg_'+lc) || defaults[lc];
+    }
+    [...seg.children].forEach(b=> b.classList.toggle('active', b.dataset.lc===lc));
+  }
+  [['javascript','🟨 JavaScript'],['python','🐍 Python']].forEach(([lc,label])=>{
+    const b=el('button',{}, label); b.dataset.lc=lc; b.onclick=()=>setLang(lc); seg.appendChild(b);
+  });
+  langField.appendChild(seg);
+  panel.appendChild(langField);
+
+  ta.value = sessionStorage.getItem('sb_pg_'+_pgLang) || defaults[_pgLang];
+  ta.oninput=()=>sessionStorage.setItem('sb_pg_'+_pgLang, ta.value);
+  panel.appendChild(ta);
+
+  const actions=el('div',{class:'actions'});
+  const run=el('button',{class:'btn'}, t('play_run'));
+  run.onclick=()=>{ if(_pgLang==='python') runPython(ta.value); else runJS(ta.value); };
+  const clr=el('button',{class:'btn ghost'}, t('play_clear'));
+  clr.onclick=()=>{ ta.value=''; sessionStorage.setItem('sb_pg_'+_pgLang,''); const ro=document.getElementById('runout'); if(ro)ro.classList.add('hidden'); };
+  actions.appendChild(run); actions.appendChild(clr);
+  panel.appendChild(actions);
+
+  // output container (shared by runJS/runPython via #runout / #runpre)
+  const ro=el('div',{class:'runout hidden',id:'runout'});
+  ro.appendChild(el('div',{class:'rh'}, '🖥️ '+t('run_h')));
+  ro.appendChild(el('pre',{id:'runpre'},''));
+  panel.appendChild(ro);
+
+  app.appendChild(panel);
+  // reflect active language button
+  [...seg.children].forEach(b=> b.classList.toggle('active', b.dataset.lc===_pgLang));
+}
+
+/* ---- Run Guide (detailed) ---- */
+var GUIDE_AR = [
+'<h2>📘 دليل التشغيل الكامل</h2>',
+'<p>هنا نشرح خطوة بخطوة كيف تحوّل الكود الذي أنشأته إلى بوت تلكرام أو واتساب يعمل فعلاً — على <b>اللابتوب</b> وعلى <b>الموبايل</b>. اتبع القسم الذي يخصّك بالترتيب ولن تخربط.</p>',
+'<div class="toc">',
+'  <a href="#g-tg-token">1) تلكرام: التوكن</a>',
+'  <a href="#g-tg-pc">2) تلكرام على اللابتوب</a>',
+'  <a href="#g-tg-mob">3) تلكرام على الموبايل</a>',
+'  <a href="#g-wa-pc">4) واتساب على اللابتوب</a>',
+'  <a href="#g-wa-mob">5) واتساب على الموبايل</a>',
+'  <a href="#g-scripts">6) السكربتات</a>',
+'  <a href="#g-247">7) تشغيل دائم 24/7</a>',
+'  <a href="#g-fix">8) حل المشاكل</a>',
+'</div>',
+
+'<h3 id="g-tg-token" class="sec"><span class="badge tg">تلكرام</span> 1) إنشاء البوت والحصول على التوكن</h3>',
+'<p>هذه الخطوة واحدة على الموبايل واللابتوب، وتُعمل مرة واحدة فقط:</p>',
+'<ol>',
+'  <li>افتح تطبيق <b>تلكرام</b> وابحث في الأعلى عن <code>@BotFather</code> (الحساب الرسمي بعلامة زرقاء).</li>',
+'  <li>اضغط <b>Start</b>، ثم أرسل الأمر <code>/newbot</code>.</li>',
+'  <li>سيطلب منك <b>اسم البوت</b> (أي اسم، مثل: متجري). أرسله.</li>',
+'  <li>ثم يطلب <b>معرّف البوت (username)</b> ويجب أن ينتهي بكلمة <code>bot</code> (مثل: <code>my_store_bot</code>).</li>',
+'  <li>سيعطيك رسالة فيها <b>التوكن</b> — سطر طويل شكله مثل: <code>123456789:AAH...xyz</code>. <b>انسخه</b>.</li>',
+'  <li>ارجع لتطبيق سكربت بوت، الصق التوكن في خانة «توكن البوت»، ثم أنشئ الكود وحمّله.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ التوكن مثل كلمة السر — لا تنشره لأحد. أي شخص يملكه يتحكم ببوتك.</div>',
+
+'<h3 id="g-tg-pc" class="sec"><span class="badge tg">تلكرام</span> <span class="badge pc">لابتوب</span> 2) التشغيل على الكمبيوتر</h3>',
+'<p><b>إذا اخترت لغة Python:</b></p>',
+'<ol>',
+'  <li>نزّل بايثون من <code>python.org/downloads</code> وثبّته. <b>مهم جداً على ويندوز:</b> علّم مربع <b>«Add Python to PATH»</b> في أول شاشة قبل التثبيت.</li>',
+'  <li>افتح نافذة الأوامر: ويندوز اكتب <code>cmd</code> في قائمة ابدأ، ماك افتح <b>Terminal</b>.</li>',
+'  <li>ثبّت المكتبة (تظهر لك في صفحة الشرح داخل التطبيق)، مثلاً: <code>pip install python-telegram-bot</code></li>',
+'  <li>احفظ الكود بملف اسمه <code>bot.py</code> (أو استعمل زر «تحميل» في التطبيق).</li>',
+'  <li>في نافذة الأوامر انتقل لمكان الملف: <code>cd Downloads</code> (حسب مجلد التحميل).</li>',
+'  <li>شغّل البوت: <code>python bot.py</code></li>',
+'  <li>لمّا تشوف رسالة مثل <code>...is running</code> يعني البوت أصبح شغّالاً. افتح تلكرام وكلّم بوتك وأرسل <code>/start</code>.</li>',
+'</ol>',
+'<p><b>إذا اخترت لغة JavaScript:</b></p>',
+'<ol>',
+'  <li>نزّل <b>Node.js</b> من <code>nodejs.org</code> (النسخة LTS) وثبّته.</li>',
+'  <li>افتح نافذة الأوامر (cmd / Terminal).</li>',
+'  <li>ثبّت المكتبة، مثلاً: <code>npm install node-telegram-bot-api</code></li>',
+'  <li>احفظ الكود بملف <code>bot.js</code>، ثم شغّله: <code>node bot.js</code></li>',
+'</ol>',
+'<div class="tip">💡 البوت يبقى شغّالاً ما دامت نافذة الأوامر مفتوحة. إذا سكّرتها يتوقف البوت. لجعله يعمل دائماً شوف قسم «تشغيل دائم 24/7».</div>',
+
+'<h3 id="g-tg-mob" class="sec"><span class="badge tg">تلكرام</span> <span class="badge mob">موبايل</span> 3) التشغيل على الأندرويد</h3>',
+'<p><b>الطريقة الأسهل — لغة Python عبر تطبيق Pydroid 3:</b></p>',
+'<ol>',
+'  <li>ثبّت تطبيق <b>«Pydroid 3»</b> من متجر Play.</li>',
+'  <li>افتحه، ومن القائمة الجانبية اختر <b>Pip</b>، واكتب اسم المكتبة (مثل <code>python-telegram-bot</code>) واضغط Install.</li>',
+'  <li>ارجع للمحرّر (أيقونة الورقة)، الصق الكود الذي حمّلته من التطبيق.</li>',
+'  <li>اضغط زر التشغيل <b>▶️</b> بالأسفل. البوت الآن شغّال ما دام Pydroid مفتوحاً.</li>',
+'</ol>',
+'<p><b>طريقة المتقدمين — عبر Termux (Python أو JavaScript):</b></p>',
+'<ol>',
+'  <li>ثبّت <b>Termux</b> من متجر <b>F-Droid</b> (النسخة في Play قديمة).</li>',
+'  <li>حدّث الحزم: <code>pkg update</code></li>',
+'  <li>لبايثون: <code>pkg install python</code> ثم <code>pip install python-telegram-bot</code></li>',
+'  <li>لجافا سكريبت: <code>pkg install nodejs</code> ثم <code>npm install node-telegram-bot-api</code></li>',
+'  <li>احفظ الكود بملف (مثلاً بمحرّر <code>nano bot.py</code>)، ثم شغّله: <code>python bot.py</code> أو <code>node bot.js</code></li>',
+'</ol>',
+'<div class="warnbox">📱 أصحاب <b>آيفون</b>: تشغيل البوت على الآيفون صعب. الأفضل استعمال لابتوب أو استضافة مجانية (قسم 7).</div>',
+
+'<h3 id="g-wa-pc" class="sec"><span class="badge wa">واتساب</span> <span class="badge pc">لابتوب</span> 4) واتساب على الكمبيوتر</h3>',
+'<p>بوت واتساب يعمل بلغة JavaScript فقط (مكتبة whatsapp-web.js)، والأفضل تشغيله على لابتوب:</p>',
+'<ol>',
+'  <li>نزّل <b>Node.js</b> من <code>nodejs.org</code> وثبّته.</li>',
+'  <li>افتح نافذة الأوامر وثبّت المكتبات: <code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>احفظ الكود بملف <code>bot.js</code> ثم شغّله: <code>node bot.js</code></li>',
+'  <li>سيظهر <b>رمز QR</b> داخل نافذة الأوامر.</li>',
+'  <li>على هاتفك: افتح <b>واتساب ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز</b>، ثم وجّه الكاميرا نحو رمز الـ QR في الشاشة لمسحه.</li>',
+'  <li>بعد المسح يتصل البوت ويبدأ الرد. اتركه شغّالاً (النافذة مفتوحة).</li>',
+'</ol>',
+'<div class="tip">💡 استعمل رقم واتساب مخصّص للبوت إن أمكن، وتجنّب الإرسال الجماعي المزعج حتى لا يُحظر الرقم.</div>',
+
+'<h3 id="g-wa-mob" class="sec"><span class="badge wa">واتساب</span> <span class="badge mob">موبايل</span> 5) واتساب على الموبايل (متقدّم)</h3>',
+'<p>ممكن لكنه ثقيل لأنه يحتاج متصفح Chromium داخل Termux:</p>',
+'<ol>',
+'  <li>ثبّت <b>Termux</b> من F-Droid، ثم: <code>pkg update</code></li>',
+'  <li><code>pkg install nodejs</code></li>',
+'  <li>ثبّت المتصفح: <code>pkg install chromium</code></li>',
+'  <li><code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>شغّل: <code>node bot.js</code> وامسح رمز الـ QR كما في طريقة اللابتوب.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ الطريقة تستهلك بطارية وذاكرة. للاستخدام الجدّي ننصح باللابتوب أو استضافة.</div>',
+
+'<h3 id="g-scripts" class="sec"><span class="badge pc">سكربت</span> 6) تشغيل السكربتات (ترتيب ملفات، كلمات سر، سحب بيانات)</h3>',
+'<p>السكربتات أدوات تُشغّل مرة وتعطي نتيجة (ليست بوتات دائمة):</p>',
+'<ol>',
+'  <li>ثبّت بايثون أو Node.js كما في الأعلى.</li>',
+'  <li>ثبّت المكتبات المذكورة في صفحة الشرح (بعض السكربتات لا تحتاج أي مكتبة).</li>',
+'  <li>احفظ الكود وشغّله: <code>python script.py</code> أو <code>node script.js</code></li>',
+'  <li>سكربتات بايثون البسيطة يمكنك أيضاً تجربتها فوراً داخل التطبيق بزر «تشغيل (Python)».</li>',
+'</ol>',
+
+'<h3 id="g-247" class="sec">☁️ 7) كيف يبقى البوت شغّالاً 24 ساعة؟</h3>',
+'<p>عند إغلاق النافذة أو الموبايل يتوقف البوت. لجعله دائم التشغيل، ارفعه على استضافة (بعضها مجاني):</p>',
+'<ul>',
+'  <li><b>Railway</b> أو <b>Render</b>: ترفع ملفاتك وتشتغل على السحابة. مناسبة للمبتدئين.</li>',
+'  <li><b>Replit</b>: تكتب الكود مباشرة في المتصفح وتشغّله.</li>',
+'  <li><b>VPS</b> (خادم افتراضي مثل Hetzner / DigitalOcean): تحكّم كامل، برسوم شهرية بسيطة.</li>',
+'</ul>',
+'<p>الفكرة العامة: ترفع ملف الكود + ملف يذكر المكتبات (<code>requirements.txt</code> لبايثون أو <code>package.json</code> لجافا سكريبت)، وتضبط أمر التشغيل <code>python bot.py</code> أو <code>node bot.js</code>.</p>',
+
+'<h3 id="g-fix" class="sec">🛠️ 8) حل المشاكل الشائعة</h3>',
+'<ul>',
+'  <li><b>«python» أو «node» غير معروف:</b> لم يُثبّت البرنامج أو نسيت «Add to PATH». أعد التثبيت وأعد فتح نافذة الأوامر.</li>',
+'  <li><b>ModuleNotFoundError / Cannot find module:</b> لم تُثبّت المكتبة — نفّذ أمر <code>pip install</code> أو <code>npm install</code> المذكور في الشرح.</li>',
+'  <li><b>البوت لا يرد:</b> تأكد أن النافذة ما زالت مفتوحة، وأن التوكن صحيح ومنسوخ كاملاً بدون فراغات.</li>',
+'  <li><b>Unauthorized / توكن خاطئ:</b> انسخ التوكن من جديد من BotFather (قد يكون ناقصاً).</li>',
+'  <li><b>رمز QR انتهى (واتساب):</b> أوقف البوت وشغّله من جديد وامسح الرمز بسرعة.</li>',
+'  <li><b>ffmpeg غير موجود (بوت التحميل):</b> ثبّت ffmpeg على جهازك (ويندوز: من ffmpeg.org، أو <code>pkg install ffmpeg</code> في Termux، أو <code>brew install ffmpeg</code> على ماك).</li>',
+'</ul>',
+'<div class="tip">✅ نصيحة أخيرة: ابدأ ببوت بسيط (رد آلي)، شغّله على اللابتوب حتى تتقنه، وبعدها انتقل للاستضافة والمميزات الأكبر.</div>'
+].join('\n');
+
+var GUIDE_EN = [
+'<h2>📘 Full Run Guide</h2>',
+'<p>This explains, step by step, how to turn the code you generated into a real Telegram or WhatsApp bot — on a <b>laptop</b> and on a <b>phone</b>. Follow the section that fits you, in order, and you won\'t get lost.</p>',
+'<div class="toc">',
+'  <a href="#g-tg-token">1) Telegram: token</a>',
+'  <a href="#g-tg-pc">2) Telegram on laptop</a>',
+'  <a href="#g-tg-mob">3) Telegram on mobile</a>',
+'  <a href="#g-wa-pc">4) WhatsApp on laptop</a>',
+'  <a href="#g-wa-mob">5) WhatsApp on mobile</a>',
+'  <a href="#g-scripts">6) Scripts</a>',
+'  <a href="#g-247">7) Run 24/7</a>',
+'  <a href="#g-fix">8) Troubleshooting</a>',
+'</div>',
+
+'<h3 id="g-tg-token" class="sec"><span class="badge tg">Telegram</span> 1) Create the bot and get the token</h3>',
+'<p>Same on phone and laptop, done once:</p>',
+'<ol>',
+'  <li>Open <b>Telegram</b> and search for <code>@BotFather</code> (official, blue check).</li>',
+'  <li>Press <b>Start</b>, then send <code>/newbot</code>.</li>',
+'  <li>It asks for a <b>bot name</b> (any name). Send it.</li>',
+'  <li>Then it asks for a <b>username</b> that must end with <code>bot</code> (e.g. <code>my_store_bot</code>).</li>',
+'  <li>You get a <b>token</b> — a long line like <code>123456789:AAH...xyz</code>. <b>Copy it.</b></li>',
+'  <li>Back in Script Bot, paste it into the “Bot token” field, then generate and download the code.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ The token is like a password — never share it. Anyone with it controls your bot.</div>',
+
+'<h3 id="g-tg-pc" class="sec"><span class="badge tg">Telegram</span> <span class="badge pc">Laptop</span> 2) Run on a computer</h3>',
+'<p><b>If you chose Python:</b></p>',
+'<ol>',
+'  <li>Install Python from <code>python.org/downloads</code>. <b>On Windows, tick “Add Python to PATH”</b> on the first screen.</li>',
+'  <li>Open a terminal: Windows type <code>cmd</code> in Start; Mac open <b>Terminal</b>.</li>',
+'  <li>Install the library shown on the app\'s explanation page, e.g. <code>pip install python-telegram-bot</code></li>',
+'  <li>Save the code as <code>bot.py</code> (or use the app\'s Download button).</li>',
+'  <li>Go to the file\'s folder: <code>cd Downloads</code></li>',
+'  <li>Run it: <code>python bot.py</code></li>',
+'  <li>When you see <code>...is running</code>, the bot is live. Open Telegram, message your bot, send <code>/start</code>.</li>',
+'</ol>',
+'<p><b>If you chose JavaScript:</b></p>',
+'<ol>',
+'  <li>Install <b>Node.js</b> (LTS) from <code>nodejs.org</code>.</li>',
+'  <li>Open a terminal.</li>',
+'  <li>Install the library, e.g. <code>npm install node-telegram-bot-api</code></li>',
+'  <li>Save as <code>bot.js</code>, then run: <code>node bot.js</code></li>',
+'</ol>',
+'<div class="tip">💡 The bot stays up while the terminal window is open. Close it and the bot stops. See section 7 to keep it always on.</div>',
+
+'<h3 id="g-tg-mob" class="sec"><span class="badge tg">Telegram</span> <span class="badge mob">Mobile</span> 3) Run on Android</h3>',
+'<p><b>Easiest — Python via the Pydroid 3 app:</b></p>',
+'<ol>',
+'  <li>Install <b>“Pydroid 3”</b> from the Play Store.</li>',
+'  <li>Open it, choose <b>Pip</b> from the side menu, type the library (e.g. <code>python-telegram-bot</code>) and press Install.</li>',
+'  <li>Back in the editor, paste the code you downloaded.</li>',
+'  <li>Press <b>▶️</b>. The bot runs while Pydroid is open.</li>',
+'</ol>',
+'<p><b>Advanced — via Termux (Python or JavaScript):</b></p>',
+'<ol>',
+'  <li>Install <b>Termux</b> from <b>F-Droid</b> (the Play version is outdated).</li>',
+'  <li><code>pkg update</code></li>',
+'  <li>Python: <code>pkg install python</code> then <code>pip install python-telegram-bot</code></li>',
+'  <li>JavaScript: <code>pkg install nodejs</code> then <code>npm install node-telegram-bot-api</code></li>',
+'  <li>Save the code (e.g. <code>nano bot.py</code>), then run <code>python bot.py</code> or <code>node bot.js</code></li>',
+'</ol>',
+'<div class="warnbox">📱 <b>iPhone</b>: running a bot on iOS is hard. Use a laptop or free hosting (section 7).</div>',
+
+'<h3 id="g-wa-pc" class="sec"><span class="badge wa">WhatsApp</span> <span class="badge pc">Laptop</span> 4) WhatsApp on a computer</h3>',
+'<p>WhatsApp bots run on JavaScript only (whatsapp-web.js), best on a laptop:</p>',
+'<ol>',
+'  <li>Install <b>Node.js</b> from <code>nodejs.org</code>.</li>',
+'  <li>Install the libraries: <code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>Save the code as <code>bot.js</code>, then run <code>node bot.js</code></li>',
+'  <li>A <b>QR code</b> appears in the terminal.</li>',
+'  <li>On your phone: <b>WhatsApp → Settings → Linked Devices → Link a Device</b>, then scan the QR on screen.</li>',
+'  <li>Once scanned, the bot connects and starts replying. Keep it running.</li>',
+'</ol>',
+'<div class="tip">💡 Use a dedicated WhatsApp number for the bot if possible, and avoid spammy bulk sending so the number isn\'t banned.</div>',
+
+'<h3 id="g-wa-mob" class="sec"><span class="badge wa">WhatsApp</span> <span class="badge mob">Mobile</span> 5) WhatsApp on mobile (advanced)</h3>',
+'<p>Possible but heavy — it needs Chromium inside Termux:</p>',
+'<ol>',
+'  <li>Install <b>Termux</b> from F-Droid, then <code>pkg update</code></li>',
+'  <li><code>pkg install nodejs</code></li>',
+'  <li><code>pkg install chromium</code></li>',
+'  <li><code>npm install whatsapp-web.js qrcode-terminal</code></li>',
+'  <li>Run <code>node bot.js</code> and scan the QR as on laptop.</li>',
+'</ol>',
+'<div class="warnbox">⚠️ This drains battery and memory. For serious use prefer a laptop or hosting.</div>',
+
+'<h3 id="g-scripts" class="sec"><span class="badge pc">Script</span> 6) Running scripts (file organizer, passwords, scraper)</h3>',
+'<p>Scripts are one-shot tools, not always-on bots:</p>',
+'<ol>',
+'  <li>Install Python or Node.js as above.</li>',
+'  <li>Install any libraries listed on the explanation page (some need none).</li>',
+'  <li>Save and run: <code>python script.py</code> or <code>node script.js</code></li>',
+'  <li>Simple Python scripts can also be tried instantly in the app via the “Run (Python)” button.</li>',
+'</ol>',
+
+'<h3 id="g-247" class="sec">☁️ 7) How to keep the bot running 24/7</h3>',
+'<p>The bot stops when you close the window or phone. To keep it always on, deploy it to a host (some are free):</p>',
+'<ul>',
+'  <li><b>Railway</b> or <b>Render</b>: upload your files, runs in the cloud. Beginner-friendly.</li>',
+'  <li><b>Replit</b>: write and run code right in the browser.</li>',
+'  <li><b>VPS</b> (Hetzner / DigitalOcean): full control for a small monthly fee.</li>',
+'</ul>',
+'<p>General idea: upload the code file + a dependencies file (<code>requirements.txt</code> for Python or <code>package.json</code> for JavaScript), and set the start command <code>python bot.py</code> or <code>node bot.js</code>.</p>',
+
+'<h3 id="g-fix" class="sec">🛠️ 8) Troubleshooting</h3>',
+'<ul>',
+'  <li><b>“python”/“node” not recognized:</b> not installed, or you skipped “Add to PATH”. Reinstall and reopen the terminal.</li>',
+'  <li><b>ModuleNotFoundError / Cannot find module:</b> the library isn\'t installed — run the <code>pip install</code> / <code>npm install</code> command from the explanation.</li>',
+'  <li><b>Bot doesn\'t reply:</b> is the window still open? Is the token correct and fully copied with no spaces?</li>',
+'  <li><b>Unauthorized / bad token:</b> re-copy the token from BotFather (it may be incomplete).</li>',
+'  <li><b>QR expired (WhatsApp):</b> stop the bot, run it again, and scan quickly.</li>',
+'  <li><b>ffmpeg not found (downloader bot):</b> install ffmpeg (Windows: ffmpeg.org, Termux: <code>pkg install ffmpeg</code>, Mac: <code>brew install ffmpeg</code>).</li>',
+'</ul>',
+'<div class="tip">✅ Final tip: start with a simple auto-reply bot, run it on a laptop until you\'re comfortable, then move to hosting and bigger features.</div>'
+].join('\n');
+
+function renderGuide(){
+  const panel=el('div',{class:'panel guide-wrap'});
+  panel.innerHTML = state.lang==='ar' ? GUIDE_AR : GUIDE_EN;
+  app.appendChild(panel);
+  // smooth-scroll TOC links within the SPA
+  panel.querySelectorAll('.toc a').forEach(a=>{
+    a.onclick=(e)=>{ e.preventDefault(); const id=a.getAttribute('href').slice(1); const el2=document.getElementById(id); if(el2) el2.scrollIntoView({behavior:'smooth',block:'start'}); };
+  });
+}
+
+/* ---- QR generator ---- */
+function renderQR(){
+  const panel=el('div',{class:'panel'});
+  panel.appendChild(el('h2',{}, '🔳 '+t('qr_h')));
+  panel.appendChild(el('p',{class:'sub'}, t('qr_p')));
+  const field=el('div',{class:'field'});
+  field.appendChild(el('label',{}, t('qr_label')));
+  const input=el('input',{type:'text'}); input.value=sessionStorage.getItem('sb_qr')||t('qr_ph');
+  input.oninput=()=>sessionStorage.setItem('sb_qr',input.value);
+  field.appendChild(input);
+  panel.appendChild(field);
+  const actions=el('div',{class:'actions'});
+  const mk=el('button',{class:'btn'}, t('qr_make'));
+  const dl=el('button',{class:'btn ghost'}, t('qr_dl'));
+  actions.appendChild(mk); actions.appendChild(dl);
+  panel.appendChild(actions);
+  const holder=el('div',{style:'margin-top:18px;display:flex;justify-content:center'});
+  const canvas=el('canvas',{id:'qrcanvas'}); canvas.style.maxWidth='100%'; canvas.style.borderRadius='14px';
+  holder.appendChild(canvas);
+  panel.appendChild(holder);
+  panel.appendChild(el('div',{class:'note',style:'margin-top:16px'}, t('qr_hint_wa')));
+  app.appendChild(panel);
+
+  function draw(){
+    const text=(input.value||'').trim();
+    const ctx=canvas.getContext('2d');
+    if(!text){ canvas.width=canvas.height=0; toast(t('qr_empty')); return; }
+    try{
+      qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+      const qr=qrcode(0,'M'); qr.addData(text); qr.make();
+      const n=qr.getModuleCount(), scale=8, pad=4*scale, size=n*scale+pad*2;
+      canvas.width=size; canvas.height=size;
+      ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,size,size);
+      ctx.fillStyle='#0b1020';
+      for(let row=0;row<n;row++) for(let col=0;col<n;col++) if(qr.isDark(row,col))
+        ctx.fillRect(pad+col*scale, pad+row*scale, scale, scale);
+    }catch(e){ toast(String(e.message||e)); }
+  }
+  mk.onclick=draw;
+  dl.onclick=()=>{ if(!canvas.width){ toast(t('qr_empty')); return; } const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download='qrcode.png'; a.click(); };
+  draw();
+}
+
+/* ---- ZIP export (STORED, pure JS, no libs) ---- */
+function crc32(bytes){
+  let c, crc=0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++){
+    c=(crc ^ bytes[i]) & 0xFF;
+    for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1);
+    crc = (crc>>>8) ^ c;
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function makeZip(files){
+  const enc=new TextEncoder();
+  const chunks=[], central=[]; let offset=0;
+  const u16=v=>[v&0xFF,(v>>8)&0xFF];
+  const u32=v=>[v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF];
+  files.forEach(f=>{
+    const nameBytes=enc.encode(f.name);
+    const data=enc.encode(f.content);
+    const crc=crc32(data);
+    const local=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(crc),u32(data.length),u32(data.length),u16(nameBytes.length),u16(0));
+    chunks.push(new Uint8Array(local), nameBytes, data);
+    const cen=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(crc),u32(data.length),u32(data.length),u16(nameBytes.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset));
+    central.push(new Uint8Array(cen), nameBytes);
+    offset += local.length + nameBytes.length + data.length;
+  });
+  let cenSize=0; central.forEach(c=>cenSize+=c.length);
+  const end=new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),
+    u32(cenSize),u32(offset),u16(0)));
+  const all=[...chunks,...central,end];
+  let total=0; all.forEach(a=>total+=a.length);
+  const out=new Uint8Array(total); let p=0;
+  all.forEach(a=>{ out.set(a,p); p+=a.length; });
+  return new Blob([out],{type:'application/zip'});
+}
+function exportZip(){
+  const steps=buildExplain(state._ctx||currentCtx());
+  const readme = 'Script Bot — '+L(state.tpl.title)+'\n'+
+    '='.repeat(40)+'\n\n'+
+    (state.lang==='ar'?'التعليمات:\n':'Instructions:\n')+
+    steps[state.lang].map((s,i)=>(i+1)+'. '+s.replace(/<[^>]+>/g,'')).join('\n')+'\n';
+  const blob=makeZip([{name:state.fname,content:state.code},{name:'README.txt',content:readme}]);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=(state.tpl.id||'project')+'.zip'; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  toast(t('zip_ok'));
+}
+
+/* ---- Saved ---- */
+function renderSaved(){
+  const panel=el('div',{class:'panel'});
+  panel.appendChild(el('h2',{}, '💾 '+t('saved_h')));
+  const list=store.projects;
+  if(!list.length){
+    const empty=el('div',{class:'empty'});
+    empty.appendChild(el('div',{class:'big'},'📭'));
+    empty.appendChild(el('p',{},t('saved_empty')));
+    panel.appendChild(empty);
+    app.appendChild(panel); return;
+  }
+  list.forEach(pr=>{
+    const item=el('div',{class:'saved-item'});
+    const icon = TEMPLATES.find(x=>x.id===pr.tplId);
+    item.appendChild(el('div',{style:'font-size:26px'}, icon?icon.icon:'📄'));
+    const meta=el('div',{class:'meta'});
+    meta.appendChild(el('b',{}, pr.title||t('unnamed')));
+    const plabel = pr.platform==='telegram'?'Telegram':pr.platform==='whatsapp'?'WhatsApp':(state.lang==='ar'?'سكربت':'Script');
+    meta.appendChild(el('span',{}, plabel+' · '+(pr.langCode==='python'?'Python':'JavaScript')+' · '+pr.fname+' · '+new Date(pr.date).toLocaleDateString()));
+    item.appendChild(meta);
+    const openB=el('button',{class:'btn small'}, t('open')); openB.onclick=()=>openSaved(pr);
+    const delB=el('button',{class:'btn small ghost'}, t('del')); delB.onclick=()=>{ if(confirm(t('confirm_del'))){ store.projects=store.projects.filter(x=>x.id!==pr.id); toast(t('del_ok')); render(); } };
+    item.appendChild(openB); item.appendChild(delB);
+    panel.appendChild(item);
+  });
+  app.appendChild(panel);
+}
+function openSaved(pr){
+  const tp=TEMPLATES.find(x=>x.id===pr.tplId);
+  if(tp){ state.tpl=tp; }
+  state.platform=pr.platform; state.langCode=pr.langCode; state.fname=pr.fname; state.code=pr.code;
+  state._ctx={ tpl:tp||{title:{ar:pr.title,en:pr.title},desc:{ar:'',en:''},id:pr.tplId}, platform:pr.platform, langCode:pr.langCode, opts:{token:'TOKEN'}, fname:pr.fname };
+  go('build'); scrollToResult();
+}
+
+/* ---- Toast ---- */
+let toastTimer=null;
+function toast(msg){
+  const box=document.getElementById('toast');
+  box.innerHTML='';
+  const t=el('div',{class:'t'},msg);
+  box.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ t.classList.remove('show'); },1800);
+}
+
+/* ---- Boot ---- */
+render();
+</script>
