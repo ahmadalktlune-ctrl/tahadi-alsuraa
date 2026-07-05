@@ -2408,7 +2408,7 @@ service cloud.firestore {
         return d.keys().hasOnly(['username','avatar','xp','games','wins','correct',
                                  'wrong','joined','history','gems','unlockedCats',
                                  'bundleType','bundleExpiry','lastUpdated','welcomeGemsGiven',
-                                 'dailyBonusAt','adDayStart','adDayCount','srvPing'])
+                                 'dailyBonusAt','adDayStart','adDayCount','srvPing','loginStreak'])
           && (!('username' in d) || (d.username is string && d.username.size() <= 30))
           && (!('avatar'   in d) || (d.avatar is string && d.avatar.size() <= 10))
           && (!('joined'   in d) || (d.joined is string && d.joined.size() <= 30))
@@ -2425,6 +2425,7 @@ service cloud.firestore {
           && (!('dailyBonusAt' in d) || (d.dailyBonusAt is number && d.dailyBonusAt >= 0))
           && (!('adDayStart'   in d) || (d.adDayStart is number && d.adDayStart >= 0))
           && (!('adDayCount'   in d) || (d.adDayCount is number && d.adDayCount >= 0 && d.adDayCount <= 50))
+          && (!('loginStreak'  in d) || (d.loginStreak is number && d.loginStreak >= 0 && d.loginStreak <= 100000))
           && (!('srvPing'      in d) || d.srvPing is timestamp);
       }
     }
@@ -3613,7 +3614,7 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">⚽</span><div class="cat-info"><div class="cat-name">كرة القدم عامة</div><div class="cat-count">800 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-big5 cat-premium" id="catbtn-BIG5_LEAGUES" data-cat="BIG5_LEAGUES" onclick="trySelectCategory('BIG5_LEAGUES')">
-      <div class="cat-locked-overlay" id="lock-BIG5_LEAGUES"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 650💎</span></div>
+      <div class="cat-locked-overlay" id="lock-BIG5_LEAGUES"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 800💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">⚽</span><div class="cat-info"><div class="cat-name">الدوريات الخمسة الكبار</div><div class="cat-count">998 سؤال</div></div></div>
     </button>
@@ -3639,7 +3640,7 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">📜</span><div class="cat-info"><div class="cat-name">تاريخ</div><div class="cat-count">537 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-science cat-premium" id="catbtn-SCIENCE" data-cat="SCIENCE" onclick="trySelectCategory('SCIENCE')">
-      <div class="cat-locked-overlay" id="lock-SCIENCE"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 650💎</span></div>
+      <div class="cat-locked-overlay" id="lock-SCIENCE"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 700💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🔬</span><div class="cat-info"><div class="cat-name">علوم</div><div class="cat-count">773 سؤال</div></div></div>
     </button>
@@ -3655,7 +3656,7 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">💄</span><div class="cat-info"><div class="cat-name">جمال وميكياج</div><div class="cat-count">500 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-cars cat-premium" id="catbtn-CARS" data-cat="CARS" onclick="trySelectCategory('CARS')">
-      <div class="cat-locked-overlay" id="lock-CARS"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 650💎</span></div>
+      <div class="cat-locked-overlay" id="lock-CARS"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 750💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🚗</span><div class="cat-info"><div class="cat-name">عالم السيارات</div><div class="cat-count">701 سؤال</div></div></div>
     </button>
@@ -9044,13 +9045,23 @@ const FREE_CATS = ['BEGINNER_GENIUS','FOOTBALL','SPORTS','GENERAL','ARABIC_CULTU
 const PAID_CATS = ['BIG5_LEAGUES',
                    'MOVIES','ANIME','HISTORY','SCIENCE',
                    'BEAUTY','CARS','MESSI_RONALDO'];
-const GEMS_PER_CAT = 650;
+const GEMS_PER_CAT = 650;   // السعر الافتراضي للفئات المميزة
 const CAT_PRICE_USD = '1.99$';
+
+// أسعار خاصة لبعض الفئات (الباقي على السعر الافتراضي 650)
+const CAT_GEM_PRICES = {
+  BIG5_LEAGUES: 800,
+  CARS:         750,
+  SCIENCE:      700,
+};
 
 // ── فحص الذكاء IQ: يُفتح بـ100 جوهرة، يُخزن بنفس unlockedCats على Firebase ──
 const IQ_CAT_ID = 'IQ_TEST';
 const IQ_UNLOCK_PRICE = 100;
-function catGemPrice(cat) { return cat === IQ_CAT_ID ? IQ_UNLOCK_PRICE : GEMS_PER_CAT; }
+function catGemPrice(cat) {
+  if (cat === IQ_CAT_ID) return IQ_UNLOCK_PRICE;
+  return CAT_GEM_PRICES[cat] || GEMS_PER_CAT;
+}
 
 // بيانات الفئات للمتجر
 const CAT_INFO = {
@@ -9125,59 +9136,9 @@ function updateGemsUI() {
   if (badge) badge.style.display = (currentUser && !currentUser.isGuest) ? 'flex' : 'none';
 }
 
-// ── حماية منح الجواهر: Rate Limit ──
-const _gemRateLimit = {
-  lastAward: 0,
-  sessionCount: 0,
-  sessionStart: Date.now(),
-  MAX_PER_MINUTE: 6,       // حد أقصى 6 جواهر في الدقيقة
-  MAX_PER_SESSION: 200,    // حد أقصى 200 جوهرة في الجلسة الواحدة
-  MIN_INTERVAL_MS: 3000,   // لا يمكن أقل من 3 ثواني بين كل جائزتين
-};
-
-// ── إعطاء جواهر عند الإجابة الصحيحة ──
-function awardGem() {
-  if (!currentUser || currentUser.isGuest) return;
-
-  const now = Date.now();
-
-  // فحص الحد الأدنى بين الجوائز
-  if (now - _gemRateLimit.lastAward < _gemRateLimit.MIN_INTERVAL_MS) {
-    console.warn('⚠️ gem rate limit: too fast');
-    return;
-  }
-
-  // فحص الحد الأقصى في الجلسة
-  if (_gemRateLimit.sessionCount >= _gemRateLimit.MAX_PER_SESSION) {
-    console.warn('⚠️ gem rate limit: session max reached');
-    return;
-  }
-
-  // فحص الحد الأقصى في الدقيقة (إعادة ضبط كل دقيقة)
-  if (now - _gemRateLimit.sessionStart > 60000) {
-    _gemRateLimit.sessionStart = now;
-    _gemRateLimit.sessionCount = 0;
-  }
-
-  _gemRateLimit.lastAward = now;
-  _gemRateLimit.sessionCount++;
-
-  currentUser.gems = (currentUser.gems || 0) + 1;
-  updateGemsUI();
-  showGemEarn('+1 💎');
-
-  // مكافأة السلسلة
-  const streak = state.currentStreak || 0;
-  if (streak > 0 && streak % 5 === 0) {
-    currentUser.gems += 10;
-    _gemRateLimit.sessionCount += 10;
-    updateGemsUI();
-    showGemEarn(`🔥 سلسلة ×${streak}! +10 💎`);
-  }
-
-  // حفظ كل 5 إجابات لتقليل الكتابة
-  if ((currentUser.gems % 5) === 0) saveGems();
-}
+// (انشال نظام "+1 جوهرة لكل إجابة صحيحة" ويا الـ rate limit مالته —
+//  چان قابل للاستغلال. مصادر الجواهر الرسمية: فوز الگيم +20،
+//  الدخول اليومي، وإعلانات المكافأة — كلها محمية بوقت السيرفر)
 
 function showGemEarn(text) {
   const el = document.createElement('div');
@@ -9209,9 +9170,10 @@ async function giveWelcomeGems() {
 // ══   مصادر الجواهر: فوز الگيم + الدخول اليومي  ══
 // ══════════════════════════════════════════════
 
-const WIN_GEMS         = 20;                    // جائزة الفوز بگيم كامل
-const DAILY_BONUS_GEMS = 50;                    // مكافأة الدخول اليومي
-const DAY_MS           = 24 * 60 * 60 * 1000;   // 24 ساعة
+const WIN_GEMS          = 20;                    // جائزة الفوز بگيم كامل
+const DAILY_BONUS_GEMS  = 50;                    // مكافأة الدخول اليومي
+const STREAK_BONUS_GEMS = 20;                    // مكافأة إضافية للمواظب (دخول كل يوم بلا انقطاع)
+const DAY_MS            = 24 * 60 * 60 * 1000;   // 24 ساعة
 
 // ── وقت السيرفر الحقيقي من Firebase ──
 // نكتب serverTimestamp ونقرأه — حتى تغيير ساعة الجهاز ما ينفع للتحايل
@@ -9240,6 +9202,8 @@ function awardWinGems(winner, isTie) {
 }
 
 // ── مكافأة الدخول اليومي: +50 جوهرة كل 24 ساعة ──
+// وإذا اللاعب مواظب (دخل بالـ48 ساعة الماضية هم = ما گطع ولا يوم)
+// ياخذ +20 إضافية وسلسلة أيامه (loginStreak) تكبر
 // الوقت مخزن بـ Firebase (dailyBonusAt) ويُقارن بوقت السيرفر —
 // لا حذف التطبيق ولا تغيير ساعة الجهاز يعيد المكافأة قبل أوانها
 async function checkDailyBonus() {
@@ -9251,14 +9215,23 @@ async function checkDailyBonus() {
     const last = data.dailyBonusAt || 0;
     const now = await getServerNow();
     if (now - last < DAY_MS) return; // بعده ما مرت 24 ساعة
-    const newGems = (data.gems || 0) + DAILY_BONUS_GEMS;
-    await ref.set({ gems: newGems, dailyBonusAt: now }, { merge: true });
+
+    // مواظب؟ آخر مكافأة قبل أقل من 48 ساعة = ما گطع يوم كامل
+    const consecutive = last > 0 && (now - last) < 2 * DAY_MS;
+    const streak = consecutive ? (data.loginStreak || 1) + 1 : 1;
+    const bonus = DAILY_BONUS_GEMS + (consecutive ? STREAK_BONUS_GEMS : 0);
+
+    const newGems = (data.gems || 0) + bonus;
+    await ref.set({ gems: newGems, dailyBonusAt: now, loginStreak: streak }, { merge: true });
     currentUser.gems = newGems;
     currentUser.dailyBonusAt = now;
+    currentUser.loginStreak = streak;
     updateGemsUI();
     setTimeout(() => {
-      showGemEarn(`📅 مكافأة اليوم +${DAILY_BONUS_GEMS} 💎`);
-      showToast(`📅 مكافأة الدخول اليومي: +${DAILY_BONUS_GEMS} جوهرة! تعال باچر وخذ غيرها 🎁`);
+      showGemEarn(`📅 مكافأة اليوم +${bonus} 💎`);
+      showToast(consecutive
+        ? `🔥 مواظب ${streak} أيام! ${DAILY_BONUS_GEMS}+${STREAK_BONUS_GEMS} = +${bonus} جوهرة 💎`
+        : `📅 مكافأة الدخول اليومي: +${bonus} جوهرة! ادخل باچر وخذ +${DAILY_BONUS_GEMS + STREAK_BONUS_GEMS} 🎁`);
     }, 2500);
   } catch(e) { console.warn('checkDailyBonus error:', e); }
 }
@@ -9516,7 +9489,7 @@ function renderShopCats() {
         : unlocked
           ? `<button class="btn-buy-cat owned">✅ مفتوحة</button>`
           : `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-               <button class="btn-buy-cat gems" onclick="buyWithGems('${cat}')">💎 ${GEMS_PER_CAT}</button>
+               <button class="btn-buy-cat gems" onclick="buyWithGems('${cat}')">💎 ${catGemPrice(cat)}</button>
                <button class="btn-buy-cat money" onclick="buyWithMoney('${cat}')">💳 ${CAT_PRICE_USD}</button>
              </div>`
       }
@@ -10025,7 +9998,8 @@ function answerCorrect() {
   flashCard('flash-correct');
   soundCorrect();
   haptic('medium');
-  awardGem();
+  // (انشالت جوهرة الإجابة الصحيحة +1 — مصادر الجواهر صارت: فوز الگيم،
+  //  الدخول اليومي، وإعلانات المكافأة فقط، حتى ما ينستغل النظام)
   // ── تأثير +10 عائم ──
   const btnEl = document.getElementById('btn-correct');
   if (btnEl && window._floatScore) {
