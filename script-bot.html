@@ -169,6 +169,13 @@
   .badge{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:11.5px;font-weight:700;margin-inline-end:6px}
   .badge.tg{color:#5eb3ff}.badge.wa{color:#43d97f}.badge.mob{color:#ffb45e}.badge.pc{color:#c58bff}
 
+  /* Shop */
+  .pricetag{position:absolute;top:12px;inset-inline-end:12px;background:linear-gradient(135deg,var(--good),#12a35a);color:#fff;font-weight:800;font-size:14px;padding:4px 11px;border-radius:999px;box-shadow:0 4px 12px rgba(47,210,122,.4)}
+  .tcard .pitch{font-size:12.5px;color:var(--good);background:rgba(47,210,122,.08);border:1px solid rgba(47,210,122,.25);border-radius:9px;padding:6px 10px;margin-top:4px}
+  .shop-hero{text-align:center;padding:20px 0 6px}
+  .shop-hero h2{font-size:clamp(22px,4vw,32px);margin:0 0 8px}
+  .shop-hero .big-price{display:inline-block;background:linear-gradient(135deg,var(--good),#12a35a);color:#fff;font-weight:800;font-size:20px;padding:6px 18px;border-radius:999px;margin-top:6px}
+
   .runout{margin-top:12px;background:#05070f;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
   .runout .rh{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--line);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
   .runout pre{margin:0;padding:12px 14px;font-family:ui-monospace,monospace;font-size:12.5px;color:#cfe;direction:ltr;text-align:left;max-height:280px;overflow:auto;white-space:pre-wrap}
@@ -2525,6 +2532,986 @@ try{ qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"]; }catch(e){}
 </script>
 
 <script>
+/* ============================================================
+   PREMIUM — ready-to-sell bots & scripts (shown in a dedicated
+   in-app "Store" tab). Each item is a complete, self-contained
+   product. Generated code uses quotes/concatenation (no backticks).
+   ============================================================ */
+var PREMIUM_PRICE = 15;
+var PREMIUM = [
+
+/* 1 */ { id:'p-store-tg-py', icon:'🛒', platform:'telegram', lang:'python', fname:'store_bot.py',
+  cat:{ar:'متجر',en:'Store'}, title:{ar:'متجر تلكرام برو',en:'Telegram Store PRO'},
+  desc:{ar:'أقسام، سلة شراء، إتمام طلب، وإشعار الإدارة تلقائياً.',en:'Categories, cart, checkout and automatic admin notifications.'},
+  pitch:{ar:'مثالي لأصحاب المتاجر والإنستا — يستقبل الطلبات 24 ساعة.',en:'Perfect for shop & Instagram sellers — takes orders 24/7.'},
+  code:[
+'# 🛒 Telegram Store Bot PRO  |  pip install python-telegram-bot',
+'import json, os',
+'from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup',
+'from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'STORE_NAME = "متجري"',
+'ADMIN_ID = 123456789',
+'CURRENCY = "IQD"',
+'PRODUCTS = {"قميص": 15000, "بنطلون": 25000, "حذاء": 40000}',
+'',
+'def menu():',
+'    rows = [[InlineKeyboardButton(f"{n} - {p:,} {CURRENCY}", callback_data=n)] for n, p in PRODUCTS.items()]',
+'    rows.append([InlineKeyboardButton("🧺 سلّتي", callback_data="cart"), InlineKeyboardButton("✅ إتمام", callback_data="checkout")])',
+'    return InlineKeyboardMarkup(rows)',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    context.user_data.setdefault("cart", [])',
+'    await update.message.reply_text(f"🛍️ أهلاً بك في {STORE_NAME}\\nاختر منتجاً:", reply_markup=menu())',
+'',
+'async def on_click(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    q = update.callback_query',
+'    await q.answer()',
+'    cart = context.user_data.setdefault("cart", [])',
+'    if q.data in PRODUCTS:',
+'        cart.append(q.data)',
+'        await q.edit_message_text(f"✅ أُضيف {q.data}. عناصر السلة: {len(cart)}", reply_markup=menu())',
+'    elif q.data == "cart":',
+'        total = sum(PRODUCTS[i] for i in cart)',
+'        txt = "\\n".join("• " + i for i in cart) or "فارغة"',
+'        await q.edit_message_text(f"🧺 سلّتك:\\n{txt}\\n💰 الإجمالي: {total:,} {CURRENCY}", reply_markup=menu())',
+'    elif q.data == "checkout":',
+'        if not cart:',
+'            await q.edit_message_text("سلّتك فارغة.", reply_markup=menu())',
+'            return',
+'        context.user_data["await_phone"] = True',
+'        await q.edit_message_text("📞 أرسل رقم هاتفك وعنوانك لإتمام الطلب.")',
+'',
+'async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if not context.user_data.get("await_phone"):',
+'        return',
+'    cart = context.user_data.get("cart", [])',
+'    total = sum(PRODUCTS[i] for i in cart)',
+'    order = {"customer": update.effective_user.full_name, "contact": update.message.text, "items": cart, "total": total}',
+'    with open("orders.json", "a", encoding="utf-8") as f:',
+'        f.write(json.dumps(order, ensure_ascii=False) + "\\n")',
+'    await context.bot.send_message(ADMIN_ID, f"🔔 طلب جديد من {order[\'customer\']}\\n📞 {order[\'contact\']}\\n🛒 {\', \'.join(cart)}\\n💰 {total:,} {CURRENCY}")',
+'    context.user_data["await_phone"] = False',
+'    context.user_data["cart"] = []',
+'    await update.message.reply_text("✅ تم استلام طلبك! سنتواصل معك قريباً 🌟", reply_markup=menu())',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(CallbackQueryHandler(on_click))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))',
+'    print("Store bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 2 */ { id:'p-cs-tg-py', icon:'🎧', platform:'telegram', lang:'python', fname:'support_bot.py',
+  cat:{ar:'خدمة العملاء',en:'Customer Service'}, title:{ar:'خدمة عملاء برو',en:'Customer Service PRO'},
+  desc:{ar:'قائمة أزرار، أسئلة شائعة، وساعات عمل، وتحويل للموظف.',en:'Button menu, FAQs, working hours and human handoff.'},
+  pitch:{ar:'يقلّل ضغط الرسائل ويرد فوراً على العملاء.',en:'Cuts message load and answers customers instantly.'},
+  code:[
+'# 🎧 Customer Service Bot PRO  |  pip install python-telegram-bot',
+'from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup',
+'from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'COMPANY = "شركتي"',
+'AGENT = "@support"',
+'FAQ = {',
+'    "hours": "🕘 ساعات العمل: 9 صباحاً - 9 مساءً",',
+'    "delivery": "🚚 التوصيل خلال 24 ساعة داخل المدينة.",',
+'    "pay": "💳 الدفع نقداً أو تحويل.",',
+'    "warranty": "🛡️ ضمان سنة كاملة على كل المنتجات.",',
+'}',
+'',
+'def menu():',
+'    return InlineKeyboardMarkup([',
+'        [InlineKeyboardButton("🕘 ساعات العمل", callback_data="hours")],',
+'        [InlineKeyboardButton("🚚 التوصيل", callback_data="delivery")],',
+'        [InlineKeyboardButton("💳 الدفع", callback_data="pay")],',
+'        [InlineKeyboardButton("🛡️ الضمان", callback_data="warranty")],',
+'        [InlineKeyboardButton("👤 موظف الدعم", callback_data="agent")],',
+'    ])',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(f"مرحباً بك في خدمة عملاء {COMPANY} 👋\\nاختر موضوعاً:", reply_markup=menu())',
+'',
+'async def on_click(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    q = update.callback_query',
+'    await q.answer()',
+'    if q.data == "agent":',
+'        await q.edit_message_text(f"للتواصل مع موظف الدعم: {AGENT}", reply_markup=menu())',
+'    else:',
+'        await q.edit_message_text(FAQ.get(q.data, "غير متوفر"), reply_markup=menu())',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(CallbackQueryHandler(on_click))',
+'    print("Support bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 3 */ { id:'p-welcome-guard-py', icon:'🛡️', platform:'telegram', lang:'python', fname:'guard_bot.py',
+  cat:{ar:'إدارة المجموعات',en:'Moderation'}, title:{ar:'حارس المجموعات برو',en:'Group Guard PRO'},
+  desc:{ar:'ترحيب بالأعضاء، حذف الروابط والسبام، وأوامر طرد وكتم.',en:'Welcomes members, deletes links/spam, ban & mute commands.'},
+  pitch:{ar:'حماية كاملة لمجموعتك بدون مشرف بشري دائم.',en:'Full group protection without a full-time human admin.'},
+  code:[
+'# 🛡️ Group Guard Bot PRO  |  pip install python-telegram-bot',
+'from telegram import Update, ChatPermissions',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'WELCOME = "أهلاً {name}! نوّرت المجموعة 🌟 يرجى قراءة القوانين."',
+'BANNED_WORDS = ["اعلان", "سبام", "دعاية"]',
+'BLOCK_LINKS = True',
+'',
+'async def greet(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    for m in update.message.new_chat_members:',
+'        await update.message.reply_text(WELCOME.replace("{name}", m.first_name))',
+'',
+'async def guard(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    msg = update.message',
+'    text = (msg.text or "").lower()',
+'    if BLOCK_LINKS and ("http://" in text or "https://" in text or "t.me/" in text):',
+'        await msg.delete()',
+'        return',
+'    if any(w in text for w in BANNED_WORDS):',
+'        await msg.delete()',
+'',
+'async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.message.reply_to_message:',
+'        u = update.message.reply_to_message.from_user',
+'        await context.bot.ban_chat_member(update.message.chat_id, u.id)',
+'        await update.message.reply_text(f"🚫 تم طرد {u.first_name}")',
+'',
+'async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.message.reply_to_message:',
+'        u = update.message.reply_to_message.from_user',
+'        await context.bot.restrict_chat_member(update.message.chat_id, u.id, ChatPermissions(can_send_messages=False))',
+'        await update.message.reply_text(f"🔇 تم كتم {u.first_name}")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, greet))',
+'    app.add_handler(CommandHandler("ban", ban))',
+'    app.add_handler(CommandHandler("mute", mute))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, guard))',
+'    print("Guard bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 4 */ { id:'p-broadcast-py', icon:'📢', platform:'telegram', lang:'python', fname:'broadcast_bot.py',
+  cat:{ar:'بث',en:'Broadcast'}, title:{ar:'بوت البث برو',en:'Broadcast PRO'},
+  desc:{ar:'يجمع المشتركين ويرسل رسالة للجميع بأمر واحد للمشرف.',en:'Collects subscribers and mass-messages everyone with one admin command.'},
+  pitch:{ar:'وسيلة تسويق قوية — أرسل عروضك لكل عملائك دفعة واحدة.',en:'Strong marketing tool — blast offers to all customers at once.'},
+  code:[
+'# 📢 Broadcast Bot PRO  |  pip install python-telegram-bot',
+'import json, os',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'ADMIN_ID = 123456789',
+'DB = "subs.json"',
+'',
+'def load():',
+'    return json.load(open(DB)) if os.path.exists(DB) else []',
+'def save(s):',
+'    json.dump(s, open(DB, "w"))',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    subs = load()',
+'    cid = update.effective_chat.id',
+'    if cid not in subs:',
+'        subs.append(cid); save(subs)',
+'    await update.message.reply_text("✅ تم اشتراكك، ستصلك العروض والإشعارات.")',
+'',
+'async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    if update.effective_user.id != ADMIN_ID:',
+'        return',
+'    msg = " ".join(context.args)',
+'    if not msg:',
+'        await update.message.reply_text("اكتب: /broadcast رسالتك")',
+'        return',
+'    sent = 0',
+'    for cid in load():',
+'        try:',
+'            await context.bot.send_message(cid, "📢 " + msg); sent += 1',
+'        except Exception:',
+'            pass',
+'    await update.message.reply_text(f"تم الإرسال إلى {sent} مشترك.")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(CommandHandler("broadcast", broadcast))',
+'    print("Broadcast bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 5 */ { id:'p-downloader-py', icon:'📥', platform:'telegram', lang:'python', fname:'downloader_bot.py',
+  cat:{ar:'تحميل',en:'Downloader'}, title:{ar:'بوت تحميل برو',en:'Downloader PRO'},
+  desc:{ar:'يوتيوب/انستا/تيكتوك بدون علامة مائية، مع اختيار الجودة وMP3.',en:'YouTube/IG/TikTok no-watermark, with quality choice and MP3.'},
+  pitch:{ar:'من أكثر البوتات طلباً — يجذب مستخدمين كثيرين بسرعة.',en:'One of the most in-demand bots — attracts users fast.'},
+  code:[
+'# 📥 Media Downloader Bot PRO  |  pip install python-telegram-bot yt-dlp  (+ ffmpeg)',
+'import os, yt_dlp',
+'from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup',
+'from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'pending = {}',
+'FORMATS = {"best": "mp4/bestvideo+bestaudio/best", "720": "best[height<=720]", "360": "best[height<=360]"}',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("📥 أرسل رابط فيديو من يوتيوب/انستا/تيكتوك.")',
+'',
+'async def on_link(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    url = (update.message.text or "").strip()',
+'    if not url.startswith("http"):',
+'        return',
+'    pending[update.effective_chat.id] = url',
+'    kb = InlineKeyboardMarkup([',
+'        [InlineKeyboardButton("🎬 أفضل", callback_data="best"), InlineKeyboardButton("📺 720p", callback_data="720")],',
+'        [InlineKeyboardButton("📱 360p", callback_data="360"), InlineKeyboardButton("🎵 MP3", callback_data="mp3")],',
+'    ])',
+'    await update.message.reply_text("اختر الجودة:", reply_markup=kb)',
+'',
+'async def on_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    q = update.callback_query',
+'    await q.answer()',
+'    chat = q.message.chat.id',
+'    url = pending.get(chat)',
+'    if not url:',
+'        await q.edit_message_text("أرسل الرابط من جديد."); return',
+'    await q.edit_message_text("⏳ جاري التحميل...")',
+'    name = None',
+'    if q.data == "mp3":',
+'        opts = {"outtmpl": "d_%(id)s.%(ext)s", "format": "bestaudio", "quiet": True,',
+'                "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}]}',
+'    else:',
+'        opts = {"outtmpl": "d_%(id)s.%(ext)s", "format": FORMATS.get(q.data, FORMATS["best"]), "quiet": True}',
+'    try:',
+'        with yt_dlp.YoutubeDL(opts) as ydl:',
+'            info = ydl.extract_info(url, download=True)',
+'            name = ydl.prepare_filename(info)',
+'        if q.data == "mp3":',
+'            name = os.path.splitext(name)[0] + ".mp3"',
+'            with open(name, "rb") as fp:',
+'                await context.bot.send_audio(chat, fp)',
+'        else:',
+'            with open(name, "rb") as fp:',
+'                await context.bot.send_video(chat, fp)',
+'    except Exception as e:',
+'        await context.bot.send_message(chat, "تعذّر التحميل: " + str(e)[:100])',
+'    finally:',
+'        if name and os.path.exists(name):',
+'            os.remove(name)',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(CallbackQueryHandler(on_choice))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_link))',
+'    print("Downloader bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 6 */ { id:'p-weather-py', icon:'🌤️', platform:'telegram', lang:'python', fname:'weather_bot.py',
+  cat:{ar:'طقس',en:'Weather'}, title:{ar:'بوت الطقس برو',en:'Weather PRO'},
+  desc:{ar:'حالة الطقس لأي مدينة فوراً — بدون مفتاح API (خدمة wttr.in المجانية).',en:'Instant weather for any city — no API key (free wttr.in service).'},
+  pitch:{ar:'بوت يومي يستخدمه الناس باستمرار — تفاعل عالٍ.',en:'A daily-use bot people keep coming back to.'},
+  code:[
+'# 🌤️ Weather Bot PRO  |  pip install python-telegram-bot requests',
+'import requests',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🌤️ أرسل اسم أي مدينة لأعطيك حالة الطقس.")',
+'',
+'async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    city = (update.message.text or "").strip()',
+'    try:',
+'        r = requests.get(f"https://wttr.in/{city}", params={"format": "%l: %c %t شعور %f رطوبة %h رياح %w", "lang": "ar"}, timeout=10)',
+'        await update.message.reply_text(r.text)',
+'    except Exception:',
+'        await update.message.reply_text("تعذّر جلب الطقس، تأكد من اسم المدينة.")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, weather))',
+'    print("Weather bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 7 */ { id:'p-crypto-py', icon:'💰', platform:'telegram', lang:'python', fname:'crypto_bot.py',
+  cat:{ar:'أسعار',en:'Prices'}, title:{ar:'بوت أسعار العملات برو',en:'Crypto Price PRO'},
+  desc:{ar:'أسعار العملات الرقمية لحظياً — بدون مفتاح API (CoinGecko المجاني).',en:'Live crypto prices — no API key (free CoinGecko).'},
+  pitch:{ar:'شريحة مهتمين كبيرة ومتفاعلة بالعملات الرقمية.',en:'Large, highly-engaged crypto audience.'},
+  code:[
+'# 💰 Crypto Price Bot PRO  |  pip install python-telegram-bot requests',
+'import requests',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'ALIASES = {"btc": "bitcoin", "eth": "ethereum", "bnb": "binancecoin", "sol": "solana", "xrp": "ripple"}',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("💰 أرسل رمز العملة (مثل btc أو eth) لأعطيك سعرها.")',
+'',
+'async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    key = (update.message.text or "").strip().lower()',
+'    coin = ALIASES.get(key, key)',
+'    try:',
+'        r = requests.get("https://api.coingecko.com/api/v3/simple/price",',
+'                         params={"ids": coin, "vs_currencies": "usd"}, timeout=10).json()',
+'        if coin in r:',
+'            await update.message.reply_text(f"💵 {coin.upper()} = ${r[coin][\'usd\']:,}")',
+'        else:',
+'            await update.message.reply_text("عملة غير معروفة، جرّب btc أو eth.")',
+'    except Exception:',
+'        await update.message.reply_text("تعذّر جلب السعر، حاول لاحقاً.")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, price))',
+'    print("Crypto bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 8 */ { id:'p-qr-py', icon:'🔳', platform:'telegram', lang:'python', fname:'qr_bot.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'بوت مولّد QR برو',en:'QR Maker PRO'},
+  desc:{ar:'يحوّل أي نص أو رابط إلى صورة رمز QR جاهزة.',en:'Turns any text/link into a ready QR image.'},
+  pitch:{ar:'أداة بسيطة يحتاجها الجميع — سهل بيعها للمحلات.',en:'A simple tool everyone needs — easy to sell to shops.'},
+  code:[
+'# 🔳 QR Maker Bot PRO  |  pip install python-telegram-bot "qrcode[pil]"',
+'import io, qrcode',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🔳 أرسل أي نص أو رابط لأحوّله إلى رمز QR.")',
+'',
+'async def make_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    text = update.message.text or ""',
+'    img = qrcode.make(text)',
+'    bio = io.BytesIO()',
+'    img.save(bio, "PNG")',
+'    bio.seek(0)',
+'    await update.message.reply_photo(bio, caption="✅ رمز QR جاهز")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, make_qr))',
+'    print("QR bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 9 */ { id:'p-todo-py', icon:'📝', platform:'telegram', lang:'python', fname:'todo_bot.py',
+  cat:{ar:'إنتاجية',en:'Productivity'}, title:{ar:'بوت المهام والملاحظات برو',en:'To-Do & Notes PRO'},
+  desc:{ar:'أضف مهام، اعرضها، واحذف المنجز — محفوظة لكل مستخدم.',en:'Add tasks, list them, delete done ones — saved per user.'},
+  pitch:{ar:'أداة يومية تبني عادة استخدام لدى المشتركين.',en:'A daily habit-forming tool for subscribers.'},
+  code:[
+'# 📝 To-Do Bot PRO  |  pip install python-telegram-bot',
+'import json, os',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'DB = "tasks.json"',
+'',
+'def load():',
+'    return json.load(open(DB, encoding="utf-8")) if os.path.exists(DB) else {}',
+'def save(d):',
+'    json.dump(d, open(DB, "w", encoding="utf-8"), ensure_ascii=False)',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("📝 الأوامر:\\n/add مهمة\\n/list\\n/done رقم")',
+'',
+'async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    d = load(); uid = str(update.effective_user.id)',
+'    d.setdefault(uid, []).append(" ".join(context.args))',
+'    save(d)',
+'    await update.message.reply_text("✅ أُضيفت المهمة.")',
+'',
+'async def show(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    tasks = load().get(str(update.effective_user.id), [])',
+'    if not tasks:',
+'        await update.message.reply_text("لا توجد مهام.")',
+'        return',
+'    await update.message.reply_text("\\n".join(f"{i+1}. {t}" for i, t in enumerate(tasks)))',
+'',
+'async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    d = load(); uid = str(update.effective_user.id)',
+'    try:',
+'        i = int(context.args[0]) - 1',
+'        removed = d[uid].pop(i); save(d)',
+'        await update.message.reply_text(f"✅ تم إنجاز: {removed}")',
+'    except (IndexError, ValueError, KeyError):',
+'        await update.message.reply_text("رقم غير صحيح.")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(CommandHandler("add", add))',
+'    app.add_handler(CommandHandler("list", show))',
+'    app.add_handler(CommandHandler("done", done))',
+'    print("Todo bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 10 */ { id:'p-feedback-py', icon:'📮', platform:'telegram', lang:'python', fname:'feedback_bot.py',
+  cat:{ar:'دعم',en:'Support'}, title:{ar:'بوت الشكاوى والاقتراحات برو',en:'Feedback & Tickets PRO'},
+  desc:{ar:'يستقبل رسائل العملاء ويحوّلها للإدارة برقم تذكرة.',en:'Collects customer messages and forwards them to admin with a ticket id.'},
+  pitch:{ar:'مناسب للشركات لتنظيم شكاوى العملاء.',en:'Great for companies to organise customer complaints.'},
+  code:[
+'# 📮 Feedback / Ticket Bot PRO  |  pip install python-telegram-bot',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'from datetime import datetime',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'ADMIN_ID = 123456789',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("📮 أرسل شكواك أو اقتراحك وسنردّ عليك قريباً.")',
+'',
+'async def ticket(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    u = update.effective_user',
+'    tid = datetime.now().strftime("%m%d%H%M")',
+'    await context.bot.send_message(ADMIN_ID, f"🎫 تذكرة #{tid}\\n👤 {u.full_name} (@{u.username})\\n💬 {update.message.text}")',
+'    await update.message.reply_text(f"✅ تم استلام رسالتك برقم تذكرة #{tid}. شكراً لك!")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ticket))',
+'    print("Feedback bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 11 */ { id:'p-quiz-py', icon:'❓', platform:'telegram', lang:'python', fname:'quiz_bot.py',
+  cat:{ar:'ترفيه',en:'Fun'}, title:{ar:'بوت المسابقات برو',en:'Quiz PRO'},
+  desc:{ar:'أسئلة اختيار من متعدد مع حساب النتيجة النهائية.',en:'Multiple-choice questions with final scoring.'},
+  pitch:{ar:'ممتاز للقنوات لزيادة التفاعل والمشاركة.',en:'Great for channels to boost engagement.'},
+  code:[
+'# ❓ Quiz Bot PRO  |  pip install python-telegram-bot',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'QUESTIONS = [',
+'    {"q": "عاصمة العراق؟", "opts": ["بغداد", "البصرة", "أربيل"], "correct": 1},',
+'    {"q": "كم يساوي 2+2؟", "opts": ["3", "4", "5"], "correct": 2},',
+'    {"q": "أكبر كوكب؟", "opts": ["الأرض", "المشتري", "المريخ"], "correct": 2},',
+']',
+'state = {}',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    state[update.effective_chat.id] = {"i": 0, "score": 0}',
+'    await ask(update.effective_chat.id, context)',
+'',
+'async def ask(chat, context):',
+'    st = state[chat]',
+'    if st["i"] >= len(QUESTIONS):',
+'        await context.bot.send_message(chat, f"🏁 نتيجتك: {st[\'score\']}/{len(QUESTIONS)} — /start للإعادة")',
+'        return',
+'    q = QUESTIONS[st["i"]]',
+'    opts = "\\n".join(f"{i+1}. {o}" for i, o in enumerate(q["opts"]))',
+'    await context.bot.send_message(chat, f"❓ {q[\'q\']}\\n{opts}\\nأرسل رقم الإجابة.")',
+'',
+'async def answer(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    chat = update.effective_chat.id',
+'    if chat not in state:',
+'        return',
+'    st = state[chat]',
+'    try:',
+'        a = int(update.message.text.strip())',
+'    except ValueError:',
+'        return',
+'    if a == QUESTIONS[st["i"]]["correct"]:',
+'        st["score"] += 1',
+'        await update.message.reply_text("✅ صحيح!")',
+'    else:',
+'        await update.message.reply_text("❌ خطأ.")',
+'    st["i"] += 1',
+'    await ask(chat, context)',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, answer))',
+'    print("Quiz bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 12 */ { id:'p-reminder-py', icon:'⏰', platform:'telegram', lang:'python', fname:'reminder_bot.py',
+  cat:{ar:'إنتاجية',en:'Productivity'}, title:{ar:'بوت التذكير برو',en:'Reminder PRO'},
+  desc:{ar:'يذكّر المستخدم بمهمة بعد المدة التي يحددها.',en:'Reminds the user of a task after a chosen delay.'},
+  pitch:{ar:'أداة عملية تُستخدم يومياً.',en:'A practical, daily-use utility.'},
+  code:[
+'# ⏰ Reminder Bot PRO  |  pip install python-telegram-bot',
+'import asyncio',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("⏰ استخدم: /remind ثواني نص\\nمثال: /remind 60 اشرب ماء")',
+'',
+'async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    try:',
+'        secs = int(context.args[0]); text = " ".join(context.args[1:]) or "تذكير!"',
+'    except (IndexError, ValueError):',
+'        await update.message.reply_text("الصيغة: /remind ثواني نص"); return',
+'    await update.message.reply_text(f"✅ سأذكّرك بعد {secs} ثانية.")',
+'    await asyncio.sleep(secs)',
+'    await update.message.reply_text(f"🔔 تذكير: {text}")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(CommandHandler("remind", remind))',
+'    print("Reminder bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 13 */ { id:'p-translate-py', icon:'🌍', platform:'telegram', lang:'python', fname:'translate_bot.py',
+  cat:{ar:'ترجمة',en:'Translation'}, title:{ar:'بوت الترجمة برو',en:'Translator PRO'},
+  desc:{ar:'يترجم أي رسالة إلى اللغة المطلوبة — بدون مفتاح API.',en:'Translates any message to a target language — no API key.'},
+  pitch:{ar:'مفيد للطلاب والمسافرين وأصحاب الأعمال.',en:'Useful for students, travellers and businesses.'},
+  code:[
+'# 🌍 Translator Bot PRO  |  pip install python-telegram-bot deep-translator',
+'from deep_translator import GoogleTranslator',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'TARGET = "en"   # en, ar, tr, fr ...',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(f"🌍 أرسل أي نص وسأترجمه إلى ({TARGET}).")',
+'',
+'async def translate(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    try:',
+'        out = GoogleTranslator(source="auto", target=TARGET).translate(update.message.text)',
+'        await update.message.reply_text(out)',
+'    except Exception:',
+'        await update.message.reply_text("تعذّرت الترجمة.")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, translate))',
+'    print("Translator bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+/* 14 */ { id:'p-store-tg-js', icon:'🛒', platform:'telegram', lang:'javascript', fname:'store_bot.js',
+  cat:{ar:'متجر',en:'Store'}, title:{ar:'متجر تلكرام برو (JS)',en:'Telegram Store PRO (JS)'},
+  desc:{ar:'نسخة نود من بوت المتجر: أزرار، سلة، وإشعار الإدارة.',en:'Node version of the store bot: buttons, cart, admin alerts.'},
+  pitch:{ar:'لمن يفضّل بيئة Node.js.',en:'For those who prefer Node.js.'},
+  code:[
+'// 🛒 Telegram Store Bot PRO  |  npm install node-telegram-bot-api',
+'const TelegramBot = require("node-telegram-bot-api");',
+'',
+'const TOKEN = "PASTE_YOUR_TOKEN";',
+'const STORE = "متجري";',
+'const ADMIN_ID = 123456789;',
+'const PRODUCTS = { "قميص": 15000, "بنطلون": 25000, "حذاء": 40000 };',
+'const carts = {};',
+'',
+'const bot = new TelegramBot(TOKEN, { polling: true });',
+'',
+'function menu() {',
+'  const rows = Object.keys(PRODUCTS).map((n) => [{ text: n + " - " + PRODUCTS[n], callback_data: n }]);',
+'  rows.push([{ text: "🧺 سلّتي", callback_data: "cart" }, { text: "✅ إتمام", callback_data: "checkout" }]);',
+'  return { reply_markup: { inline_keyboard: rows } };',
+'}',
+'',
+'bot.onText(/\\/start/, (msg) => {',
+'  carts[msg.chat.id] = carts[msg.chat.id] || [];',
+'  bot.sendMessage(msg.chat.id, "🛍️ أهلاً بك في " + STORE + "\\nاختر منتجاً:", menu());',
+'});',
+'',
+'bot.on("callback_query", (q) => {',
+'  const chat = q.message.chat.id;',
+'  const cart = (carts[chat] = carts[chat] || []);',
+'  bot.answerCallbackQuery(q.id);',
+'  if (PRODUCTS[q.data]) {',
+'    cart.push(q.data);',
+'    bot.sendMessage(chat, "✅ أُضيف " + q.data + ". عناصر السلة: " + cart.length, menu());',
+'  } else if (q.data === "cart") {',
+'    const total = cart.reduce((s, i) => s + PRODUCTS[i], 0);',
+'    bot.sendMessage(chat, "🧺 " + (cart.join("، ") || "فارغة") + "\\n💰 الإجمالي: " + total, menu());',
+'  } else if (q.data === "checkout") {',
+'    if (!cart.length) { bot.sendMessage(chat, "سلّتك فارغة."); return; }',
+'    const total = cart.reduce((s, i) => s + PRODUCTS[i], 0);',
+'    bot.sendMessage(ADMIN_ID, "🔔 طلب جديد\\n🛒 " + cart.join("، ") + "\\n💰 " + total);',
+'    carts[chat] = [];',
+'    bot.sendMessage(chat, "✅ تم استلام طلبك! سنتواصل معك قريباً 🌟");',
+'  }',
+'});',
+'',
+'console.log("Store bot PRO running...");'
+  ].join('\n') },
+
+/* 15 */ { id:'p-autoreply-js', icon:'💬', platform:'telegram', lang:'javascript', fname:'autoreply_bot.js',
+  cat:{ar:'رد آلي',en:'Auto-reply'}, title:{ar:'بوت رد آلي برو (JS)',en:'Auto-reply PRO (JS)'},
+  desc:{ar:'رد تلقائي على كلمات مفتاحية مع رسالة ترحيب.',en:'Auto-replies to keywords with a welcome message.'},
+  pitch:{ar:'أساس أي بوت أعمال — سريع الإعداد.',en:'The basis of any business bot — quick to set up.'},
+  code:[
+'// 💬 Auto-reply Bot PRO  |  npm install node-telegram-bot-api',
+'const TelegramBot = require("node-telegram-bot-api");',
+'',
+'const TOKEN = "PASTE_YOUR_TOKEN";',
+'const WELCOME = "أهلاً بك! كيف أقدر أساعدك؟";',
+'const RULES = { "السعر": "راسلنا للأسعار 💰", "العنوان": "بغداد - شارع الرشيد", "شكرا": "العفو، بخدمتك 🌟" };',
+'',
+'const bot = new TelegramBot(TOKEN, { polling: true });',
+'',
+'bot.onText(/\\/start/, (msg) => bot.sendMessage(msg.chat.id, WELCOME));',
+'',
+'bot.on("message", (msg) => {',
+'  if (!msg.text || msg.text.startsWith("/")) return;',
+'  const text = msg.text.toLowerCase();',
+'  for (const key of Object.keys(RULES)) {',
+'    if (text.includes(key.toLowerCase())) { bot.sendMessage(msg.chat.id, RULES[key]); return; }',
+'  }',
+'});',
+'',
+'console.log("Auto-reply bot PRO running...");'
+  ].join('\n') },
+
+/* 16 */ { id:'p-wa-business', icon:'🏪', platform:'whatsapp', lang:'javascript', fname:'wa_business_bot.js',
+  cat:{ar:'خدمة العملاء',en:'Customer Service'}, title:{ar:'واتساب أعمال برو',en:'WhatsApp Business PRO'},
+  desc:{ar:'قائمة رقمية، أسئلة شائعة، ساعات عمل، واستقبال الطلبات.',en:'Numbered menu, FAQs, working hours and order taking.'},
+  pitch:{ar:'الأكثر مبيعاً — كل محل يريد بوت واتساب.',en:'Top seller — every shop wants a WhatsApp bot.'},
+  code:[
+'// 🏪 WhatsApp Business Bot PRO  |  npm install whatsapp-web.js qrcode-terminal',
+'const { Client, LocalAuth } = require("whatsapp-web.js");',
+'const qrcode = require("qrcode-terminal");',
+'',
+'const COMPANY = "متجري";',
+'const ADMIN = "9647700000000@c.us";  // رقم الإدارة لاستقبال الطلبات',
+'const MENU = [',
+'  { t: "ساعات العمل", r: "🕘 من 9 صباحاً حتى 9 مساءً" },',
+'  { t: "التوصيل", r: "🚚 خلال 24 ساعة داخل المدينة" },',
+'  { t: "الأسعار", r: "💰 راسلنا باسم المنتج لمعرفة سعره" },',
+'  { t: "تقديم طلب", r: "📝 اكتب: طلب ثم اسم المنتج والعنوان" },',
+'];',
+'',
+'const client = new Client({ authStrategy: new LocalAuth() });',
+'client.on("qr", (qr) => { qrcode.generate(qr, { small: true }); console.log("امسح رمز QR."); });',
+'client.on("ready", () => console.log("WhatsApp Business PRO ready!"));',
+'',
+'function menuText() {',
+'  let m = "🤝 أهلاً بك في " + COMPANY + "\\nاختر رقماً:\\n";',
+'  MENU.forEach((it, i) => { m += (i + 1) + ". " + it.t + "\\n"; });',
+'  return m;',
+'}',
+'',
+'client.on("message", async (msg) => {',
+'  const text = (msg.body || "").trim();',
+'  if (text.startsWith("طلب")) {',
+'    await client.sendMessage(ADMIN, "🔔 طلب جديد من " + msg.from + "\\n" + text);',
+'    return msg.reply("✅ تم استلام طلبك، سنتواصل معك قريباً 🌟");',
+'  }',
+'  const n = parseInt(text);',
+'  if (n >= 1 && n <= MENU.length) return msg.reply(MENU[n - 1].r);',
+'  return msg.reply(menuText());',
+'});',
+'',
+'client.initialize();'
+  ].join('\n') },
+
+/* 17 */ { id:'p-wa-autoreply', icon:'💬', platform:'whatsapp', lang:'javascript', fname:'wa_autoreply_bot.js',
+  cat:{ar:'رد آلي',en:'Auto-reply'}, title:{ar:'واتساب رد آلي برو',en:'WhatsApp Auto-reply PRO'},
+  desc:{ar:'رد تلقائي على رسائل واتساب حسب كلمات مفتاحية.',en:'Auto-replies to WhatsApp messages by keyword.'},
+  pitch:{ar:'يوفّر وقت الرد على العملاء تلقائياً.',en:'Saves time by answering customers automatically.'},
+  code:[
+'// 💬 WhatsApp Auto-reply Bot PRO  |  npm install whatsapp-web.js qrcode-terminal',
+'const { Client, LocalAuth } = require("whatsapp-web.js");',
+'const qrcode = require("qrcode-terminal");',
+'',
+'const WELCOME = "أهلاً بك! كيف أقدر أساعدك؟";',
+'const RULES = { "السعر": "راسلنا للأسعار", "العنوان": "بغداد", "شكرا": "العفو، بخدمتك 🌟" };',
+'',
+'const client = new Client({ authStrategy: new LocalAuth() });',
+'client.on("qr", (qr) => { qrcode.generate(qr, { small: true }); console.log("امسح رمز QR."); });',
+'client.on("ready", () => console.log("WhatsApp auto-reply PRO ready!"));',
+'',
+'client.on("message", (msg) => {',
+'  const text = (msg.body || "").toLowerCase();',
+'  if (["مرحبا", "السلام", "اهلا", "hi"].some((g) => text.includes(g))) return msg.reply(WELCOME);',
+'  for (const key of Object.keys(RULES)) {',
+'    if (text.includes(key.toLowerCase())) return msg.reply(RULES[key]);',
+'  }',
+'});',
+'',
+'client.initialize();'
+  ].join('\n') },
+
+/* 18 */ { id:'p-fileorg-py', icon:'🗂️', platform:'script', lang:'python', fname:'file_organizer_pro.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'منظّم الملفات برو',en:'File Organizer PRO'},
+  desc:{ar:'يرتّب أي مجلد حسب نوع الملفات مع تقرير بالنتائج.',en:'Sorts any folder by file type with a results report.'},
+  pitch:{ar:'سكربت عملي يبيعه الناس للأفراد والمكاتب.',en:'A practical script to sell to individuals and offices.'},
+  code:[
+'# 🗂️ File Organizer PRO  |  python file_organizer_pro.py',
+'import os, shutil',
+'',
+'FOLDER = "./downloads"',
+'CATEGORIES = {',
+'    "Images": [".jpg", ".jpeg", ".png", ".gif", ".webp"],',
+'    "Videos": [".mp4", ".mov", ".avi", ".mkv"],',
+'    "Documents": [".pdf", ".doc", ".docx", ".txt", ".xlsx", ".pptx"],',
+'    "Audio": [".mp3", ".wav", ".ogg", ".m4a"],',
+'    "Archives": [".zip", ".rar", ".7z", ".tar"],',
+'}',
+'',
+'def organize(folder):',
+'    moved, report = 0, {}',
+'    for name in os.listdir(folder):',
+'        path = os.path.join(folder, name)',
+'        if not os.path.isfile(path):',
+'            continue',
+'        ext = os.path.splitext(name)[1].lower()',
+'        for cat, exts in CATEGORIES.items():',
+'            if ext in exts:',
+'                dest = os.path.join(folder, cat)',
+'                os.makedirs(dest, exist_ok=True)',
+'                shutil.move(path, os.path.join(dest, name))',
+'                report[cat] = report.get(cat, 0) + 1',
+'                moved += 1',
+'                break',
+'    print(f"✅ تم ترتيب {moved} ملف:")',
+'    for cat, count in report.items():',
+'        print(f"  {cat}: {count}")',
+'',
+'if __name__ == "__main__":',
+'    organize(FOLDER)'
+  ].join('\n') },
+
+/* 19 */ { id:'p-password-py', icon:'🔐', platform:'script', lang:'python', fname:'password_pro.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'مولّد كلمات سر برو',en:'Password Generator PRO'},
+  desc:{ar:'يولّد كلمات سر قوية مع مؤشر قوة، بالطول والعدد المطلوب.',en:'Generates strong passwords with a strength meter, by length & count.'},
+  pitch:{ar:'أداة أمان بسيطة ومطلوبة دائماً.',en:'A simple, always-needed security tool.'},
+  code:[
+'# 🔐 Password Generator PRO  |  python password_pro.py',
+'import secrets, string',
+'',
+'LENGTH = 16',
+'COUNT = 5',
+'',
+'def generate(length):',
+'    alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"',
+'    return "".join(secrets.choice(alphabet) for _ in range(length))',
+'',
+'def strength(pw):',
+'    score = sum([any(c.islower() for c in pw), any(c.isupper() for c in pw),',
+'                 any(c.isdigit() for c in pw), any(not c.isalnum() for c in pw)])',
+'    return ["ضعيفة", "متوسطة", "جيدة", "قوية", "قوية جداً"][min(score + (len(pw) >= 16), 4)]',
+'',
+'if __name__ == "__main__":',
+'    print(f"🔐 {COUNT} كلمة سر بطول {LENGTH}:")',
+'    for i in range(COUNT):',
+'        pw = generate(LENGTH)',
+'        print(f"{i+1}. {pw}   [{strength(pw)}]")'
+  ].join('\n') },
+
+/* 20 */ { id:'p-scraper-py', icon:'🕸️', platform:'script', lang:'python', fname:'scraper_csv_pro.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'ساحب بيانات إلى CSV برو',en:'Web Scraper to CSV PRO'},
+  desc:{ar:'يجمع عناصر من صفحة ويب ويحفظها في ملف CSV منظّم.',en:'Collects items from a web page into a tidy CSV file.'},
+  pitch:{ar:'أداة تُباع للتسويق وأبحاث السوق.',en:'Sells well for marketing and market research.'},
+  code:[
+'# 🕸️ Web Scraper to CSV PRO  |  pip install requests beautifulsoup4',
+'import csv, requests',
+'from bs4 import BeautifulSoup',
+'',
+'URL = "https://example.com"',
+'SELECTOR = "h2"',
+'OUT = "results.csv"',
+'',
+'def scrape():',
+'    r = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)',
+'    soup = BeautifulSoup(r.text, "html.parser")',
+'    rows = [el.get_text(strip=True) for el in soup.select(SELECTOR) if el.get_text(strip=True)]',
+'    with open(OUT, "w", newline="", encoding="utf-8") as f:',
+'        writer = csv.writer(f)',
+'        writer.writerow(["#", "text"])',
+'        for i, text in enumerate(rows, 1):',
+'            writer.writerow([i, text])',
+'    print(f"✅ تم حفظ {len(rows)} عنصر في {OUT}")',
+'',
+'if __name__ == "__main__":',
+'    scrape()'
+  ].join('\n') },
+
+/* 21 */ { id:'p-yt-mp3-py', icon:'🎵', platform:'script', lang:'python', fname:'youtube_mp3_pro.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'محوّل يوتيوب إلى MP3 برو',en:'YouTube to MP3 PRO'},
+  desc:{ar:'يحمّل صوت أي فيديو يوتيوب كملف MP3 بجودة عالية.',en:'Downloads any YouTube video\'s audio as a high-quality MP3.'},
+  pitch:{ar:'طلب دائم وكبير — سهل بيعه.',en:'Constant high demand — easy to sell.'},
+  code:[
+'# 🎵 YouTube to MP3 PRO  |  pip install yt-dlp   (+ ffmpeg)',
+'import yt_dlp',
+'',
+'URL = "https://youtube.com/watch?v=XXXX"',
+'',
+'def download(url):',
+'    opts = {',
+'        "format": "bestaudio/best",',
+'        "outtmpl": "%(title)s.%(ext)s",',
+'        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],',
+'    }',
+'    with yt_dlp.YoutubeDL(opts) as ydl:',
+'        ydl.download([url])',
+'    print("✅ تم تحميل الصوت كملف MP3")',
+'',
+'if __name__ == "__main__":',
+'    download(URL)'
+  ].join('\n') },
+
+/* 22 */ { id:'p-img2pdf-py', icon:'📄', platform:'script', lang:'python', fname:'images_to_pdf_pro.py',
+  cat:{ar:'تحويل',en:'Convert'}, title:{ar:'محوّل الصور إلى PDF برو',en:'Images to PDF PRO'},
+  desc:{ar:'يدمج كل صور مجلد في ملف PDF واحد مرتّب.',en:'Merges all images in a folder into a single ordered PDF.'},
+  pitch:{ar:'أداة مكتبية يحتاجها الطلاب والموظفون.',en:'An office tool students and employees need.'},
+  code:[
+'# 📄 Images to PDF PRO  |  pip install pillow',
+'import os',
+'from PIL import Image',
+'',
+'FOLDER = "./images"',
+'OUT = "album.pdf"',
+'',
+'def convert(folder, out):',
+'    files = sorted(f for f in os.listdir(folder) if f.lower().endswith((".jpg", ".jpeg", ".png")))',
+'    if not files:',
+'        print("لا توجد صور."); return',
+'    images = [Image.open(os.path.join(folder, f)).convert("RGB") for f in files]',
+'    images[0].save(out, save_all=True, append_images=images[1:])',
+'    print(f"✅ تم دمج {len(images)} صورة في {out}")',
+'',
+'if __name__ == "__main__":',
+'    convert(FOLDER, OUT)'
+  ].join('\n') },
+
+/* 23 */ { id:'p-rename-py', icon:'🔤', platform:'script', lang:'python', fname:'bulk_rename_pro.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'إعادة تسمية جماعية برو',en:'Bulk Rename PRO'},
+  desc:{ar:'يعيد تسمية كل ملفات مجلد باسم موحّد وترقيم تلقائي.',en:'Renames all files in a folder with a unified name and auto-numbering.'},
+  pitch:{ar:'يوفّر ساعات على المصوّرين وصنّاع المحتوى.',en:'Saves hours for photographers and content creators.'},
+  code:[
+'# 🔤 Bulk Rename PRO  |  python bulk_rename_pro.py',
+'import os',
+'',
+'FOLDER = "./files"',
+'PREFIX = "photo"',
+'START = 1',
+'',
+'def rename(folder, prefix, start):',
+'    files = sorted(f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)))',
+'    n = start',
+'    for name in files:',
+'        ext = os.path.splitext(name)[1]',
+'        new = f"{prefix}_{n:03d}{ext}"',
+'        os.rename(os.path.join(folder, name), os.path.join(folder, new))',
+'        print(f"{name} -> {new}")',
+'        n += 1',
+'    print(f"✅ تم إعادة تسمية {n - start} ملف")',
+'',
+'if __name__ == "__main__":',
+'    rename(FOLDER, PREFIX, START)'
+  ].join('\n') },
+
+/* 24 */ { id:'p-calc-py', icon:'🧮', platform:'telegram', lang:'python', fname:'calc_bot.py',
+  cat:{ar:'أدوات',en:'Utility'}, title:{ar:'بوت الآلة الحاسبة برو',en:'Calculator PRO'},
+  desc:{ar:'يحسب أي عملية حسابية يرسلها المستخدم بأمان.',en:'Safely evaluates any arithmetic expression the user sends.'},
+  pitch:{ar:'بوت مساعد بسيط يكمّل أي مجموعة أو قناة.',en:'A simple helper bot that complements any group or channel.'},
+  code:[
+'# 🧮 Calculator Bot PRO  |  pip install python-telegram-bot',
+'import re',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = "PASTE_YOUR_TOKEN"',
+'',
+'async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text("🧮 أرسل عملية حسابية، مثال: 12 * (3 + 4)")',
+'',
+'async def calc(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    expr = (update.message.text or "").strip()',
+'    if not re.fullmatch(r"[0-9+\\-*/(). ]+", expr):',
+'        await update.message.reply_text("أرسل أرقاماً وعمليات فقط."); return',
+'    try:',
+'        await update.message.reply_text(f"= {eval(expr, {\'__builtins__\': {}}, {})}")',
+'    except Exception:',
+'        await update.message.reply_text("تعذّر الحساب.")',
+'',
+'def main():',
+'    app = Application.builder().token(TOKEN).build()',
+'    app.add_handler(CommandHandler("start", start))',
+'    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, calc))',
+'    print("Calculator bot PRO running...")',
+'    app.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+  ].join('\n') },
+
+];
+
+</script>
+
+<script>
 /* =========================================================================
    Script Bot — single-file, offline, no-AI code generator
    ========================================================================= */
@@ -2556,8 +3543,11 @@ const I = {
   ar: {
     dir:'rtl',
     brandSub:'صانع البوتات والسكربتات',
-    nav_home:'الرئيسية', nav_build:'الإنشاء', nav_play:'المختبر', nav_qr:'رمز QR', nav_guide:'الدليل', nav_saved:'مشاريعي',
+    nav_home:'الرئيسية', nav_build:'الإنشاء', nav_shop:'🛒 جاهزات للبيع', nav_play:'المختبر', nav_qr:'رمز QR', nav_guide:'الدليل', nav_saved:'مشاريعي',
     guide_cta:'📘 دليل التشغيل الكامل (موبايل + لابتوب)',
+    shop_h:'بوتات وسكربتات جاهزة للبيع', shop_p:'مجموعة منتجات احترافية كاملة وجاهزة — انسخها أو حمّلها وبِعها لعملائك. السعر المقترح لكل منتج:',
+    shop_sell:'السعر المقترح', shop_pitch:'💡 فكرة البيع', shop_open:'عرض الكود', shop_back:'← رجوع للمتجر',
+    shop_note:'كل منتج جاهز ومفحوص. عدّل الإعدادات في أعلى الملف (التوكن، الأسماء...) ثم شغّله حسب دليل التشغيل. بِعه كخدمة (تنصيب + تشغيل) لتربح أكثر.',
     lang_btn:'English', theme_dark:'🌙', theme_light:'☀️',
     export_zip:'📦 تصدير ZIP', zip_ok:'تم تصدير الحزمة ✓',
     qr_h:'مولّد رمز QR', qr_p:'حوّل رابط بوتك أو أي نص إلى رمز QR قابل للمسح — شاركه مع عملائك ليفتحوا البوت بسرعة.',
@@ -2594,8 +3584,11 @@ const I = {
   en: {
     dir:'ltr',
     brandSub:'Bot & Script Generator',
-    nav_home:'Home', nav_build:'Build', nav_play:'Playground', nav_qr:'QR Code', nav_guide:'Guide', nav_saved:'My Projects',
+    nav_home:'Home', nav_build:'Build', nav_shop:'🛒 For Sale', nav_play:'Playground', nav_qr:'QR Code', nav_guide:'Guide', nav_saved:'My Projects',
     guide_cta:'📘 Full run guide (mobile + laptop)',
+    shop_h:'Ready-to-sell bots & scripts', shop_p:'A pack of complete, professional products — copy or download and sell them to your clients. Suggested price each:',
+    shop_sell:'Suggested price', shop_pitch:'💡 Selling angle', shop_open:'View code', shop_back:'← Back to store',
+    shop_note:'Every product is complete and tested. Edit the settings at the top of the file (token, names…), then run it per the guide. Sell it as a service (setup + hosting) to earn more.',
     lang_btn:'العربية', theme_dark:'🌙', theme_light:'☀️',
     export_zip:'📦 Export ZIP', zip_ok:'Package exported ✓',
     qr_h:'QR Code Generator', qr_p:'Turn your bot link or any text into a scannable QR code — share it so customers can open your bot instantly.',
@@ -4450,7 +5443,7 @@ function applyChrome(){
 function renderTabs(){
   const tabs=document.getElementById('tabs');
   tabs.innerHTML='';
-  const items=[['home','nav_home'],['build','nav_build'],['play','nav_play'],['qr','nav_qr'],['guide','nav_guide'],['saved','nav_saved']];
+  const items=[['home','nav_home'],['build','nav_build'],['shop','nav_shop'],['play','nav_play'],['qr','nav_qr'],['guide','nav_guide'],['saved','nav_saved']];
   items.forEach(([v,key])=>{
     const b=el('button',{class: state.view===v?'active':''}, t(key));
     b.onclick=()=>go(v);
@@ -4462,7 +5455,7 @@ function renderTabs(){
 function toggleLang(){ state.lang = state.lang==='ar'?'en':'ar'; store.lang=state.lang; render(); }
 function toggleTheme(){ store.theme = store.theme==='dark'?'light':'dark'; render(); }
 
-function go(view){ state.view=view; render(); window.scrollTo(0,0); }
+function go(view){ if(view!=='shop') _shopProduct=null; state.view=view; render(); window.scrollTo(0,0); }
 
 function render(){
   applyChrome();
@@ -4472,6 +5465,7 @@ function render(){
   if(state.view==='play') return renderPlay();
   if(state.view==='qr') return renderQR();
   if(state.view==='guide') return renderGuide();
+  if(state.view==='shop') return renderShop();
   if(state.view==='saved') return renderSaved();
 }
 
@@ -4856,6 +5850,101 @@ function renderPlay(){
   app.appendChild(panel);
   // reflect active language button
   [...seg.children].forEach(b=> b.classList.toggle('active', b.dataset.lc===_pgLang));
+}
+
+/* ---- Shop: ready-to-sell products ---- */
+var _shopProduct = null;
+function renderShop(){
+  if(_shopProduct) return renderShopProduct(_shopProduct);
+  const hero=el('section',{class:'shop-hero'});
+  hero.appendChild(el('h2',{}, '🛒 '+t('shop_h')));
+  hero.appendChild(el('p',{class:'sub',style:'max-width:640px;margin:0 auto;color:var(--muted)'}, t('shop_p')));
+  hero.appendChild(el('div',{class:'big-price'}, '$'+PREMIUM_PRICE+' '+ (state.lang==='ar'?'/ منتج':'/ product')));
+  app.appendChild(hero);
+
+  // filters (reuse chips)
+  const filters=el('div',{class:'filters'});
+  [['all','f_all'],['telegram','f_telegram'],['whatsapp','f_whatsapp'],['script','f_script']].forEach(([f,key])=>{
+    const c=el('button',{class:'chip'+(state.shopFilter===f||(!state.shopFilter&&f==='all')?' active':'')},t(key));
+    c.onclick=()=>{ state.shopFilter=f; render(); };
+    filters.appendChild(c);
+  });
+  app.appendChild(filters);
+
+  const grid=el('div',{class:'grid'});
+  const flt=state.shopFilter||'all';
+  PREMIUM.filter(pr=> flt==='all'||pr.platform===flt).forEach(pr=>{
+    const card=el('div',{class:'tcard'});
+    card.appendChild(el('div',{class:'pricetag'}, '$'+PREMIUM_PRICE));
+    card.appendChild(el('div',{class:'ic'}, pr.icon));
+    card.appendChild(el('h3',{}, L(pr.title)));
+    card.appendChild(el('p',{}, L(pr.desc)));
+    card.appendChild(el('div',{class:'pitch'}, L(pr.pitch)));
+    const tags=el('div',{class:'tags'});
+    const pcls = pr.platform==='telegram'?'tg':pr.platform==='whatsapp'?'wa':'sc';
+    const plabel = pr.platform==='telegram'?'Telegram':pr.platform==='whatsapp'?'WhatsApp':(state.lang==='ar'?'سكربت':'Script');
+    tags.appendChild(el('span',{class:'tag '+pcls}, plabel));
+    tags.appendChild(el('span',{class:'tag '+(pr.lang==='python'?'py':'js')}, pr.lang==='python'?'Python':'JavaScript'));
+    card.appendChild(tags);
+    card.onclick=()=>{ _shopProduct=pr; render(); window.scrollTo(0,0); };
+    grid.appendChild(card);
+  });
+  app.appendChild(grid);
+}
+function renderShopProduct(pr){
+  const back=el('button',{class:'btn ghost small'}, t('shop_back')); back.onclick=()=>{ _shopProduct=null; render(); };
+  app.appendChild(back);
+
+  const panel=el('div',{class:'panel'});
+  const head=el('div',{style:'display:flex;align-items:center;gap:12px;flex-wrap:wrap'});
+  head.appendChild(el('div',{style:'font-size:34px'}, pr.icon));
+  const ht=el('div',{style:'flex:1;min-width:200px'});
+  ht.appendChild(el('h2',{style:'margin:0'}, L(pr.title)));
+  ht.appendChild(el('p',{class:'sub',style:'margin:2px 0 0'}, L(pr.desc)));
+  head.appendChild(ht);
+  head.appendChild(el('div',{class:'big-price'}, '$'+PREMIUM_PRICE));
+  panel.appendChild(head);
+
+  panel.appendChild(el('div',{class:'explain',style:'margin-top:14px'}, '<b>'+t('shop_pitch')+':</b> '+L(pr.pitch)));
+
+  // code block (reuse styles)
+  const codewrap=el('div',{style:'margin-top:14px'});
+  const ch=el('div',{class:'codehead'});
+  ch.appendChild(el('span',{class:'fname'}, '📄 '+pr.fname));
+  const sp=el('div',{class:'sp'});
+  const copyBtn=el('button',{class:'btn small good'}, t('copy')); copyBtn.onclick=()=>{ copyText(pr.code, copyBtn); };
+  const dlBtn=el('button',{class:'btn small'}, t('download')); dlBtn.onclick=()=>downloadText(pr.code, pr.fname);
+  const zipBtn=el('button',{class:'btn small'}, t('export_zip')); zipBtn.onclick=()=>exportProductZip(pr);
+  sp.appendChild(copyBtn); sp.appendChild(dlBtn); sp.appendChild(zipBtn);
+  ch.appendChild(sp);
+  codewrap.appendChild(ch);
+  const pre=el('pre',{class:'code'}); pre.innerHTML=highlight(pr.code, pr.lang);
+  codewrap.appendChild(pre);
+  panel.appendChild(codewrap);
+
+  panel.appendChild(el('div',{class:'note',style:'margin-top:14px'}, '💵 '+t('shop_note')));
+  const gbtn=el('button',{class:'btn',style:'margin-top:14px'}, t('guide_cta')); gbtn.onclick=()=>{ _shopProduct=null; go('guide'); };
+  panel.appendChild(gbtn);
+  app.appendChild(panel);
+}
+function copyText(text, btn){
+  navigator.clipboard.writeText(text).then(()=>{
+    toast(t('copied')); if(btn){ const o=btn.textContent; btn.textContent=t('copied'); setTimeout(()=>btn.textContent=o,1200); }
+  }).catch(()=>{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');toast(t('copied'));}catch(e){} document.body.removeChild(ta); });
+}
+function downloadText(text, fname){
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function exportProductZip(pr){
+  const readme='Script Bot — '+pr.title.en+' (PRO)\n'+'='.repeat(40)+'\n\n'+pr.desc.en+'\n\nSelling angle: '+pr.pitch.en+'\nSuggested price: $'+PREMIUM_PRICE+'\n\nEdit the settings at the top of '+pr.fname+', then run it (see the app\'s Guide tab).';
+  const blob=makeZip([{name:pr.fname,content:pr.code},{name:'README.txt',content:readme}]);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=pr.id+'.zip'; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  toast(t('zip_ok'));
 }
 
 /* ---- Run Guide (detailed) ---- */
