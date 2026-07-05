@@ -1191,8 +1191,6 @@ _dbg('serviceWorker controller: ' + (navigator.serviceWorker && navigator.servic
   .mode-btn span { font-size: 1.3rem; display: block; margin-bottom: 3px; }
   .mode-btn-million.selected { border-color: var(--gold); background: rgba(255,215,0,0.12); color: var(--gold); }
   .mode-btn-million:hover { border-color: var(--gold) !important; color: var(--gold) !important; }
-  .mode-btn-online.selected { border-color: #00e676; background: rgba(0,230,118,0.1); color: #00e676; }
-  .mode-btn-online:hover { border-color: #00e676 !important; color: #00e676 !important; }
   .mode-btn-team.selected { border-color: var(--orange); background: rgba(255,152,0,0.1); color: var(--orange); }
   .mode-btn-team:hover { border-color: var(--orange) !important; color: var(--orange) !important; }
 
@@ -1509,89 +1507,6 @@ _dbg('serviceWorker controller: ' + (navigator.serviceWorker && navigator.servic
   .diff-badge.easy { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); }
   .diff-badge.medium { background: rgba(234,97,255,0.1); border: 1px solid rgba(234,97,255,0.3); color: var(--accent); }
   .diff-badge.hard { background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3); color: var(--red); }
-
-  /* ── ONLINE ROOM SCREEN ── */
-  .online-card {
-    background: var(--card); border: 1.5px solid var(--border);
-    border-radius: 20px; padding: 28px 24px;
-    width: 100%; max-width: 420px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  }
-  .online-title {
-    font-family: 'Tajawal', sans-serif; font-size: 1.5rem; font-weight: 900;
-    text-align: center; margin-bottom: 6px; color: #00e676;
-  }
-  .online-sub { color: var(--muted); text-align: center; font-size: 0.88rem; margin-bottom: 24px; }
-  .room-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: var(--surface); border-radius: 12px; padding: 4px; }
-  .room-tab {
-    flex: 1; padding: 10px; border: none; border-radius: 10px;
-    font-family: 'Cairo', sans-serif; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; background: transparent; color: var(--muted); transition: all 0.2s;
-  }
-  .room-tab.active { background: #00e676; color: #0a0f0a; }
-  .room-code-display {
-    background: var(--surface); border: 2px solid #00e676;
-    border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 16px;
-    box-shadow: 0 0 30px rgba(0,230,118,0.15);
-  }
-  .room-code-num {
-    font-family: 'Tajawal', sans-serif; font-size: 3rem; font-weight: 900;
-    color: #00e676; letter-spacing: 12px; text-shadow: 0 0 20px rgba(0,230,118,0.4);
-  }
-  .room-code-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
-  .room-waiting {
-    display: flex; align-items: center; gap: 10px; justify-content: center;
-    color: var(--muted); font-size: 0.9rem; margin-bottom: 16px;
-  }
-  .room-waiting-dot {
-    width: 10px; height: 10px; border-radius: 50%; background: var(--muted);
-    animation: blink 1.2s ease-in-out infinite;
-  }
-  .room-waiting-dot:nth-child(2) { animation-delay: 0.2s; }
-  .room-waiting-dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:1} }
-  .room-player-joined {
-    background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3);
-    border-radius: 12px; padding: 12px; text-align: center;
-    color: #00e676; font-weight: 700; font-size: 0.9rem; margin-bottom: 16px;
-    display: none;
-  }
-  .online-scoreboard {
-    display: flex; gap: 12px; width: 100%; max-width: 500px; margin-bottom: 14px;
-  }
-  .online-score-card {
-    flex: 1; background: var(--card); border: 1.5px solid var(--border);
-    border-radius: 14px; padding: 12px; text-align: center;
-  }
-  .online-score-card.me { border-color: #00e676; }
-  .online-score-card.opponent { border-color: var(--accent); }
-  .online-score-name { font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
-  .online-score-num {
-    font-family: 'Tajawal', sans-serif; font-size: 1.8rem; font-weight: 900;
-  }
-  .online-score-card.me .online-score-num { color: #00e676; }
-  .online-score-card.opponent .online-score-num { color: var(--accent); }
-  .online-status {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 8px 14px; text-align: center;
-    font-size: 0.82rem; color: var(--muted); margin-bottom: 12px;
-  }
-  .online-answer-wrap {
-    display: flex; gap: 10px; width: 100%; max-width: 500px; margin-bottom: 10px;
-  }
-  .online-ans-btn {
-    flex: 1; padding: 16px; border-radius: 14px; border: 1.5px solid var(--border);
-    font-family: 'Cairo', sans-serif; font-size: 0.95rem; font-weight: 700;
-    cursor: pointer; background: var(--card); color: var(--text); transition: all 0.2s;
-  }
-  .online-ans-btn.correct-ans { border-color: #00e676; background: rgba(0,230,118,0.1); color: #00e676; }
-  .online-ans-btn.wrong-ans { border-color: var(--red); background: rgba(244,67,54,0.1); color: var(--red); }
-  .online-ans-btn:hover:not(:disabled) { border-color: #00e676; }
-  .online-ans-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .opponent-answered {
-    text-align: center; font-size: 0.82rem; color: var(--muted);
-    margin-bottom: 8px; min-height: 20px;
-  }
 
   /* ── HOW TO PLAY SCREEN ── */
   .howto-card {
@@ -2335,58 +2250,12 @@ _dbg('serviceWorker controller: ' + (navigator.serviceWorker && navigator.servic
 <!-- database-compat انشال نهائياً: ما أكو databaseURL بالإعدادات فالمكتبة ما تشتغل
      أصلاً، ووجود السكربت نفسه كان من المشتبه بهم بتقرير الخلل (يسجّل موارد عامة) -->
 <script>
-/*
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                     ⚠️ FIREBASE SECURITY RULES                              ║
-║  انسخ هذه القواعس إلى Firebase Console > Realtime Database > Rules          ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-{
-  "rules": {
-    "rooms": {
-      "$roomCode": {
-        ".read": "root.child('rooms').child($roomCode).exists()",
-        ".write": "auth.uid != null && (root.child('rooms').child($roomCode).child('hostId').val() == auth.uid || root.child('rooms').child($roomCode).child('guestId').val() == auth.uid)",
-        
-        "host": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50" },
-        "hostId": { ".validate": "newData.isString()" },
-        "guest": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50 || newData.isNull()" },
-        "guestId": { ".validate": "newData.isString() || newData.isNull()" },
-        "hostScore": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
-        "guestScore": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
-        "currentQ": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20" },
-        "status": { ".validate": "newData.isString() && (newData.val() == 'waiting' || newData.val() == 'playing' || newData.val() == 'ended')" },
-        "hostOnline": { ".validate": "newData.isBoolean()" },
-        "guestOnline": { ".validate": "newData.isBoolean()" },
-        "createdAt": { ".validate": "newData.isNumber()" },
-        "questions": { ".write": "!root.child('rooms').child($roomCode).child('status').exists() || root.child('rooms').child($roomCode).child('status').val() == 'waiting'" },
-        
-        // ✅ حماية: الأسئلة لا تُعدَّل بعد بدء اللعبة
-        "hostAnswered": { ".validate": "newData.isString() || newData.isNull()" },
-        "guestAnswered": { ".validate": "newData.isString() || newData.isNull()" },
-        
-        // ✅ منع الكتابة على نقاط الخصم
-        "hostScore": {
-          ".write": "auth.uid != null && root.child('rooms').child($roomCode).child('hostId').val() == auth.uid",
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000 && newData.val() >= data.val()"
-        },
-        "guestScore": {
-          ".write": "auth.uid != null && root.child('rooms').child($roomCode).child('guestId').val() == auth.uid",
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000 && newData.val() >= data.val()"
-        }
-      }
-    },
-    "$other": { ".read": false, ".write": false }
-  }
-}
-*/
 
 /*
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                 🛡 FIRESTORE SECURITY RULES (المهمة فعلياً)                  ║
 ║  انسخ هذه القواعد إلى Firebase Console > Firestore Database > Rules > Publish ║
-║  ملاحظة: القواعد فوگ (Realtime Database) للغرف الأونلاين المعطلة حالياً —     ║
-║  هذه القواعد هي اللي تحمي بيانات اللعبة الحقيقية (الحسابات والجواهر والأسئلة) ║
+║  هذه القواعد هي اللي تحمي بيانات اللعبة (الحسابات والجواهر والأسئلة)          ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 rules_version = '2';
@@ -2478,19 +2347,6 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // ── سجلات اللعب والإنذارات الأمنية ── إضافة فقط (append-only)
-    // محد يكدر يقرأها أو يعدلها أو يمسحها من التطبيق — فقط أنت من الـ Console
-    match /game_logs/{logId} {
-      allow create: if request.resource.data.type is string
-                    && request.resource.data.type.size() <= 40;
-      allow read, update, delete: if false;
-    }
-    match /security_alerts/{aId} {
-      allow create: if request.resource.data.type is string
-                    && request.resource.data.type.size() <= 40;
-      allow read, update, delete: if false;
-    }
-
     // ── أي شي ثاني: ممنوع ──
     match /{document=**} {
       allow read, write: if false;
@@ -2512,7 +2368,7 @@ const firebaseConfig = {
 // (السكربتات من gstatic.com) عن التحميل. لذلك نبدأ بكائنات بديلة آمنة
 // فوراً حتى لا تنكسر بقية الكود، وبنفس الوقت نحاول التهيئة الحقيقية
 // بشكل متكرر لمدة ~9 ثواني، ونرفّع fbAuth/fbDb/rtdb فور نجاحها.
-let fbAuth, fbDb, rtdb;
+let fbAuth, fbDb;
 let _fbReady = false;
 // ⚠️ لازم يتصرّحون هنا (قبل _tryInitFirebase) مو جوّة عند attachAuthListener:
 // السكربتات مال SDK تتحمّل بشكل متزامن، فأول محاولة تهيئة تنجح فوراً
@@ -2525,7 +2381,6 @@ let _authListenerUnsub = null;
 
 fbAuth = { onAuthStateChanged: (cb) => { cb(null); return () => {}; }, signInWithEmailAndPassword: () => Promise.reject({code:'unavailable'}), createUserWithEmailAndPassword: () => Promise.reject({code:'unavailable'}), signOut: () => Promise.resolve() };
 fbDb   = { collection: () => ({ doc: () => ({ get: () => Promise.resolve({exists:false}), set: () => Promise.resolve() }) }) };
-rtdb   = { ref: () => ({ once: () => Promise.resolve({val:()=>null}), set: () => Promise.resolve(), update: () => Promise.resolve(), remove: () => Promise.resolve(), on: () => {}, off: () => {} }) };
 
 function _tryInitFirebase(attempt) {
   if (typeof firebase === 'undefined' || !firebase.initializeApp) {
@@ -2566,14 +2421,6 @@ function _tryInitFirebase(attempt) {
     // تتعلّق للأبد بنفس البيئة رغم إنها معزولة بـ try/catch — يبدو إنها
     // تكسر الاتصال الداخلي لـ Firestore حتى لو وعدها بالذات ما يفشل
     // بشكل ظاهر. التخزين المؤقت بدون نت شي ثانوي، حذفه أهم من نشغله.
-  }
-  // Realtime Database غير مُعدّة أصلاً (ما أكو databaseURL بالإعدادات)
-  // فتشغيلها راح تفشل دائماً وقد تحجز موارد شبكة/اتصال بلا فائدة —
-  // نتجاوزها بالكامل ونخليها بالنسخة البديلة الآمنة (rtdb يُستخدم بس
-  // بميزة الغرف الأونلاين غير المفعّلة أصلاً بدون هذا الإعداد).
-  if (firebaseConfig.databaseURL && typeof firebase.database === 'function') {
-    try { rtdb = firebase.database(); }
-    catch(e) { console.warn('⚠️ فشل تهيئة firebase.database:', e && e.message); }
   }
 
   if (anyReady) {
@@ -2830,16 +2677,13 @@ function handleBackButton() {
   const activeScreen = document.querySelector('.screen.active');
   const screenId = activeScreen ? activeScreen.id : '';
 
-  // لو في مود أونلاين أو لعبة نشطة
-  if (screenId === 'screen-online' || screenId === 'screen-game' || screenId === 'screen-iq') {
+  // لو في لعبة نشطة
+  if (screenId === 'screen-game' || screenId === 'screen-iq') {
     showBackConfirmDialog(
       '⚠️ هل تريد الخروج؟',
       'سيتم إنهاء اللعبة الحالية إذا خرجت.',
       function() {
         // خروج من اللعبة
-        if (screenId === 'screen-online') {
-          if (typeof leaveOnlineRoom === 'function') leaveOnlineRoom();
-        }
         showScreen('screen-setup');
         history.pushState({ page: 'game' }, '', '');
       }
@@ -3010,7 +2854,7 @@ window.addEventListener('offline', updateOnlineStatus);
 
 <!-- ══ شريط أوفلاين ══ -->
 <div id="offline-banner">
-  📵 أنت أوفلاين — اللعب المحلي يشتغل، اللعب الأونلاين غير متاح
+  📵 أنت أوفلاين — اللعب يشتغل، بس الجواهر والحفظ يحتاجون إنترنت
 </div>
 
 <!-- ══ LOGIN SCREEN ══ -->
@@ -3406,9 +3250,8 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="logo" style="margin-bottom:4px">🧠 هل أنت أذكى؟</div>
       <div class="aurora-tagline">لعبة ثقافية تنافسية للعائلة والأصدقاء</div>
       <div class="aurora-badges">
-        <span class="aurora-badge">🎮 6 أوضاع</span>
+        <span class="aurora-badge">🎮 5 أوضاع</span>
         <span class="aurora-badge">🧠 +8500 سؤال</span>
-        <span class="aurora-badge">🌐 أونلاين</span>
       </div>
     </div>
     <div class="aurora-wave">
@@ -3432,9 +3275,6 @@ window.addEventListener('offline', updateOnlineStatus);
         </button>
         <button class="mode-btn mode-btn-million" id="mode-million" onclick="selectMode('million')">
           <span>💰</span>المليون
-        </button>
-        <button class="mode-btn mode-btn-online" id="mode-online" onclick="selectMode('online')">
-          <span>🌐</span>أونلاين
         </button>
         <button class="mode-btn mode-btn-team" id="mode-team" onclick="selectMode('team')">
           <span>🤝</span>فريقان
@@ -3781,7 +3621,7 @@ window.addEventListener('offline', updateOnlineStatus);
   </div>
   <div class="howto-card">
 
-    <!-- الأوضاع الستة -->
+    <!-- أوضاع اللعب -->
     <div style="font-weight:700;font-size:1rem;margin-bottom:10px;color:var(--accent);">🎮 أوضاع اللعب</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 12px;">
@@ -3799,11 +3639,7 @@ window.addEventListener('offline', updateOnlineStatus);
         <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">المليون</div>
         <div style="font-size:0.75rem;color:var(--muted);line-height:1.4;">15 سؤال متصاعد الصعوبة من 500 ريال حتى المليون! عندك خطوط نجاة: 50/50 وأتصل بصديق ورأي الجمهور.</div>
       </div>
-      <div style="background:var(--card);border:1px solid #3b82f644;border-radius:14px;padding:14px 12px;">
-        <div style="font-size:1.6rem;margin-bottom:6px;">🌐</div>
-        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">أونلاين</div>
-        <div style="font-size:0.75rem;color:var(--muted);line-height:1.4;">العب مع أصدقاء من أي مكان عبر الإنترنت. أنشئ غرفة وشارك الكود مع أصدقاءك وابدأوا المنافسة.</div>
-      </div>
+</div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 12px;">
         <div style="font-size:1.6rem;margin-bottom:6px;">🤝</div>
         <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">فريقان</div>
@@ -3823,7 +3659,7 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="howto-num">1</div>
       <div class="howto-text">
         <div class="howto-title">اختر وضع اللعب 🎮</div>
-        <div class="howto-sub">من الشاشة الرئيسية اختر الوضع المناسب: لاعبان للتنافس المباشر، منفرد لتحدي نفسك، المليون لتجربة مثيرة، أو أونلاين مع أصدقاء بعيدين.</div>
+        <div class="howto-sub">من الشاشة الرئيسية اختر الوضع المناسب: لاعبان للتنافس المباشر، منفرد لتحدي نفسك، المليون لتجربة مثيرة، أو فريقان للعب الجماعي.</div>
       </div>
     </div>
 
@@ -11274,582 +11110,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-// ═══════════════ ONLINE MODE ═══════════════
-let onlineState = {
-  roomCode: null,
-  isHost: false,
-  myName: '',
-  oppName: '',
-  myScore: 0,
-  oppScore: 0,
-  currentQ: 0,
-  totalQ: 10,
-  answered: false,
-  timer: null,
-  timeLeft: 20,
-  roomRef: null,
-  listeners: [],
-  questions: [],
-  category: null,
-};
-
-// ═══════════════ دوال الأمان المحسّنة ═══════════════
-
-// ✅ توليد كود غرفة آمن (8 أحرف - 2.8 تريليون احتمالية)
-function generateSecureRoomCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
-// ✅ التحقق من صحة البيانات
-const DataValidator = {
-  validateUsername(name) {
-    if (!name || typeof name !== 'string') return false;
-    if (name.length < 2 || name.length > 50) return false;
-    return true;
-  },
-  
-  validateScore(score) {
-    if (typeof score !== 'number') return false;
-    if (score < 0 || score > 1000) return false;
-    if (!Number.isInteger(score)) return false;
-    return true;
-  },
-  
-  validateQuestionNumber(q, totalQ) {
-    if (typeof q !== 'number') return false;
-    if (q < 0 || q > totalQ) return false;
-    if (!Number.isInteger(q)) return false;
-    return true;
-  },
-  
-  validateAnswer(answer, validChoices) {
-    if (!answer || typeof answer !== 'string') return false;
-    // يجب أن تكون الإجابة ضمن الخيارات المعروضة فعلاً (يمنع إرسال الجواب من الكونسول)
-    if (validChoices && Array.isArray(validChoices) && !validChoices.includes(answer)) return false;
-    // لا نقبل إجابات أطول من 500 حرف
-    if (answer.length > 500) return false;
-    return true;
-  },
-  
-  validateAnswerTime(answerTime, maxTime = 20) {
-    if (typeof answerTime !== 'number') return false;
-    if (answerTime < 0 || answerTime > maxTime) return false;
-    return true;
-  }
-};
-
-// ✅ نظام التسجيل الفعلي (Firestore) للكشف عن الغش
-const GameLogger = {
-  async logGameStart(roomCode, hostId, guestId, questions) {
-    try {
-      if (!fbDb || !roomCode) return;
-      await fbDb.collection('game_logs').add({
-        type: 'game_start',
-        roomCode,
-        hostId: hostId || 'anonymous',
-        guestId: guestId || null,
-        totalQuestions: questions ? questions.length : 0,
-        timestamp: Date.now(),
-        date: new Date().toISOString(),
-      });
-    } catch (e) {
-      console.warn('GameLogger.logGameStart:', e);
-    }
-  },
-  
-  async logAnswer(roomCode, playerId, questionNumber, answer, isCorrect, timeSpent) {
-    try {
-      if (!fbDb || !roomCode) return;
-      await fbDb.collection('game_logs').add({
-        type: 'answer',
-        roomCode,
-        playerId: playerId || 'anonymous',
-        questionNumber,
-        isCorrect,
-        timeSpent,
-        timestamp: Date.now(),
-      });
-    } catch (e) {
-      console.warn('GameLogger.logAnswer:', e);
-    }
-  },
-  
-  async logScoreChange(roomCode, playerId, oldScore, newScore) {
-    try {
-      if (!fbDb || !roomCode) return;
-      const increase = newScore - oldScore;
-      // تحذير: زيادة غير طبيعية (أكثر من 10 نقاط دفعة واحدة)
-      if (increase > 10) {
-        await fbDb.collection('security_alerts').add({
-          type: 'suspicious_score',
-          roomCode,
-          playerId: playerId || 'anonymous',
-          oldScore,
-          newScore,
-          increase,
-          timestamp: Date.now(),
-        });
-        console.warn('⚠️ تحذير أمني: زيادة نقاط مشبوهة', { increase, playerId });
-        return;
-      }
-      await fbDb.collection('game_logs').add({
-        type: 'score_change',
-        roomCode,
-        playerId: playerId || 'anonymous',
-        oldScore,
-        newScore,
-        increase,
-        timestamp: Date.now(),
-      });
-    } catch (e) {
-      console.warn('GameLogger.logScoreChange:', e);
-    }
-  }
-};
-
-// ── تبديل تبويبات الغرفة ──
-function switchRoomTab(tab) {
-  document.getElementById('rtab-create').classList.toggle('active', tab==='create');
-  document.getElementById('rtab-join').classList.toggle('active', tab==='join');
-  document.getElementById('rsec-create').style.display = tab==='create' ? 'block' : 'none';
-  document.getElementById('rsec-join').style.display   = tab==='join'   ? 'block' : 'none';
-}
-
-// ── إنشاء غرفة ──
-async function createOnlineRoom() {
-  const name = document.getElementById('p1-name').value.trim() || (currentUser?.username) || 'لاعب';
-  
-  // ✅ التحقق من صحة اسم اللاعب
-  if (!DataValidator.validateUsername(name)) {
-    showToast('❌ اسم اللاعب غير صحيح (2-50 حرف)');
-    return;
-  }
-  
-  // ✅ كود الغرفة الآمن (8 أحرف بدل 4 أرقام)
-  const code = generateSecureRoomCode();
-  onlineState.roomCode = code;
-  onlineState.isHost   = true;
-  onlineState.myName   = name;
-  onlineState.myScore  = 0;
-  onlineState.oppScore = 0;
-
-  // اختر أسئلة عشوائية من جميع الفئات
-  const cats = Object.keys(QUESTIONS);
-  const allQ = [];
-  cats.forEach(c => { const qs = QUESTIONS[c]; if(qs) allQ.push(...qs); });
-  onlineState.questions = shuffle([...allQ]).slice(0, onlineState.totalQ);
-
-  const roomRef = rtdb.ref('rooms/' + code);
-  onlineState.roomRef = roomRef;
-
-  await roomRef.set({
-    host: name,
-    hostId: currentUser?.uid || 'anonymous', // ✅ أضفنا معرف المستخدم
-    guest: null,
-    guestId: null,
-    status: 'waiting',
-    currentQ: 0,
-    hostScore: 0,
-    guestScore: 0,
-    hostAnswered: null,
-    guestAnswered: null,
-    hostOnline: true,
-    guestOnline: false,
-    questions: onlineState.questions.map(q => ({ q: q.q, a: q.a })),
-    createdAt: Date.now(),
-  });
-
-  // ✅ سجّل بدء اللعبة
-  const hostId = currentUser?.uid || 'anonymous';
-  await GameLogger.logGameStart(code, hostId, null, onlineState.questions);
-
-  // احذف الغرفة تلقائياً بعد ساعة
-  setTimeout(() => roomRef.remove().catch(()=>{}), 3600000);
-
-  // أظهر الكود
-  document.getElementById('room-code-display').style.display = 'block';
-  document.getElementById('room-code-num').textContent = code;
-  document.getElementById('room-waiting').style.display = 'flex';
-  document.getElementById('btn-create-room').style.display = 'none';
-
-  // انتظر صاحبك
-  const guestListener = roomRef.child('guest').on('value', snap => {
-    const guest = snap.val();
-    if (guest) {
-      onlineState.oppName = guest;
-      document.getElementById('room-player-joined').style.display = 'block';
-      document.getElementById('room-waiting').style.display = 'none';
-      setTimeout(() => startOnlineGame(), 1500);
-    }
-  });
-  onlineState.listeners.push({ ref: roomRef.child('guest'), listener: guestListener, event: 'value' });
-}
-
-// ── دخول غرفة ──
-async function joinOnlineRoom(code) {
-  if (!code || code.length !== 8) {
-    showOnlineError('أدخل كود من 8 أحرف');
-    return;
-  }
-  const name = document.getElementById('p1-name').value.trim() || (currentUser?.username) || 'لاعب';
-  const errEl = document.getElementById('join-error');
-  errEl.style.display = 'block';
-  errEl.style.color = 'var(--muted)';
-  errEl.textContent = '⏳ جاري البحث عن الغرفة...';
-
-  const roomRef = rtdb.ref('rooms/' + code);
-  const snap = await roomRef.get();
-
-  if (!snap.exists()) {
-    showOnlineError('❌ الغرفة غير موجودة');
-    return;
-  }
-
-  const data = snap.val();
-  if (data.status !== 'waiting') {
-    showOnlineError('❌ الغرفة مشغولة أو انتهت');
-    return;
-  }
-  if (data.guest) {
-    showOnlineError('❌ الغرفة ممتلئة');
-    return;
-  }
-
-  onlineState.roomCode   = code;
-  onlineState.isHost     = false;
-  onlineState.myName     = name;
-  onlineState.oppName    = data.host;
-  onlineState.roomRef    = roomRef;
-  onlineState.myScore    = 0;
-  onlineState.oppScore   = 0;
-  onlineState.questions  = data.questions || [];
-
-  await roomRef.update({ guest: name });
-  errEl.textContent = '✅ تم الدخول! جاري البدء...';
-  setTimeout(() => startOnlineGame(), 1500);
-}
-
-function showOnlineError(msg) {
-  const errEl = document.getElementById('join-error');
-  errEl.style.display = 'block';
-  errEl.style.color = 'var(--red)';
-  errEl.textContent = msg;
-}
-
-// ── مراقبة انقطاع الاتصال ──
-function watchOnlineDisconnect() {
-  if (!onlineState.roomRef) return;
-  const myKey = onlineState.isHost ? 'hostOnline' : 'guestOnline';
-  const myRef = onlineState.roomRef.child(myKey);
-  myRef.onDisconnect().set(false);
-  myRef.set(true);
-
-  // لو صاحبك انقطع
-  const oppKey = onlineState.isHost ? 'guestOnline' : 'hostOnline';
-  const oppListener = onlineState.roomRef.child(oppKey).on('value', snap => {
-    if (snap.val() === false && onlineState.currentQ > 0) {
-      clearInterval(onlineState.timer);
-      showToast('⚠️ انقطع اتصال صاحبك!');
-      setTimeout(() => endOnlineGame(), 2000);
-    }
-  });
-  onlineState.listeners.push({ ref: onlineState.roomRef.child(oppKey), listener: oppListener, event: 'value' });
-}
-
-// ── بدء اللعبة الأونلاين ──
-function startOnlineGame() {
-  onlineState.currentQ = 0;
-  onlineState.myScore  = 0;
-  onlineState.oppScore = 0;
-
-  // اضبط الأسماء
-  document.getElementById('og-my-name').textContent   = onlineState.myName;
-  document.getElementById('og-opp-name').textContent  = onlineState.oppName;
-
-  showScreen('screen-online-game');
-  watchOnlineDisconnect();
-  renderOnlineQuestion();
-
-  // اسمع التغييرات
-  const gameRef = onlineState.roomRef;
-  const scoreKey = onlineState.isHost ? 'guestScore' : 'hostScore';
-  const oppAnsKey = onlineState.isHost ? 'guestAnswered' : 'hostAnswered';
-
-  const oppScoreListener = gameRef.child(scoreKey).on('value', snap => {
-    const v = snap.val();
-    if (v !== null) {
-      onlineState.oppScore = v;
-      document.getElementById('og-opp-score').textContent = v;
-      document.getElementById('or-opp-score').textContent = v;
-    }
-  });
-
-  const oppAnsListener = gameRef.child(oppAnsKey).on('value', snap => {
-    const v = snap.val();
-    if (v !== null && v !== undefined) {
-      document.getElementById('og-opp-answered').textContent = '✅ صاحبك أجاب!';
-    } else {
-      document.getElementById('og-opp-answered').textContent = '';
-    }
-  });
-
-  const qListener = gameRef.child('currentQ').on('value', snap => {
-    const q = snap.val();
-    if (q !== null && q !== onlineState.currentQ && !onlineState.isHost) {
-      onlineState.currentQ = q;
-      if (q >= onlineState.totalQ) {
-        endOnlineGame();
-      } else {
-        renderOnlineQuestion();
-      }
-    }
-  });
-
-  onlineState.listeners.push(
-    { ref: gameRef.child(scoreKey), listener: oppScoreListener, event: 'value' },
-    { ref: gameRef.child(oppAnsKey), listener: oppAnsListener, event: 'value' },
-    { ref: gameRef.child('currentQ'), listener: qListener, event: 'value' }
-  );
-}
-
-// ── عرض السؤال ──
-function renderOnlineQuestion() {
-  clearInterval(onlineState.timer);
-  onlineState.answered = false;
-  onlineState.timeLeft = 20;
-
-  const q = onlineState.questions[onlineState.currentQ];
-  if (!q) { endOnlineGame(); return; }
-
-  document.getElementById('og-question').textContent = q.q;
-  document.getElementById('og-status').textContent = `سؤال ${onlineState.currentQ + 1} من ${onlineState.totalQ}`;
-  document.getElementById('og-opp-answered').textContent = '';
-  document.getElementById('og-timer-fill').style.width = '100%';
-  document.getElementById('og-timer-text').textContent = '⏱ 20 ثانية';
-
-  // أنشئ خيارات الإجابة — صح + 3 خاطئة عشوائية
-  const correct = q.a;
-  const allAnswers = [correct];
-  
-  // جيب 3 إجابات خاطئة عشوائية من أسئلة ثانية
-  const otherAnswers = onlineState.questions
-    .filter((_, i) => i !== onlineState.currentQ)
-    .map(x => x.a)
-    .filter(a => a !== correct);
-  
-  const shuffledOthers = shuffle(otherAnswers).slice(0, 3);
-  shuffledOthers.forEach(a => allAnswers.push(a));
-  const shuffledAnswers = shuffle(allAnswers);
-
-  const wrap = document.getElementById('og-answers');
-  wrap.innerHTML = '';
-  shuffledAnswers.forEach(ans => {
-    const btn = document.createElement('button');
-    btn.className = 'online-ans-btn';
-    btn.textContent = ans;
-    btn.onclick = () => { soundClick(); answerOnline(ans, correct, btn, shuffledAnswers); };
-    wrap.appendChild(btn);
-  });
-
-  // تايمر 20 ثانية
-  onlineState.timer = setInterval(() => {
-    onlineState.timeLeft--;
-    const pct = (onlineState.timeLeft / 20) * 100;
-    document.getElementById('og-timer-fill').style.width = pct + '%';
-    document.getElementById('og-timer-text').textContent = `⏱ ${onlineState.timeLeft} ثانية`;
-    if (onlineState.timeLeft <= 5) {
-      document.getElementById('og-timer-fill').style.background = 'var(--red)';
-      soundTick10();
-    }
-    if (onlineState.timeLeft <= 0) {
-      clearInterval(onlineState.timer);
-      if (!onlineState.answered) nextOnlineQuestion(false);
-    }
-  }, 1000);
-}
-
-// ── إجابة ──
-async function answerOnline(ans, correct, btn, allBtns) {
-  if (onlineState.answered) return;
-  
-  // ✅ التحقق من صحة الإجابة (يجب أن تكون من الخيارات المعروضة فعلاً)
-  if (!DataValidator.validateAnswer(ans, allBtns.map(b => b.textContent || b))) {
-    console.warn('❌ إجابة غير موجودة في الخيارات المعروضة');
-    return;
-  }
-  
-  // ✅ التحقق من الوقت (يجب أن تكون الإجابة ضمن 20 ثانية)
-  const answerTime = 20 - onlineState.timeLeft;
-  if (!DataValidator.validateAnswerTime(answerTime)) {
-    console.warn('❌ الإجابة خارج الوقت المسموح');
-    return;
-  }
-  
-  onlineState.answered = true;
-  clearInterval(onlineState.timer);
-
-  // عطّل كل الأزرار
-  document.querySelectorAll('.online-ans-btn').forEach(b => b.disabled = true);
-
-  const isCorrect = ans === correct;
-
-  // لوّن الإجابات
-  allBtns.forEach(b => {
-    if (b.textContent === correct) b.classList.add('correct-ans');
-  });
-  if (!isCorrect) btn.classList.add('wrong-ans');
-
-  // سجّل إجابتي
-  const myAnsKey = onlineState.isHost ? 'hostAnswered' : 'guestAnswered';
-  await onlineState.roomRef.update({ [myAnsKey]: ans });
-
-  if (isCorrect) {
-    const newScore = onlineState.myScore + 10;
-    
-    // ✅ التحقق من صحة النقاط الجديدة
-    if (DataValidator.validateScore(newScore)) {
-      onlineState.myScore = newScore;
-      soundCorrect(); haptic('heavy');
-      document.getElementById('og-my-score').textContent = newScore;
-      document.getElementById('or-my-score').textContent = newScore;
-      
-      // احفظ نقاطي
-      const myScoreKey = onlineState.isHost ? 'hostScore' : 'guestScore';
-      await onlineState.roomRef.update({ [myScoreKey]: newScore });
-      
-      // ✅ سجّل الإجابة الصحيحة
-      const playerId = currentUser?.uid || onlineState.myName;
-      await GameLogger.logAnswer(onlineState.roomCode, playerId, onlineState.currentQ, ans, true, answerTime);
-      await GameLogger.logScoreChange(onlineState.roomCode, playerId, newScore - 10, newScore);
-    } else {
-      console.warn('⚠️ تحذير أمني: محاولة نقاط غير صحيحة');
-    }
-  } else {
-    soundWrong(); haptic('medium');
-    
-    // ✅ سجّل الإجابة الخاطئة
-    const playerId = currentUser?.uid || onlineState.myName;
-    await GameLogger.logAnswer(onlineState.roomCode, playerId, onlineState.currentQ, ans, false, answerTime);
-  }
-
-  setTimeout(() => nextOnlineQuestion(isCorrect), 1800);
-}
-
-// ── السؤال التالي ──
-async function nextOnlineQuestion(wasCorrect) {
-  onlineState.currentQ++;
-
-  // صفّر الإجابات
-  const myAnsKey  = onlineState.isHost ? 'hostAnswered' : 'guestAnswered';
-  await onlineState.roomRef.update({ [myAnsKey]: null });
-
-  if (onlineState.currentQ >= onlineState.totalQ) {
-    endOnlineGame();
-    return;
-  }
-
-  // الهوست يزيد الرقم عشان الضيف يتحدث
-  if (onlineState.isHost) {
-    await onlineState.roomRef.update({ currentQ: onlineState.currentQ });
-  }
-
-  renderOnlineQuestion();
-}
-
-// ── نهاية اللعبة ──
-function endOnlineGame() {
-  clearInterval(onlineState.timer);
-  const won = onlineState.myScore > onlineState.oppScore;
-  const draw = onlineState.myScore === onlineState.oppScore;
-
-  document.getElementById('or-icon').textContent  = won ? '🏆' : draw ? '🤝' : '😔';
-  document.getElementById('or-title').textContent = won ? `فزت يا ${onlineState.myName}! 🎉` : draw ? 'تعادل!' : `فاز ${onlineState.oppName}!`;
-  document.getElementById('or-sub').textContent   = won ? 'أنت الأفضل!' : draw ? 'مباراة متكافئة!' : 'حاول مرة ثانية!';
-  document.getElementById('or-my-name').textContent  = onlineState.myName;
-  document.getElementById('or-opp-name').textContent = onlineState.oppName;
-  document.getElementById('or-my-score').textContent  = onlineState.myScore;
-  document.getElementById('or-opp-score').textContent = onlineState.oppScore;
-
-  if (won) { soundWin(); haptic('win'); setTimeout(launchConfetti, 300); }
-  else { haptic('medium'); }
-
-  showScreen('screen-online-result');
-}
-
-// ── العب مرة ثانية ──
-async function playOnlineAgain() {
-  onlineState.currentQ = 0;
-  onlineState.myScore  = 0;
-  onlineState.oppScore = 0;
-
-  // اخلط أسئلة جديدة
-  const cats = Object.keys(QUESTIONS);
-  const allQ = [];
-  cats.forEach(c => { const qs = QUESTIONS[c]; if(qs) allQ.push(...qs); });
-  onlineState.questions = shuffle([...allQ]).slice(0, onlineState.totalQ);
-
-  if (onlineState.isHost) {
-    await onlineState.roomRef.update({
-      status: 'playing',
-      currentQ: 0,
-      hostScore: 0,
-      guestScore: 0,
-      hostAnswered: null,
-      guestAnswered: null,
-      questions: onlineState.questions.map(q => ({ q: q.q, a: q.a })),
-    });
-  }
-  startOnlineGame();
-}
-
-// ── إزالة المستمعين ──
-function removeOnlineListeners() {
-  onlineState.listeners.forEach(({ ref, listener, event }) => {
-    try { ref.off(event, listener); } catch(e) {}
-  });
-  onlineState.listeners = [];
-}
-
-// ── مغادرة الغرفة ──
-async function leaveOnlineRoom() {
-  clearInterval(onlineState.timer);
-  removeOnlineListeners();
-  if (onlineState.roomRef) {
-    try { await onlineState.roomRef.remove(); } catch(e) {}
-  }
-  onlineState = {
-    roomCode: null, isHost: false, myName: '', oppName: '',
-    myScore: 0, oppScore: 0, currentQ: 0, totalQ: 10,
-    answered: false, timer: null, timeLeft: 20,
-    roomRef: null, listeners: [], questions: [], category: null,
-  };
-  showScreen('screen-setup');
-  setNavMode('setup');
-}
-
-// ── إغلاق شاشة الغرفة ──
-function closeOnlineRoom() {
-  clearInterval(onlineState.timer);
-  removeOnlineListeners();
-  if (onlineState.roomRef && onlineState.isHost) {
-    onlineState.roomRef.remove().catch(()=>{});
-  }
-  document.getElementById('btn-create-room').style.display = 'block';
-  document.getElementById('room-code-display').style.display = 'none';
-  document.getElementById('room-waiting').style.display = 'none';
-  document.getElementById('room-player-joined').style.display = 'none';
-  document.getElementById('join-code-input').value = '';
-  document.getElementById('join-error').style.display = 'none';
-  onlineState.roomRef = null;
-  showScreen('screen-setup');
-}
-
-
 // ═══════════════════════════════════════════════════
 // ══           نظام اختبار الذكاء IQ              ══
 // ═══════════════════════════════════════════════════
@@ -12841,148 +12101,17 @@ function copyIQResult() {
   try { haptic('light'); } catch(e) {}
 }
 
-// ── Override selectMode for online ──
-const _baseSelectMode = window.selectMode;
-window.selectMode = function(mode) {
-  if (mode === 'online') {
-    ['mode-two','mode-solo','mode-million'].forEach(id => {
-      document.getElementById(id)?.classList.remove('selected');
-    });
-    document.getElementById('mode-online').classList.add('selected');
-    document.getElementById('p2-group').style.display = 'none';
-    document.getElementById('ref-group').style.display = 'none';
-    window._millionMode = false;
-    window._onlineMode = true;
-  } else {
-    document.getElementById('mode-online')?.classList.remove('selected');
-    window._onlineMode = false;
-    _baseSelectMode(mode);
-  }
-};
-
-// ── Override startGame for online ──
+// ── Override startGame for IQ mode ──
 const _baseStartGame = window.startGame;
 window.startGame = function() {
   if (window._iqMode) {
     startIQTest();
     return;
   }
-  if (window._onlineMode) {
-    if (!navigator.onLine) {
-      alert('📵 أنت أوفلاين! اللعب الأونلاين يحتاج إنترنت.');
-      return;
-    }
-    showScreen('screen-online-room');
-    return;
-  }
   _baseStartGame();
 };
 
 </script>
-
-
-<!-- ══ ONLINE ROOM SCREEN ══ -->
-<div id="screen-online-room" class="screen">
-  <div class="online-card">
-    <div class="online-title">🌐 اللعب أونلاين</div>
-    <p class="online-sub">العب مع صاحبك من أي مكان!</p>
-    <div class="room-tabs">
-      <button class="room-tab active" id="rtab-create" onclick="soundClick();switchRoomTab('create')">🏠 إنشاء غرفة</button>
-      <button class="room-tab" id="rtab-join" onclick="soundClick();switchRoomTab('join')">🚪 دخول غرفة</button>
-    </div>
-
-    <!-- إنشاء غرفة -->
-    <div id="rsec-create">
-      <div class="room-code-display" id="room-code-display" style="display:none">
-        <div class="room-code-label">كود الغرفة</div>
-        <div class="room-code-num" id="room-code-num">----</div>
-        <div class="room-code-label">أعطه لصاحبك 👆</div>
-      </div>
-      <div class="room-waiting" id="room-waiting" style="display:none">
-        <div style="text-align:center;padding:20px 0">
-          <div style="font-size:3rem;animation:pulse 1.5s ease-in-out infinite;margin-bottom:12px">🌐</div>
-          <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px">ينتظر صاحبك يدخل...</div>
-          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px">
-            <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);animation:bounce 1s ease-in-out infinite"></div>
-            <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);animation:bounce 1s ease-in-out 0.2s infinite"></div>
-            <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);animation:bounce 1s ease-in-out 0.4s infinite"></div>
-          </div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:0.82rem;color:var(--muted)">
-            📋 شارك الكود مع صاحبك عشان يدخل!
-          </div>
-        </div>
-      </div>
-      <div class="room-player-joined" id="room-player-joined">✅ دخل صاحبك! جاري البدء...</div>
-      <button class="btn btn-primary" id="btn-create-room" onclick="soundClick();createOnlineRoom()" style="margin-bottom:10px">🏠 إنشاء غرفة جديدة</button>
-    </div>
-
-    <!-- دخول غرفة -->
-    <div id="rsec-join" style="display:none">
-      <div class="input-group">
-        <label>🔑 أدخل كود الغرفة</label>
-        <input type="text" id="join-code-input" placeholder="مثال: 4821" maxlength="4"
-          style="text-align:center;font-size:1.8rem;letter-spacing:8px;font-family:'Tajawal',sans-serif;font-weight:900"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===4)joinOnlineRoom(this.value)">
-      </div>
-      <div class="login-error" id="join-error" style="display:none;text-align:center;padding:8px"></div>
-      <button class="btn btn-primary" onclick="soundClick();joinOnlineRoom(document.getElementById('join-code-input').value)">🚪 دخول الغرفة</button>
-    </div>
-
-    <button onclick="soundClick();closeOnlineRoom()" style="width:100%;margin-top:10px;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">← رجوع</button>
-  </div>
-</div>
-
-<!-- ══ ONLINE GAME SCREEN ══ -->
-<div id="screen-online-game" class="screen">
-  <div class="online-scoreboard">
-    <div class="online-score-card me">
-      <div class="online-score-name" id="og-my-name">أنت</div>
-      <div class="online-score-num" id="og-my-score">0</div>
-    </div>
-    <div style="display:flex;align-items:center;color:var(--muted);font-size:0.8rem;font-weight:700">VS</div>
-    <div class="online-score-card opponent">
-      <div class="online-score-name" id="og-opp-name">المنافس</div>
-      <div class="online-score-num" id="og-opp-score">0</div>
-    </div>
-  </div>
-
-  <div class="online-status" id="og-status">سؤال 1 من 10</div>
-  <div class="opponent-answered" id="og-opp-answered"></div>
-
-  <div class="q-card" style="width:100%;max-width:500px;margin-bottom:14px">
-    <div class="q-text" id="og-question">...</div>
-  </div>
-
-  <div class="online-answer-wrap" id="og-answers"></div>
-
-  <div style="width:100%;max-width:500px">
-    <div id="og-timer-bar" style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;margin-bottom:8px">
-      <div id="og-timer-fill" style="height:100%;background:#00e676;border-radius:3px;transition:width 1s linear;width:100%"></div>
-    </div>
-    <div style="text-align:center;color:var(--muted);font-size:0.8rem" id="og-timer-text">⏱ 20 ثانية</div>
-  </div>
-</div>
-
-<!-- ══ ONLINE RESULT SCREEN ══ -->
-<div id="screen-online-result" class="screen">
-  <div class="solo-result-wrap" style="max-width:420px;text-align:center">
-    <div class="solo-grade" id="or-icon">🏆</div>
-    <div class="solo-grade-text" id="or-title">نتيجة المباراة</div>
-    <div class="solo-grade-sub" id="or-sub">انتهت اللعبة!</div>
-    <div class="solo-final-stats" style="margin-bottom:20px">
-      <div class="solo-fs green">
-        <div class="num" id="or-my-score">0</div>
-        <div class="lbl" id="or-my-name">نقاطك</div>
-      </div>
-      <div class="solo-fs" style="border-color:var(--accent)">
-        <div class="num" id="or-opp-score" style="color:var(--accent)">0</div>
-        <div class="lbl" id="or-opp-name">المنافس</div>
-      </div>
-    </div>
-    <button class="btn btn-primary" style="margin-bottom:10px" onclick="soundClick();playOnlineAgain()">🔄 العب مرة ثانية</button>
-    <button onclick="soundClick();leaveOnlineRoom()" style="width:100%;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">🏠 القائمة الرئيسية</button>
-  </div>
-</div>
 
 
 <!-- ══ IQ TEST SCREEN ══ -->
