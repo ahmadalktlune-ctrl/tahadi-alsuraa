@@ -2831,6 +2831,15 @@ const TEMPLATES = [
       F('target','text',{ar:'اللغة الهدف (رمز: en, ar, tr, fr...)',en:'Target language (code: en, ar, tr, fr…)'},'en')
     ]),
     gen:genTranslate
+  },
+  /* 17. Telegram Video Downloader */
+  {
+    id:'tg-downloader', icon:'📥', platform:'telegram', langs:['python','javascript'],
+    cat:{ar:'تحميل',en:'Downloader'},
+    title:{ar:'بوت تحميل فيديوهات',en:'Video Downloader Bot'},
+    desc:{ar:'يحمّل الفيديوهات من يوتيوب وإنستغرام وتيكتوك (بدون علامة مائية) عبر رابط — بدون مفتاح API باستخدام أداة yt-dlp المجانية.',en:'Downloads videos from YouTube, Instagram & TikTok (no watermark) from a link — no API key, using the free yt-dlp tool.'},
+    fields:baseBot(),
+    gen:genDownloader
   }
 ];
 
@@ -3992,6 +4001,109 @@ r.botv+'.on("message", async (msg) => {',
   ].join('\n');
 }
 
+/* ---- 17. Video Downloader (YouTube / Instagram / TikTok) ---- */
+function genDownloader(ctx){
+  const r=ctx.rnd,o=ctx.opts;
+  if(ctx.langCode==='python'){
+    const c='#';
+    return [
+banner(c,r,ctx),
+c+' يحتاج: pip install python-telegram-bot yt-dlp   (ويحتاج ffmpeg مثبّتاً على الجهاز)',
+'import os',
+'import yt_dlp',
+'from telegram import Update',
+'from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes',
+'',
+'TOKEN = '+JSON.stringify(o.token),
+'',
+'async def '+r.greet+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    await update.message.reply_text(',
+'        "📥 أرسل رابط فيديو من يوتيوب أو إنستغرام أو تيكتوك وسأحمّله لك.\\n"',
+'        "(تيكتوك يُحمَّل بدون علامة مائية)"',
+'    )',
+'',
+'async def '+r.handle+'(update: Update, context: ContextTypes.DEFAULT_TYPE):',
+'    url = (update.message.text or "").strip()',
+'    if not url.startswith("http"):',
+'        await update.message.reply_text("أرسل رابطاً صحيحاً يبدأ بـ http.")',
+'        return',
+'    status = await update.message.reply_text("⏳ جاري التحميل...")',
+'    filename = None',
+'    '+c+' outtmpl بمعرف فريد لتجنّب تعارض الملفات',
+'    ydl_opts = {',
+'        "outtmpl": "dl_%(id)s.%(ext)s",',
+'        "format": "mp4/bestvideo+bestaudio/best",',
+'        "quiet": True,',
+'        "noplaylist": True,',
+'    }',
+'    try:',
+'        with yt_dlp.YoutubeDL(ydl_opts) as ydl:',
+'            info = ydl.extract_info(url, download=True)',
+'            filename = ydl.prepare_filename(info)',
+'        '+c+' حد تلكرام للبوتات 50 ميغابايت',
+'        if os.path.getsize(filename) > 50 * 1024 * 1024:',
+'            await status.edit_text("⚠️ الفيديو أكبر من 50 ميغابايت (حد تلكرام).")',
+'        else:',
+'            with open(filename, "rb") as video:',
+'                await context.bot.send_video(update.effective_chat.id, video)',
+'            await status.delete()',
+'    except Exception as error:',
+'        await status.edit_text("تعذّر التحميل: " + str(error)[:120])',
+'    finally:',
+'        if filename and os.path.exists(filename):',
+'            os.remove(filename)',
+'',
+'def main():',
+'    '+r.botv+' = Application.builder().token(TOKEN).build()',
+'    '+r.botv+'.add_handler(CommandHandler("start", '+r.greet+'))',
+'    '+r.botv+'.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, '+r.handle+'))',
+'    print("Downloader bot is running...")',
+'    '+r.botv+'.run_polling()',
+'',
+'if __name__ == "__main__":',
+'    main()'
+    ].join('\n');
+  }
+  const c='//';
+  return [
+banner(c,r,ctx),
+c+' يحتاج: npm install node-telegram-bot-api youtube-dl-exec   (ويحتاج ffmpeg مثبّتاً على الجهاز)',
+'const TelegramBot = require("node-telegram-bot-api");',
+'const youtubedl = require("youtube-dl-exec");',
+'const fs = require("fs");',
+'',
+'const TOKEN = '+JSON.stringify(o.token)+';',
+'const '+r.botv+' = new TelegramBot(TOKEN, { polling: true });',
+'',
+r.botv+'.onText(/\\/start/, (msg) => {',
+'  '+r.botv+'.sendMessage(msg.chat.id, "📥 أرسل رابط فيديو من يوتيوب أو إنستغرام أو تيكتوك وسأحمّله لك.\\n(تيكتوك يُحمَّل بدون علامة مائية)");',
+'});',
+'',
+r.botv+'.on("message", async (msg) => {',
+'  const url = (msg.text || "").trim();',
+'  if (!url.startsWith("http")) return;',
+'  const status = await '+r.botv+'.sendMessage(msg.chat.id, "⏳ جاري التحميل...");',
+'  const file = "dl_" + Date.now() + ".mp4";',
+'  try {',
+'    await youtubedl(url, { output: file, format: "mp4/bestvideo+bestaudio/best", noPlaylist: true });',
+'    '+c+' حد تلكرام للبوتات 50 ميغابايت',
+'    if (fs.statSync(file).size > 50 * 1024 * 1024) {',
+'      '+r.botv+'.editMessageText("⚠️ الفيديو أكبر من 50 ميغابايت (حد تلكرام).", { chat_id: msg.chat.id, message_id: status.message_id });',
+'    } else {',
+'      await '+r.botv+'.sendVideo(msg.chat.id, file);',
+'      '+r.botv+'.deleteMessage(msg.chat.id, status.message_id).catch(() => {});',
+'    }',
+'  } catch (error) {',
+'    '+r.botv+'.editMessageText("تعذّر التحميل.", { chat_id: msg.chat.id, message_id: status.message_id });',
+'  } finally {',
+'    if (fs.existsSync(file)) fs.unlinkSync(file);',
+'  }',
+'});',
+'',
+'console.log("Downloader bot is running...");'
+  ].join('\n');
+}
+
 /* ============================================================
    EXPLANATIONS (bilingual, built from platform + language)
    ============================================================ */
@@ -4004,7 +4116,11 @@ function buildExplain(ctx){
   push('هذا الكود ينفّذ: '+L(ctx.tpl.desc), 'What it does: '+ctx.tpl.desc.en);
 
   // Install
-  if(ctx.tpl.id==='tg-translate'&&lang==='python'){
+  if(ctx.tpl.id==='tg-downloader'&&lang==='python'){
+    push('ثبّت المكتبات: <code>pip install python-telegram-bot yt-dlp</code> — وتأكد أن <code>ffmpeg</code> مثبّت على جهازك.','Install: <code>pip install python-telegram-bot yt-dlp</code> — and make sure <code>ffmpeg</code> is installed on your machine.');
+  } else if(ctx.tpl.id==='tg-downloader'&&lang==='javascript'){
+    push('ثبّت المكتبات: <code>npm install node-telegram-bot-api youtube-dl-exec</code> — وتأكد أن <code>ffmpeg</code> مثبّت على جهازك.','Install: <code>npm install node-telegram-bot-api youtube-dl-exec</code> — and make sure <code>ffmpeg</code> is installed on your machine.');
+  } else if(ctx.tpl.id==='tg-translate'&&lang==='python'){
     push('ثبّت المكتبات: <code>pip install python-telegram-bot deep-translator</code>','Install: <code>pip install python-telegram-bot deep-translator</code>');
   } else if(ctx.tpl.id==='tg-translate'&&lang==='javascript'){
     push('ثبّت المكتبات: <code>npm install node-telegram-bot-api @vitalets/google-translate-api</code>','Install: <code>npm install node-telegram-bot-api @vitalets/google-translate-api</code>');
@@ -4137,7 +4253,7 @@ function renderHome(){
   const b2=el('button',{class:'btn ghost'},t('hero_cta2')); b2.onclick=()=>go('play');
   cta.appendChild(b1); cta.appendChild(b2); hero.appendChild(cta);
   const stats=el('div',{class:'stats'});
-  [['16',t('st_tpl')],['100%',t('st_off')],['0$',t('st_free')],['∞',t('st_uniq')]].forEach(([n,l])=>{
+  [['17',t('st_tpl')],['100%',t('st_off')],['0$',t('st_free')],['∞',t('st_uniq')]].forEach(([n,l])=>{
     const s=el('div',{class:'s'}); s.appendChild(el('b',{},n)); s.appendChild(el('span',{},l)); stats.appendChild(s);
   });
   hero.appendChild(stats);
