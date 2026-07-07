@@ -1,0 +1,19 @@
+{
+  "name": "tahadi-athka-app",
+  "version": "1.0.0",
+  "description": "لعبة هل أنت أذكى؟ — تطبيق أندرويد عبر Capacitor",
+  "private": true,
+  "scripts": {
+    "copy-game": "node copy-game.js",
+    "sync": "npm run copy-game && npx cap sync android",
+    "open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^6.0.0",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
