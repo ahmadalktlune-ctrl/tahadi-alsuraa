@@ -1,0 +1,11 @@
+{
+  "appId": "com.tahadi.athka",
+  "appName": "هل أنت أذكى؟",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

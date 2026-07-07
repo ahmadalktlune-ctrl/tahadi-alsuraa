@@ -2270,7 +2270,8 @@ service cloud.firestore {
       allow create, update: if request.auth != null
                             && request.auth.uid == userId
                             && validUser();
-      allow delete: if false;
+      // حذف الحساب: صاحب الحساب فقط يحذف وثيقته (مطلوب لسياسة Google Play)
+      allow delete: if request.auth != null && request.auth.uid == userId;
 
       function validUser() {
         let d = request.resource.data;
@@ -3147,6 +3148,15 @@ window.addEventListener('offline', updateOnlineStatus);
       <button class="btn-danger" style="margin-top:10px" onclick="clearGameHistory()">🏅 مسح سجل الفائزين</button>
     </div>
 
+    <div class="settings-divider"></div>
+
+    <!-- الحساب -->
+    <div class="settings-section">
+      <div class="settings-section-title">👤 الحساب</div>
+      <button class="btn-danger" onclick="openDeleteAccount()" style="border-color:var(--red);color:var(--red)">🗑️ حذف الحساب نهائياً</button>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:8px;line-height:1.6">يحذف حسابك وكل بياناتك (الجواهر، الفئات المفتوحة، النقاط، السجل) من خوادمنا نهائياً وبلا رجعة.</p>
+    </div>
+
     <!-- سياسة الخصوصية وفريق المساعدة -->
     <div class="settings-section">
       <div class="settings-section-title">📋 قانوني</div>
@@ -3158,6 +3168,26 @@ window.addEventListener('offline', updateOnlineStatus);
       </button>
     </div>
 
+  </div>
+</div>
+
+<!-- ══ نافذة تأكيد حذف الحساب ══ -->
+<div id="delete-account-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--card);border:1.5px solid var(--red);border-radius:20px;padding:24px;max-width:380px;width:100%;">
+    <div style="font-size:1.15rem;font-weight:900;color:var(--red);margin-bottom:10px;font-family:'Tajawal',sans-serif">⚠️ حذف الحساب نهائياً</div>
+    <p style="color:var(--muted);font-size:0.88rem;line-height:1.8;margin-bottom:14px">
+      راح ينحذف حسابك وكل بياناتك نهائياً:<br>
+      💎 الجواهر والفئات المفتوحة<br>
+      🏆 النقاط والمستوى والسجل<br>
+      <strong style="color:var(--red)">هذا الإجراء لا يمكن التراجع عنه!</strong>
+    </p>
+    <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px">أدخل كلمة المرور للتأكيد:</label>
+    <input type="password" id="delete-account-pass" placeholder="كلمة المرور" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Cairo',sans-serif;margin-bottom:8px" autocomplete="current-password">
+    <div id="delete-account-err" style="display:none;color:var(--red);font-size:0.8rem;margin-bottom:8px"></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button onclick="closeDeleteAccount()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer">إلغاء</button>
+      <button id="delete-account-btn" onclick="confirmDeleteAccount()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--red);color:#fff;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer">🗑️ احذف حسابي</button>
+    </div>
   </div>
 </div>
 
@@ -3193,7 +3223,7 @@ window.addEventListener('offline', updateOnlineStatus);
 
     <div style="margin-bottom:16px;">
       <strong>5. حذف البيانات</strong>
-      <p style="color:var(--muted);margin-top:6px;">يمكنك حذف حسابك وبياناتك في أي وقت عبر التواصل مع فريق المساعدة داخل التطبيق.</p>
+      <p style="color:var(--muted);margin-top:6px;">يمكنك حذف حسابك وكل بياناتك نهائياً بنفسك من داخل اللعبة: الإعدادات ⚙️ ← الحساب 👤 ← «حذف الحساب نهائياً»، أو عبر التواصل مع فريق المساعدة داخل التطبيق.</p>
     </div>
 
     <div style="margin-bottom:16px;">
@@ -3377,6 +3407,10 @@ window.addEventListener('offline', updateOnlineStatus);
 
     <!-- باقات -->
     <div id="ssec-bundles" style="display:none">
+      <!-- 💳 باقات الدفع الحقيقي مخفية حتى يترابط Google Play Billing.
+           بعد الربط: شيل style="display:none" من money-bundles-subs
+           و money-bundles-gems وخلي ENABLE_MONEY_BUY = true بالكود -->
+      <div id="money-bundles-subs" style="display:none">
       <div class="shop-section-title">باقات الاشتراك</div>
 
       <div class="bundle-card" onclick="buyBundle('monthly')">
@@ -3393,6 +3427,7 @@ window.addEventListener('offline', updateOnlineStatus);
         <div class="bundle-desc">كل الفئات مفتوحة للأبد + كل الإضافات القادمة</div>
         <div class="bundle-price">$19.99</div>
       </div>
+      </div><!-- /money-bundles-subs -->
 
       <!-- إعلان مكافئ -->
       <div class="shop-section-title" style="margin-top:20px">📺 شاهد إعلان — مجاناً!</div>
@@ -3406,6 +3441,7 @@ window.addEventListener('offline', updateOnlineStatus);
         </div>
       </div>
 
+      <div id="money-bundles-gems" style="display:none">
       <div class="shop-section-title" style="margin-top:20px">شراء جواهر 💎</div>
 
       <div class="bundle-card" onclick="buyGems(100, 0.99)">
@@ -3429,6 +3465,7 @@ window.addEventListener('offline', updateOnlineStatus);
         <div class="bundle-name">2000 جوهرة</div>
         <div class="bundle-price">$7.99</div>
       </div>
+      </div><!-- /money-bundles-gems -->
     </div>
   </div>
 </div>
@@ -3454,7 +3491,7 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">⚽</span><div class="cat-info"><div class="cat-name">كرة القدم عامة</div><div class="cat-count">800 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-big5 cat-premium" id="catbtn-BIG5_LEAGUES" data-cat="BIG5_LEAGUES" onclick="trySelectCategory('BIG5_LEAGUES')">
-      <div class="cat-locked-overlay" id="lock-BIG5_LEAGUES"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 900💎</span></div>
+      <div class="cat-locked-overlay" id="lock-BIG5_LEAGUES"><span class="lock-icon">🔒</span><span class="lock-price">900💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">⚽</span><div class="cat-info"><div class="cat-name">الدوريات الخمسة الكبار</div><div class="cat-count">998 سؤال</div></div></div>
     </button>
@@ -3462,12 +3499,12 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">🏆</span><div class="cat-info"><div class="cat-name">الرياضة العامة</div><div class="cat-count">587 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-movies cat-premium" id="catbtn-MOVIES" data-cat="MOVIES" onclick="trySelectCategory('MOVIES')">
-      <div class="cat-locked-overlay" id="lock-MOVIES"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 750💎</span></div>
+      <div class="cat-locked-overlay" id="lock-MOVIES"><span class="lock-icon">🔒</span><span class="lock-price">750💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🎬</span><div class="cat-info"><div class="cat-name">أفلام ومسلسلات</div><div class="cat-count">725 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-anime cat-premium" id="catbtn-ANIME" data-cat="ANIME" onclick="trySelectCategory('ANIME')">
-      <div class="cat-locked-overlay" id="lock-ANIME"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 600💎</span></div>
+      <div class="cat-locked-overlay" id="lock-ANIME"><span class="lock-icon">🔒</span><span class="lock-price">600💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🎌</span><div class="cat-info"><div class="cat-name">أنمي</div><div class="cat-count">582 سؤال</div></div></div>
     </button>
@@ -3475,12 +3512,12 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">🌍</span><div class="cat-info"><div class="cat-name">جغرافيا</div><div class="cat-count">665 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-history cat-premium" id="catbtn-HISTORY" data-cat="HISTORY" onclick="trySelectCategory('HISTORY')">
-      <div class="cat-locked-overlay" id="lock-HISTORY"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 550💎</span></div>
+      <div class="cat-locked-overlay" id="lock-HISTORY"><span class="lock-icon">🔒</span><span class="lock-price">550💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">📜</span><div class="cat-info"><div class="cat-name">تاريخ</div><div class="cat-count">537 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-science cat-premium" id="catbtn-SCIENCE" data-cat="SCIENCE" onclick="trySelectCategory('SCIENCE')">
-      <div class="cat-locked-overlay" id="lock-SCIENCE"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 800💎</span></div>
+      <div class="cat-locked-overlay" id="lock-SCIENCE"><span class="lock-icon">🔒</span><span class="lock-price">800💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🔬</span><div class="cat-info"><div class="cat-name">علوم</div><div class="cat-count">773 سؤال</div></div></div>
     </button>
@@ -3491,17 +3528,17 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="cat-btn-inner"><span class="cat-emoji">🕌</span><div class="cat-info"><div class="cat-name">ثقافة عربية</div><div class="cat-count">206 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-beauty cat-premium" id="catbtn-BEAUTY" data-cat="BEAUTY" onclick="trySelectCategory('BEAUTY')">
-      <div class="cat-locked-overlay" id="lock-BEAUTY"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 500💎</span></div>
+      <div class="cat-locked-overlay" id="lock-BEAUTY"><span class="lock-icon">🔒</span><span class="lock-price">500💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">💄</span><div class="cat-info"><div class="cat-name">جمال وميكياج</div><div class="cat-count">500 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-cars cat-premium" id="catbtn-CARS" data-cat="CARS" onclick="trySelectCategory('CARS')">
-      <div class="cat-locked-overlay" id="lock-CARS"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 700💎</span></div>
+      <div class="cat-locked-overlay" id="lock-CARS"><span class="lock-icon">🔒</span><span class="lock-price">700💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner"><span class="cat-emoji">🚗</span><div class="cat-info"><div class="cat-name">عالم السيارات</div><div class="cat-count">701 سؤال</div></div></div>
     </button>
     <button class="cat-btn cat-c-messi cat-premium" id="catbtn-MESSI_RONALDO" data-cat="MESSI_RONALDO" onclick="trySelectCategory('MESSI_RONALDO')">
-      <div class="cat-locked-overlay" id="lock-MESSI_RONALDO"><span class="lock-icon">🔒</span><span class="lock-price">1.99$ أو 450💎</span></div>
+      <div class="cat-locked-overlay" id="lock-MESSI_RONALDO"><span class="lock-icon">🔒</span><span class="lock-price">450💎</span></div>
       <div class="cat-premium-badge">💎 مميز</div>
       <div class="cat-btn-inner">
         <div class="mr-icon-wrap">
@@ -8264,6 +8301,63 @@ async function doLogout() {
   showScreen('screen-login');
 }
 
+// ═══ حذف الحساب نهائياً (مطلوب لسياسة Google Play) ═══
+function openDeleteAccount() {
+  if (!currentUser || currentUser.isGuest) {
+    showToast('⚠️ أنت داخل كضيف — ما عندك حساب لحذفه');
+    return;
+  }
+  document.getElementById('delete-account-pass').value = '';
+  document.getElementById('delete-account-err').style.display = 'none';
+  document.getElementById('delete-account-overlay').style.display = 'flex';
+}
+function closeDeleteAccount() {
+  document.getElementById('delete-account-overlay').style.display = 'none';
+}
+async function confirmDeleteAccount() {
+  const pass = document.getElementById('delete-account-pass').value;
+  const errEl = document.getElementById('delete-account-err');
+  const btn = document.getElementById('delete-account-btn');
+  const showErr = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+  if (!pass) { showErr('⚠️ اكتب كلمة المرور للتأكيد'); return; }
+
+  const user = fbAuth.currentUser;
+  if (!user || !user.email) { showErr('❌ ما كدرنا نتحقق من الحساب — سجل خروج وادخل من جديد'); return; }
+
+  btn.disabled = true; btn.textContent = '⏳ جاري الحذف...';
+  try {
+    // 1) إعادة المصادقة (Firebase يشترطها قبل الحذف)
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, pass);
+    await user.reauthenticateWithCredential(cred);
+
+    // 2) حذف بيانات اللاعب من Firestore
+    try { await fbDb.collection('users').doc(user.uid).delete(); } catch(e) { console.warn('حذف الوثيقة:', e); }
+
+    // 3) حذف حساب المصادقة نفسه
+    await user.delete();
+
+    // 4) تنظيف محلي والرجوع لشاشة الدخول
+    closeDeleteAccount();
+    currentUser = null; window.currentUser = null; window.isGuestMode = false;
+    try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(IQ_USED_KEY); localStorage.removeItem(M_USED_KEY); } catch(e) {}
+    document.getElementById('user-badge').style.display = 'none';
+    if (document.getElementById('gems-badge')) document.getElementById('gems-badge').style.display = 'none';
+    showScreen('screen-login');
+    showToast('✅ انحذف حسابك وكل بياناتك نهائياً. نتمنى نشوفك مرة ثانية 👋');
+  } catch(e) {
+    console.error('deleteAccount error:', e);
+    const msgs = {
+      'auth/wrong-password': '❌ كلمة المرور غلط',
+      'auth/invalid-credential': '❌ كلمة المرور غلط',
+      'auth/too-many-requests': '❌ حاولت كثير — انتظر شوية وجرب',
+      'auth/network-request-failed': '❌ مشكلة بالشبكة، تحقق من الإنترنت',
+    };
+    showErr(msgs[e.code] || ('❌ فشل الحذف: ' + (e.message || e.code || 'خطأ')));
+  } finally {
+    btn.disabled = false; btn.textContent = '🗑️ احذف حسابي';
+  }
+}
+
 // ── XP & Stats ──
 async function addXpAndSave(xpGained, didWin, correctCount, wrongCount) {
   if (!currentUser || currentUser.isGuest) return;
@@ -8883,6 +8977,9 @@ const PAID_CATS = ['BIG5_LEAGUES',
                    'BEAUTY','CARS','MESSI_RONALDO'];
 const GEMS_PER_CAT = 650;   // السعر الافتراضي للفئات المميزة
 const CAT_PRICE_USD = '1.99$';
+// 💳 الدفع بالفلوس الحقيقية معطّل حتى يترابط Google Play Billing —
+// أزرار غير شغالة بالسوق = رفض من مراجعة Google. رجّعها true بعد الربط.
+const ENABLE_MONEY_BUY = false;
 
 // أسعار متدرّجة حسب عدد أسئلة كل فئة (من الأرخص للأغلى)
 const CAT_GEM_PRICES = {
@@ -9330,7 +9427,7 @@ function renderShopCats() {
           ? `<button class="btn-buy-cat owned">✅ مفتوحة</button>`
           : `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
                <button class="btn-buy-cat gems" onclick="buyWithGems('${cat}')">💎 ${catGemPrice(cat)}</button>
-               <button class="btn-buy-cat money" onclick="buyWithMoney('${cat}')">💳 ${CAT_PRICE_USD}</button>
+               ${ENABLE_MONEY_BUY ? `<button class="btn-buy-cat money" onclick="buyWithMoney('${cat}')">💳 ${CAT_PRICE_USD}</button>` : ''}
              </div>`
       }
     </div>`;
@@ -9413,18 +9510,53 @@ function buyGems(amount, price) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ═══           نظام الإعلانات (AdMob Placeholders)            ═══
+// ═══        نظام الإعلانات AdMob (ربط حقيقي عبر Capacitor)     ═══
 // ═══════════════════════════════════════════════════════════════
-// الدوال الثلاث (showRewardedAd / showInterstitial / showAppOpen) جاهزة
-// بالمنطق الكامل، وبس مكان عرض الإعلان الفعلي placeholder — بعد تحويل
-// اللعبة APK بـ Capacitor، اربط SDK مال AdMob هنا.
+// بالمتصفح: محاكاة (الإعلان "ينجح" بعد 3 ثواني) حتى تكدر تجرب اللعبة.
+// بالـ APK (Capacitor + إضافة @capacitor-community/admob): إعلانات حقيقية
+// تلقائياً — الكود يكتشف المنصة بنفسه، ما تحتاج تغير شي غير المعرفات.
 //
-// ⬇️⬇️ ضع معرفات الوحدات الإعلانية (Ad Unit IDs) هنا بعد إنشائها بحساب AdMob ⬇️⬇️
-const ADMOB_IDS = {
-  APP_OPEN:     'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // ← إعلان فتح التطبيق
+// ⚠️⚠️ خطوتان قبل النشر بالسوق ⚠️⚠️
+// 1) بدّل المعرفات تحت بمعرفاتك الحقيقية من حساب AdMob (apps.admob.com)
+// 2) خلّي ADMOB_TESTING = false
+// (لا تنشر وأنت على معرفات الاختبار — ما يجيك ولا فلس؛ ولا تجرب على
+//  معرفاتك الحقيقية وأنت تطور — Google تحظر الحساب على النقرات الذاتية!)
+const ADMOB_TESTING = true; // ← خلّيها false قبل رفع النسخة النهائية للسوق
+
+// ⬇️⬇️ ضع معرفات الوحدات الإعلانية (Ad Unit IDs) الحقيقية هنا ⬇️⬇️
+const ADMOB_IDS_REAL = {
   INTERSTITIAL: 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // ← إعلان بيني (بين الجولات)
   REWARDED:     'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // ← إعلان المكافأة (جواهر)
 };
+// معرفات الاختبار الرسمية من Google — آمنة للتجربة، ما تربّح
+const ADMOB_IDS_TEST = {
+  INTERSTITIAL: 'ca-app-pub-3940256099942544/1033173712',
+  REWARDED:     'ca-app-pub-3940256099942544/5224354917',
+};
+const ADMOB_IDS = ADMOB_TESTING ? ADMOB_IDS_TEST : ADMOB_IDS_REAL;
+// ملاحظة: معرف التطبيق نفسه (App ID الي بصيغة ca-app-pub-XXXX~YYYY بعلامة ~)
+// ما ينحط هنا — ينحط بـ AndroidManifest.xml (شوف PUBLISH_APK.md)
+
+// ── كشف المنصة: هل احنا داخل تطبيق Capacitor أم متصفح؟ ──
+function _isNativeApp() {
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+}
+function _admobPlugin() {
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) || null;
+}
+
+// ── تهيئة AdMob مرة وحدة عند أول استخدام ──
+let _admobInitDone = false;
+async function _initAdMob() {
+  if (_admobInitDone) return true;
+  const AdMob = _admobPlugin();
+  if (!AdMob) return false;
+  try {
+    await AdMob.initialize({ initializeForTesting: ADMOB_TESTING });
+    _admobInitDone = true;
+    return true;
+  } catch(e) { console.warn('AdMob init فشل:', e); return false; }
+}
 
 const AD_REWARD_GEMS   = 50;                  // جواهر كل إعلان مكافأة
 const AD_DAILY_LIMIT   = 10;                  // حد أقصى 10 إعلانات باليوم
@@ -9432,13 +9564,39 @@ const AD_DAILY_LIMIT   = 10;                  // حد أقصى 10 إعلانات
 // كل شي مخزون بـ Firebase (adDayStart / adDayCount) — حذف التطبيق أو
 // تغيير ساعة الجهاز ما يصفّر العداد لأن المقارنة بوقت السيرفر
 
-// ── مشغّل الإعلان الفعلي (placeholder) ──
-// يرجع true إذا اكتملت المشاهدة. حالياً: محاكاة 3 ثواني.
-// عند الربط: حمّل وأعرض الإعلان من ADMOB_IDS.REWARDED وأرجع true فقط
-// من حدث onUserEarnedReward (يعني كمّل المشاهدة فعلاً).
+// ── مشغّل إعلان المكافأة الفعلي ──
+// يرجع true فقط إذا كمّل اللاعب المشاهدة فعلاً (حدث Rewarded من AdMob).
+// بالمتصفح: محاكاة 3 ثواني حتى تشتغل التجربة بدون APK.
 async function _playRewardedAdPlaceholder() {
-  await new Promise(r => setTimeout(r, 3000)); // محاكاة مدة الإعلان
-  return true;
+  const AdMob = _admobPlugin();
+  if (!_isNativeApp() || !AdMob) {
+    await new Promise(r => setTimeout(r, 3000)); // محاكاة بالمتصفح
+    return true;
+  }
+  if (!(await _initAdMob())) return false;
+  return new Promise(async (resolve) => {
+    let rewarded = false;
+    let done = false;
+    const listeners = [];
+    const finish = (val) => {
+      if (done) return; done = true;
+      listeners.forEach(l => { try { l.remove(); } catch(e) {} });
+      resolve(val);
+    };
+    try {
+      listeners.push(await AdMob.addListener('onRewardedVideoAdReward',    () => { rewarded = true; }));
+      listeners.push(await AdMob.addListener('onRewardedVideoAdDismissed', () => finish(rewarded)));
+      listeners.push(await AdMob.addListener('onRewardedVideoAdFailedToLoad', () => finish(false)));
+      listeners.push(await AdMob.addListener('onRewardedVideoAdFailedToShow', () => finish(false)));
+      // مهلة أمان: لو ولا حدث وصل خلال 60 ثانية نعتبرها فاشلة
+      setTimeout(() => finish(rewarded), 60000);
+      await AdMob.prepareRewardVideoAd({ adId: ADMOB_IDS.REWARDED });
+      await AdMob.showRewardVideoAd();
+    } catch(e) {
+      console.warn('rewarded ad فشل:', e);
+      finish(false);
+    }
+  });
 }
 
 // ── حالة إعلانات اليوم من Firebase (المصدر الموثوق) ──
@@ -9524,15 +9682,27 @@ function maybeShowInterstitial() {
   _interstitialState.nextAt = 3 + Math.floor(Math.random() * 2); // 3-4 للمرة الجاية
 }
 
-// placeholder — عند الربط: حمّل وأعرض إعلان ADMOB_IDS.INTERSTITIAL هنا
-function showInterstitial() {
-  console.log('📺 [AdMob placeholder] إعلان بيني — يُعرض هنا بعد ربط SDK');
+// الإعلان البيني الحقيقي — بالمتصفح يطبع رسالة بس
+async function showInterstitial() {
+  const AdMob = _admobPlugin();
+  if (!_isNativeApp() || !AdMob) {
+    console.log('📺 [معاينة متصفح] إعلان بيني — بالـ APK يظهر إعلان حقيقي');
+    return;
+  }
+  try {
+    if (!(await _initAdMob())) return;
+    await AdMob.prepareInterstitial({ adId: ADMOB_IDS.INTERSTITIAL });
+    await AdMob.showInterstitial();
+  } catch(e) { console.warn('interstitial فشل (نكمل اللعب عادي):', e); }
 }
 
-// ═══ إعلان فتح التطبيق: يُستدعى مرة عند تشغيل اللعبة ═══
-// placeholder — عند الربط: حمّل وأعرض إعلان ADMOB_IDS.APP_OPEN هنا
+// ═══ إعلان فتح التطبيق ═══
+// إضافة @capacitor-community/admob ما تدعم صيغة App Open حالياً —
+// نعرض إعلان بيني خفيف عند الفتح بداله؟ لا: سياسة AdMob ما تحب بيني
+// مفاجئ عند الإقلاع. نخليها بلا إعلان — الربح من المكافأة والبيني كافي،
+// وإذا الإضافة دعمت App Open مستقبلاً فعّلها هنا.
 function showAppOpen() {
-  console.log('📺 [AdMob placeholder] إعلان فتح التطبيق — يُعرض هنا بعد ربط SDK');
+  console.log('📺 إعلان فتح التطبيق معطّل (الإضافة ما تدعم App Open حالياً)');
 }
 
 // ── تحديث واجهة زر الإعلان في المتجر ──
