@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>سباق الشوارع — BMW X6 (C++)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0b0f14; touch-action:none; overscroll-behavior:none; }
+  body { font-family:"Segoe UI", Tahoma, "Noto Kufi Arabic", Arial, sans-serif; color:#eef2f7; }
+  canvas { position:fixed; inset:0; display:block; width:100vw !important; height:100vh !important; outline:none; }
+
+  #vig { position:fixed; inset:0; pointer-events:none; z-index:2;
+    background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45) 100%); }
+
+  /* ---- HUD ---- */
+  #hud { position:fixed; top:0; right:0; left:0; z-index:5; display:flex; align-items:center; gap:8px;
+    padding:calc(10px + env(safe-area-inset-top)) 12px 10px; pointer-events:none; }
+  .pill { background:rgba(10,14,22,.72); border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:6px 14px; font-size:15px; font-weight:700; backdrop-filter:blur(6px);
+    display:flex; align-items:center; gap:6px; white-space:nowrap; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .pill small { font-weight:400; opacity:.7; font-size:11px; }
+  #hScore { color:#ffd75e; min-width:3ch; text-align:center; }
+  #hCoins { color:#ffcf3f; }
+  #hSpeed { color:#6fd0ff; min-width:3ch; text-align:center; }
+  #nitroWrap { flex:1; max-width:130px; height:12px; background:rgba(255,255,255,.12); border-radius:999px;
+    overflow:hidden; border:1px solid rgba(255,255,255,.15); margin-inline-start:auto; }
+  #nitroFill { height:100%; width:100%; border-radius:999px;
+    background:linear-gradient(90deg,#ff8a00,#ffd000); transition:width .1s linear; }
+
+  /* ---- buttons ---- */
+  .btn { display:block; width:min(78vw,300px); margin:10px auto; padding:15px 20px; border:none; border-radius:16px;
+    font-family:inherit; font-size:19px; font-weight:800; color:#0b0f14; cursor:pointer;
+    background:linear-gradient(180deg,#ffd75e,#f5a623); box-shadow:0 6px 18px rgba(245,166,35,.35), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .08s ease; }
+  .btn:active { transform:scale(.96); }
+  .btn:disabled { filter:grayscale(.8); opacity:.6; }
+  .btn.alt { background:linear-gradient(180deg,#3b4351,#232a35); color:#eef2f7;
+    box-shadow:0 6px 18px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08); }
+
+  /* ---- overlays ---- */
+  .overlay { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; justify-content:center; align-items:center;
+    background:rgba(7,10,16,.72); backdrop-filter:blur(10px); text-align:center; padding:24px; }
+  .hidden { display:none !important; }
+
+  #menu h1 { font-size:clamp(34px,9vw,56px); font-weight:900; letter-spacing:1px;
+    background:linear-gradient(180deg,#fff,#ffd75e 60%,#f5a623); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 40px rgba(245,166,35,.25); }
+  #menu .sub { margin:6px 0 20px; font-size:16px; color:#aeb9c9; }
+  #menu .best { margin:4px 0 18px; font-size:15px; color:#ffd75e; min-height:1.4em; }
+  .label { font-size:14px; color:#8f9bad; margin-bottom:8px; }
+  #colors { display:flex; gap:14px; justify-content:center; margin-bottom:22px; }
+  .sw { width:44px; height:44px; border-radius:50%; cursor:pointer; border:3px solid rgba(255,255,255,.18);
+    box-shadow:0 3px 10px rgba(0,0,0,.5), inset 0 2px 4px rgba(255,255,255,.25); transition:transform .1s, border-color .1s; }
+  .sw.sel { border-color:#ffd75e; transform:scale(1.18); }
+  #sndBtn { margin-top:14px; background:none; border:1px solid rgba(255,255,255,.2); color:#cdd6e2;
+    border-radius:999px; padding:8px 20px; font-family:inherit; font-size:15px; cursor:pointer; }
+  .hint { margin-top:20px; font-size:12.5px; color:#77839a; line-height:1.9; max-width:340px; }
+  .engineTag { margin-top:10px; font-size:11px; color:#55617a; }
+
+  #over h2 { font-size:clamp(30px,8vw,44px); margin-bottom:6px; }
+  #newBest { color:#ffd75e; font-weight:800; font-size:17px; margin-bottom:10px; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.35; } }
+  .stats { margin:14px 0 22px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+    border-radius:16px; padding:14px 26px; min-width:min(78vw,300px); }
+  .stats .row { display:flex; justify-content:space-between; gap:30px; padding:7px 0; font-size:17px; }
+  .stats .row + .row { border-top:1px dashed rgba(255,255,255,.1); }
+  .stats .v { font-weight:800; color:#ffd75e; }
+
+  #pauseOv h2 { font-size:38px; margin-bottom:16px; }
+
+  /* ---- floating controls ---- */
+  #pauseBtn { position:fixed; z-index:6; top:calc(56px + env(safe-area-inset-top)); left:12px; width:42px; height:42px;
+    border-radius:12px; background:rgba(10,14,22,.72); border:1px solid rgba(255,255,255,.14);
+    display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; backdrop-filter:blur(6px); }
+  #nitroBtn { position:fixed; z-index:6; bottom:calc(26px + env(safe-area-inset-bottom)); left:20px;
+    width:76px; height:76px; border-radius:50%; font-size:32px;
+    background:radial-gradient(circle at 35% 30%, rgba(255,170,60,.95), rgba(200,70,10,.9));
+    border:2px solid rgba(255,220,150,.5); box-shadow:0 6px 20px rgba(255,120,0,.35);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  #nitroBtn:active { transform:scale(.93); }
+  #nitroBtn.empty { filter:grayscale(.9); opacity:.5; }
+
+  #count { position:fixed; inset:0; z-index:8; display:flex; align-items:center; justify-content:center;
+    font-size:110px; font-weight:900; color:#ffd75e; text-shadow:0 0 60px rgba(245,166,35,.6); pointer-events:none; }
+
+  /* ---- floating score popups ---- */
+  .pop { position:fixed; z-index:7; font-weight:800; font-size:21px; pointer-events:none; direction:ltr;
+    text-shadow:0 2px 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9);
+    animation:popUp 1s ease-out forwards; white-space:nowrap; }
+  @keyframes popUp {
+    from { opacity:1; transform:translate(-50%,-50%); }
+    to   { opacity:0; transform:translate(-50%,-190%); }
+  }
+
+  #loading { z-index:20; }
+  #loading .spin { width:46px; height:46px; border-radius:50%; margin-bottom:18px;
+    border:4px solid rgba(255,215,94,.2); border-top-color:#ffd75e; animation:rot 1s linear infinite; }
+  @keyframes rot { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+<div id="vig"></div>
+
+<div id="hud" class="hidden">
+  <div class="pill">🏆 <span id="hScore">0</span></div>
+  <div class="pill">🪙 <span id="hCoins">0</span></div>
+  <div class="pill"><span id="hSpeed">0</span> <small>كم/س</small></div>
+  <div id="nitroWrap"><div id="nitroFill"></div></div>
+</div>
+
+<div id="pauseBtn" class="hidden">⏸</div>
+<div id="nitroBtn" class="hidden">🔥</div>
+<div id="count" class="hidden"></div>
+
+<!-- شاشة التحميل -->
+<div id="loading" class="overlay">
+  <div class="spin"></div>
+  <p>جارٍ تحميل اللعبة…</p>
+</div>
+
+<!-- القائمة الرئيسية -->
+<div id="menu" class="overlay hidden">
+  <h1>سباق الشوارع</h1>
+  <p class="sub">🚙 BMW X6 — تفادى السيارات واجمع النقاط</p>
+  <p class="best" id="menuBest"></p>
+  <p class="label">اختر لون سيارتك:</p>
+  <div id="colors"></div>
+  <button class="btn" id="btnStart">🏁 ابدأ السباق</button>
+  <button id="sndBtn">🔊 الصوت: مفعّل</button>
+  <p class="hint">📱 اسحب بإصبعك يمين ويسار للتحرك<br>⌨️ أو استخدم الأسهم ← → &nbsp;|&nbsp; النيترو: مسطرة المسافة أو زر 🔥<br>⚠️ المرور الخطر بجانب السيارات يعطيك نقاط إضافية!</p>
+  <p class="engineTag">⚙️ محرك اللعبة مكتوب بلغة C++ (SDL2 → WebAssembly)</p>
+</div>
+
+<!-- الإيقاف المؤقت -->
+<div id="pauseOv" class="overlay hidden">
+  <h2>⏸ إيقاف مؤقت</h2>
+  <button class="btn" id="btnResume">▶️ استمرار</button>
+  <button class="btn alt" id="btnQuit">🏠 القائمة الرئيسية</button>
+</div>
+
+<!-- نهاية اللعبة -->
+<div id="over" class="overlay hidden">
+  <h2>💥 اصطدمت!</h2>
+  <div id="newBest" class="hidden">⭐ رقم قياسي جديد! ⭐</div>
+  <div class="stats">
+    <div class="row"><span>🏆 النقاط</span><span class="v" id="oScore">0</span></div>
+    <div class="row"><span>🪙 العملات</span><span class="v" id="oCoins">0</span></div>
+    <div class="row"><span>🛣️ المسافة</span><span class="v" id="oDist">0 كم</span></div>
+    <div class="row"><span>⭐ أفضل نتيجة</span><span class="v" id="oBest">0</span></div>
+  </div>
+  <button class="btn" id="btnRetry">🔄 العب مرة ثانية</button>
+  <button class="btn alt" id="btnMenu2">🏠 القائمة الرئيسية</button>
+</div>
+
+<script>
+'use strict';
+// =========================================================
+//  الواجهة والأصوات (JS) — محرك اللعبة نفسه C++ (WebAssembly)
+// =========================================================
+const $ = id => document.getElementById(id);
+let wasmReady = false;
+let musicOn = false;
+
+// ---------- الصوت (WebAudio) ----------
+const SFX = {
+  ac: null, master: null, engGain: null, engOsc: null, engOsc2: null, engFilter: null,
+  musicStep: 0, musicNext: 0,
+  enabled: localStorage.getItem('bmwRaceCpp_sound') !== '0',
+
+  init() {
+    if (this.ac) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ac = new AC();
+    this.master = this.ac.createGain();
+    this.master.gain.value = this.enabled ? 1 : 0;
+    this.master.connect(this.ac.destination);
+    this.engGain = this.ac.createGain(); this.engGain.gain.value = 0;
+    this.engFilter = this.ac.createBiquadFilter();
+    this.engFilter.type = 'lowpass'; this.engFilter.frequency.value = 400;
+    this.engOsc = this.ac.createOscillator(); this.engOsc.type = 'sawtooth'; this.engOsc.frequency.value = 60;
+    this.engOsc2 = this.ac.createOscillator(); this.engOsc2.type = 'square'; this.engOsc2.frequency.value = 31;
+    const g2 = this.ac.createGain(); g2.gain.value = 0.4;
+    this.engOsc.connect(this.engFilter);
+    this.engOsc2.connect(g2); g2.connect(this.engFilter);
+    this.engFilter.connect(this.engGain);
+    this.engGain.connect(this.master);
+    this.engOsc.start(); this.engOsc2.start();
+    this.musicNext = this.ac.currentTime + 0.1;
+    setInterval(() => this.scheduleMusic(), 40);
+  },
+  resume() { if (this.ac && this.ac.state === 'suspended') this.ac.resume(); },
+  setEnabled(on) {
+    this.enabled = on;
+    localStorage.setItem('bmwRaceCpp_sound', on ? '1' : '0');
+    if (this.master) this.master.gain.value = on ? 1 : 0;
+  },
+  engine(ratio, on) {
+    if (!this.ac) return;
+    const t = this.ac.currentTime;
+    this.engGain.gain.setTargetAtTime(on ? 0.05 : 0, t, 0.1);
+    const f = 52 + ratio * 85 + Math.sin(t * 30) * 2;
+    this.engOsc.frequency.setTargetAtTime(f, t, 0.05);
+    this.engOsc2.frequency.setTargetAtTime(f / 2, t, 0.05);
+    this.engFilter.frequency.setTargetAtTime(320 + ratio * 700, t, 0.1);
+  },
+  blip(freq, dur, type, vol, when) {
+    if (!this.ac) return;
+    const t = when || this.ac.currentTime;
+    const o = this.ac.createOscillator(), g = this.ac.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.15, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  noise(dur, vol, freq, when) {
+    if (!this.ac) return;
+    const t = when || this.ac.currentTime;
+    const len = Math.max(1, (dur * this.ac.sampleRate) | 0);
+    const buf = this.ac.createBuffer(1, len, this.ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = this.ac.createBufferSource(); src.buffer = buf;
+    const f = this.ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq || 3000;
+    const g = this.ac.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t);
+  },
+  scheduleMusic() {
+    if (!this.ac || !musicOn) return;
+    const stepDur = 60 / 132 / 2;
+    const bass = [55, 0, 55, 0, 65.4, 0, 55, 0, 49, 0, 49, 0, 82.4, 0, 73.4, 0];
+    if (this.musicNext < this.ac.currentTime) this.musicNext = this.ac.currentTime + 0.05;
+    while (this.musicNext < this.ac.currentTime + 0.15) {
+      const s = this.musicStep % 16;
+      if (s % 4 === 0) {
+        const o = this.ac.createOscillator(), g = this.ac.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(140, this.musicNext);
+        o.frequency.exponentialRampToValueAtTime(42, this.musicNext + 0.1);
+        g.gain.setValueAtTime(0.16, this.musicNext);
+        g.gain.exponentialRampToValueAtTime(0.001, this.musicNext + 0.15);
+        o.connect(g); g.connect(this.master);
+        o.start(this.musicNext); o.stop(this.musicNext + 0.16);
+      }
+      if (s % 4 === 2) this.noise(0.04, 0.025, 8000, this.musicNext);
+      if (bass[s]) this.blip(bass[s], stepDur * 0.9, 'triangle', 0.07, this.musicNext);
+      this.musicNext += stepDur;
+      this.musicStep++;
+    }
+  },
+};
+
+// أحداث الصوت القادمة من C++
+window.sfxEvent = function (id) {
+  switch (id) {
+    case 0: // عملة
+      SFX.blip(1046, 0.09, 'sine', 0.12);
+      SFX.blip(1568, 0.14, 'sine', 0.1, SFX.ac ? SFX.ac.currentTime + 0.07 : 0);
+      break;
+    case 1: SFX.noise(0.18, 0.12, 1600); break;           // مرور خطر
+    case 2: SFX.noise(0.25, 0.08, 900); break;            // نيترو
+    case 3:                                               // اصطدام
+      SFX.noise(0.7, 0.5, 2200);
+      SFX.blip(70, 0.6, 'sawtooth', 0.35);
+      SFX.blip(46, 0.9, 'triangle', 0.3);
+      if (navigator.vibrate) navigator.vibrate(200);
+      break;
+    case 4: SFX.blip(520, 0.15, 'square', 0.09); break;   // عد تنازلي
+    case 5: SFX.blip(880, 0.35, 'square', 0.09); break;   // انطلق!
+  }
+};
+window.sfxEngine = (ratio, on) => SFX.engine(ratio, on);
+
+// ---------- واجهة المستخدم ----------
+const ui = {
+  hud: $('hud'), menu: $('menu'), over: $('over'), pauseOv: $('pauseOv'), loading: $('loading'),
+  hScore: $('hScore'), hCoins: $('hCoins'), hSpeed: $('hSpeed'), nitroFill: $('nitroFill'),
+  pauseBtn: $('pauseBtn'), nitroBtn: $('nitroBtn'), count: $('count'), menuBest: $('menuBest'),
+  oScore: $('oScore'), oCoins: $('oCoins'), oDist: $('oDist'), oBest: $('oBest'), newBest: $('newBest'),
+};
+const show = (el, on) => el.classList.toggle('hidden', !on);
+
+window.uiState = function (st) {
+  musicOn = (st === 'play');
+  show(ui.menu, st === 'menu');
+  show(ui.pauseOv, st === 'pause');
+  const inGame = (st === 'count' || st === 'play' || st === 'pause' || st === 'crash');
+  show(ui.hud, inGame || st === 'over');
+  show(ui.pauseBtn, inGame);
+  show(ui.nitroBtn, inGame);
+  if (st === 'menu') {
+    show(ui.over, false); show(ui.count, false);
+    const b = +(localStorage.getItem('bmwRaceCpp_best') || 0);
+    ui.menuBest.textContent = b > 0 ? `⭐ أفضل نتيجة: ${b}` : '';
+  }
+  if (st === 'count') { show(ui.over, false); show(ui.count, true); }
+  if (st !== 'pause' && st !== 'menu') show(ui.pauseOv, false);
+};
+
+let lastScore = -1, lastCoins = -1, lastKmh = -1;
+window.uiHud = function (score, coins, kmh, nitro, nitroOn) {
+  if (score !== lastScore) { lastScore = score; ui.hScore.textContent = score; }
+  if (coins !== lastCoins) { lastCoins = coins; ui.hCoins.textContent = coins; }
+  if (kmh !== lastKmh) { lastKmh = kmh; ui.hSpeed.textContent = kmh; }
+  ui.nitroFill.style.width = nitro + '%';
+  ui.nitroFill.style.background = nitroOn
+    ? 'linear-gradient(90deg,#5fb8ff,#b3e0ff)'
+    : 'linear-gradient(90deg,#ff8a00,#ffd000)';
+  ui.nitroBtn.classList.toggle('empty', nitro < 2);
+};
+
+window.uiCount = function (n) {
+  if (n < 0) { show(ui.count, false); return; }
+  show(ui.count, true);
+  ui.count.textContent = n > 0 ? n : 'انطلق!';
+};
+
+window.uiOver = function (score, coins, dist10, best, isBest) {
+  ui.oScore.textContent = score;
+  ui.oCoins.textContent = coins;
+  ui.oDist.textContent = (dist10 / 10).toFixed(1) + ' كم';
+  ui.oBest.textContent = best;
+  show(ui.newBest, !!isBest);
+  show(ui.over, true);
+  show(ui.pauseBtn, false); show(ui.nitroBtn, false);
+};
+
+window.uiPopup = function (x, y, type) {
+  const d = document.createElement('div');
+  d.className = 'pop';
+  d.textContent = type === 1 ? 'مرور خطر! +15' : '+10';
+  d.style.color = type === 1 ? '#6fd0ff' : '#ffd75e';
+  if (type === 1) d.style.direction = 'rtl';
+  d.style.left = x + 'px';
+  d.style.top = y + 'px';
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 1000);
+};
+
+// ---------- الأزرار ----------
+const COLORS = ['#e9edf2', '#23272e', '#1a5fb4', '#b01820'];
+const shade = (hex, f) => {
+  const n = parseInt(hex.slice(1), 16);
+  const c = v => Math.max(0, Math.min(255, Math.round(v + 255 * f)));
+  return `rgb(${c(n >> 16 & 255)},${c(n >> 8 & 255)},${c(n & 255)})`;
+};
+let colorIdx = Math.min(3, +(localStorage.getItem('bmwRaceCpp_color') || 0));
+const colorsBox = $('colors');
+COLORS.forEach((col, i) => {
+  const d = document.createElement('div');
+  d.className = 'sw' + (i === colorIdx ? ' sel' : '');
+  d.style.background = `linear-gradient(145deg, ${shade(col, 0.25)}, ${col})`;
+  d.onclick = () => {
+    colorIdx = i;
+    localStorage.setItem('bmwRaceCpp_color', i);
+    document.querySelectorAll('.sw').forEach(el => el.classList.remove('sel'));
+    d.classList.add('sel');
+    if (wasmReady) Module._set_color(i);
+  };
+  colorsBox.appendChild(d);
+});
+
+const sndBtn = $('sndBtn');
+const refreshSnd = () => sndBtn.textContent = SFX.enabled ? '🔊 الصوت: مفعّل' : '🔇 الصوت: مطفي';
+refreshSnd();
+sndBtn.onclick = () => { SFX.setEnabled(!SFX.enabled); refreshSnd(); };
+
+$('btnStart').onclick = () => { if (!wasmReady) return; SFX.init(); SFX.resume(); Module._start_game(); };
+$('btnRetry').onclick = () => { if (!wasmReady) return; SFX.resume(); Module._start_game(); };
+$('btnMenu2').onclick = () => { if (wasmReady) Module._to_menu(); };
+$('btnResume').onclick = () => { if (wasmReady) { SFX.resume(); Module._resume_game(); } };
+$('btnQuit').onclick = () => { if (wasmReady) Module._to_menu(); };
+ui.pauseBtn.onclick = () => { if (wasmReady) Module._pause_toggle(); };
+ui.nitroBtn.addEventListener('pointerdown', e => { e.stopPropagation(); if (wasmReady) Module._set_nitro(1); });
+addEventListener('pointerup', () => { if (wasmReady) Module._set_nitro(0); });
+addEventListener('pointercancel', () => { if (wasmReady) Module._set_nitro(0); });
+
+// حتى لا تعيد "مسطرة المسافة" ضغط آخر زر
+document.querySelectorAll('button').forEach(b => b.addEventListener('click', () => b.blur()));
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && wasmReady) Module._force_pause();
+});
+
+// ---------- تهيئة WebAssembly ----------
+var Module = {
+  canvas: (() => $('canvas'))(),
+  onRuntimeInitialized() {
+    wasmReady = true;
+    Module._set_color(colorIdx);
+    show(ui.loading, false);
+  },
+};
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
