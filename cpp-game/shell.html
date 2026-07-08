@@ -118,7 +118,8 @@
 <!-- شاشة التحميل -->
 <div id="loading" class="overlay">
   <div class="spin"></div>
-  <p>جارٍ تحميل اللعبة…</p>
+  <p id="loadMsg">جارٍ تحميل اللعبة…</p>
+  <p id="loadHint" class="hint hidden" style="color:#c9d3e2"></p>
 </div>
 
 <!-- القائمة الرئيسية -->
@@ -163,6 +164,33 @@
 const $ = id => document.getElementById(id);
 let wasmReady = false;
 let musicOn = false;
+
+// ---------- كشف الأخطاء وعرضها بدل الشاشة السوداء ----------
+window.showFatal = function (msg) {
+  const l = $('loading'), m = $('loadMsg'), h = $('loadHint');
+  if (!l || !m) { alert('خطأ: ' + msg); return; }
+  l.classList.remove('hidden');
+  l.querySelector('.spin').style.display = 'none';
+  m.textContent = '⚠️ صار خطأ ومنع اللعبة من الاشتغال';
+  h.classList.remove('hidden');
+  h.innerHTML = 'جرّب هذي الحلول:<br>' +
+    '1️⃣ افتح الملف بمتصفح <b>Chrome</b> أو <b>Firefox</b> محدث<br>' +
+    '2️⃣ تأكد الملف تنزّل كامل (حجمه حوالي 900KB) ونزّله مرة ثانية إذا لازم<br>' +
+    '3️⃣ افتحه من مدير الملفات مباشرة، مو من داخل تطبيق ثاني<br><br>' +
+    '<span style="color:#8f9bad;font-size:11px;direction:ltr;display:block">' + String(msg).slice(0, 220) + '</span>';
+};
+window.addEventListener('error', e => { if (!wasmReady) showFatal(e.message || 'Script error'); });
+window.addEventListener('unhandledrejection', e => { if (!wasmReady) showFatal(e.reason && e.reason.message || e.reason || 'Promise error'); });
+
+if (typeof WebAssembly === 'undefined') {
+  showFatal('متصفحك قديم وما يدعم WebAssembly — حدّث المتصفح أو استخدم Chrome/Firefox حديث.');
+}
+// إذا طول التحميل أكثر من ١٢ ثانية بلا نتيجة
+setTimeout(() => {
+  if (!wasmReady && $('loadHint').classList.contains('hidden')) {
+    showFatal('التحميل علق ولم يكتمل خلال ١٢ ثانية.');
+  }
+}, 12000);
 
 // ---------- الصوت (WebAudio) ----------
 const SFX = {
@@ -395,6 +423,8 @@ var Module = {
     Module._set_color(colorIdx);
     show(ui.loading, false);
   },
+  onAbort(what) { showFatal('WASM abort: ' + what); },
+  printErr(msg) { console.error(msg); },
 };
 </script>
 {{{ SCRIPT }}}

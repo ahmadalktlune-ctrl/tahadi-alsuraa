@@ -913,14 +913,28 @@ EMSCRIPTEN_KEEPALIVE void set_nitro(int on) { nitroHeld = on != 0; }
 // ---------------- البداية ----------------
 int main() {
     srand((unsigned)emscripten_get_now());
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        EM_ASM({ showFatal('SDL init failed: ' + UTF8ToString($0)); }, SDL_GetError());
+        return 1;
+    }
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
     win = SDL_CreateWindow("street-race",
                            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                            js_inner_w(), js_inner_h(), 0);
+    if (!win) {
+        EM_ASM({ showFatal('Window failed: ' + UTF8ToString($0)); }, SDL_GetError());
+        return 1;
+    }
+    // نحاول المسرّع (WebGL) أولاً، وإذا الجهاز يمنعه ننزل للبدائل
     ren = SDL_CreateRenderer(win, -1,
                              SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC |
                              SDL_RENDERER_TARGETTEXTURE);
+    if (!ren) ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_TARGETTEXTURE);
+    if (!ren) ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE);
+    if (!ren) {
+        EM_ASM({ showFatal('Renderer failed (WebGL?): ' + UTF8ToString($0)); }, SDL_GetError());
+        return 1;
+    }
     buildSprites();
     grassGrad = makeHGrad(hexCol(0x10331a), hexCol(0x17431f));
     roadGrad = makeHGrad(hexCol(0x272b31), hexCol(0x33383f));
