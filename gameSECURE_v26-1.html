@@ -2931,7 +2931,7 @@ window.addEventListener('offline', updateOnlineStatus);
       </div>
       <div class="login-error" id="login-error"></div>
       <button class="btn btn-primary" onclick="doLogin()">🚀 دخول</button>
-      <button onclick="guestLogin()" style="width:100%;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:2px;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">👻 دخول كضيف</button>
+      <button onclick="confirmGuestLogin()" style="width:100%;padding:12px;background:transparent;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:2px;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">👻 دخول كضيف</button>
     </div>
     <!-- تسجيل حساب -->
     <div id="form-register" class="login-form" style="display:none">
@@ -2966,6 +2966,10 @@ window.addEventListener('offline', updateOnlineStatus);
       <div class="login-success" id="reg-success"></div>
       <button class="btn btn-primary" onclick="doRegister()">✨ إنشاء الحساب</button>
     </div>
+  </div>
+  <!-- ملاحظة تشجيعية لتسجيل الدخول (غير إلزامية) -->
+  <div style="margin-top:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;font-family:'Cairo',sans-serif;font-size:0.8rem;color:var(--muted);line-height:1.7;max-width:380px;">
+    💡 ننصحك بتسجيل الدخول لحفظ تقدّمك وجواهرك بشكل دائم.
   </div>
 </div>
 
@@ -3238,6 +3242,20 @@ window.addEventListener('offline', updateOnlineStatus);
     <div style="display:flex;gap:10px;margin-top:8px">
       <button onclick="closeDeleteAccount()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer">إلغاء</button>
       <button id="delete-account-btn" onclick="confirmDeleteAccount()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--red);color:#fff;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer">🗑️ احذف حسابي</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ نافذة تأكيد الدخول كضيف ══ -->
+<div id="guest-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:24px;max-width:380px;width:100%;">
+    <div style="font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:10px;font-family:'Tajawal',sans-serif">👻 الدخول كضيف</div>
+    <p style="color:var(--muted);font-size:0.88rem;line-height:1.8;margin-bottom:14px;font-family:'Cairo',sans-serif">
+      ⚠️ في وضع الضيف، لن يتم حفظ جواهرك ولا تقدّمك، وستفقدها عند الخروج من اللعبة. هل تريد المتابعة كضيف، أم تسجيل حساب مجاني للحفظ الدائم؟
+    </p>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button onclick="proceedAsGuest()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer">المتابعة كضيف</button>
+      <button onclick="guestConfirmRegister()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer">✨ تسجيل حساب</button>
     </div>
   </div>
 </div>
@@ -8322,6 +8340,20 @@ async function doRegister() {
     const msgs = { 'auth/email-already-in-use':'هذا الإيميل مسجل مسبقاً', 'auth/invalid-email':'الإيميل غير صحيح', 'auth/weak-password':'كلمة المرور ضعيفة' };
     showMsg('reg-error', msgs[e.code] || ('خطأ: ' + e.message));
   }
+}
+
+// ═══ تأكيد الدخول كضيف — تنبيه غير إلزامي قبل المتابعة ═══
+function confirmGuestLogin() {
+  try { haptic('light'); } catch(e) {}
+  document.getElementById('guest-confirm-overlay').style.display = 'flex';
+}
+function proceedAsGuest() {
+  document.getElementById('guest-confirm-overlay').style.display = 'none';
+  guestLogin();
+}
+function guestConfirmRegister() {
+  document.getElementById('guest-confirm-overlay').style.display = 'none';
+  switchLoginTab('register');
 }
 
 function guestLogin() {
