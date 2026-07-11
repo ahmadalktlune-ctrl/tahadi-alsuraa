@@ -1,0 +1,5 @@
+tensorflow>=2.16,<2.20
+streamlit>=1.36
+kagglehub>=0.3
+pillow>=10.0
+numpy>=1.26
