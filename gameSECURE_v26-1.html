@@ -2279,106 +2279,31 @@ _dbg('serviceWorker controller: ' + (navigator.serviceWorker && navigator.servic
 /*
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                 🛡 FIRESTORE SECURITY RULES (المهمة فعلياً)                  ║
-║  انسخ هذه القواعد إلى Firebase Console > Firestore Database > Rules > Publish ║
-║  هذه القواعد هي اللي تحمي بيانات اللعبة (الحسابات والجواهر والأسئلة)          ║
+║   القواعد الكاملة صارت بملف منفصل: firestore.rules (بنفس مجلد المشروع)      ║
+║   انسخ محتواه إلى Firebase Console > Firestore Database > Rules > Publish    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+ملخص القواعد المشدّدة (التفاصيل والشروح كاملة بملف firestore.rules):
 
-    // ── حسابات اللاعبين ──
-    // القراءة عامة (لوحة الترتيب تعرض أفضل 20 لاعب)
-    // الكتابة: فقط صاحب الحساب المسجل يكتب على وثيقته، وبحقول وحدود معروفة
-    match /users/{userId} {
-      allow read: if true;
-      allow create, update: if request.auth != null
-                            && request.auth.uid == userId
-                            && validUser();
-      // حذف الحساب: صاحب الحساب فقط يحذف وثيقته (مطلوب لسياسة Google Play)
-      allow delete: if request.auth != null && request.auth.uid == userId;
+• users: القراءة للمسجلين فقط. الكتابة على الوثيقة الشخصية فقط. الحذف ممنوع نهائياً.
+• gems: النقصان حر (شراء الأقسام). الزيادة فقط بثلاث مسارات ذرية:
+    - مكافأة إعلان: +50 بالضبط مع adDayCount+1 بنفس الكتابة (حد 10 لكل 24 ساعة من adDayStart)
+    - مكافأة يومية: +20 بالضبط بعد 20+ ساعة على dailyBonusAt القديم، وتحديثه بنفس الكتابة
+    - هدية ترحيب: +50 مرة وحدة مع قلب welcomeGemsGiven لـ true بنفس الكتابة
+• unlockedCats: إضافة قسم واحد فقط وبنفس الكتابة تنقص gems بسعره بالضبط
+    (الأسعار ثابتة بالقواعد: IQ_TEST=100، MESSI_RONALDO=450، BEAUTY=500، HISTORY=550،
+     ANIME=600، CARS=700، MOVIES=750، SCIENCE=800، BIG5_LEAGUES=900)
+• welcomeGemsGiven: ما يرجع من true إلى false أبداً
+• adDayCount/adDayStart/dailyBonusAt: ما تتغير إلا بمسار مكافأتها حصراً
+• iq_questions: القراءة فقط لمسجل فاتح قسم IQ_TEST ضمن unlockedCats مالته
+• questions: قراءة عامة (حتى الضيوف)، كتابة ممنوعة
+• iq_stats: العداد +1 لكل كتابة والمجاميع محدودة بنتيجة لاعب واحد
+• suggested_questions / support_messages: إنشاء فقط
+• أي شي ثاني: رفض افتراضي
 
-      function validUser() {
-        let d = request.resource.data;
-        return d.keys().hasOnly(['username','avatar','xp','games','wins','correct',
-                                 'wrong','joined','history','gems','unlockedCats',
-                                 'bundleType','bundleExpiry','lastUpdated','welcomeGemsGiven',
-                                 'dailyBonusAt','adDayStart','adDayCount','srvPing','loginStreak'])
-          && (!('username' in d) || (d.username is string && d.username.size() <= 30))
-          && (!('avatar'   in d) || (d.avatar is string && d.avatar.size() <= 10))
-          && (!('joined'   in d) || (d.joined is string && d.joined.size() <= 30))
-          && (!('xp'       in d) || (d.xp is number && d.xp >= 0 && d.xp <= 100000000))
-          && (!('games'    in d) || (d.games is number && d.games >= 0 && d.games <= 1000000))
-          && (!('wins'     in d) || (d.wins is number && d.wins >= 0 && d.wins <= 1000000))
-          && (!('correct'  in d) || (d.correct is number && d.correct >= 0 && d.correct <= 10000000))
-          && (!('wrong'    in d) || (d.wrong is number && d.wrong >= 0 && d.wrong <= 10000000))
-          && (!('gems'     in d) || (d.gems is number && d.gems >= 0 && d.gems <= 1000000))
-          && (!('history'  in d) || (d.history is list && d.history.size() <= 30))
-          && (!('unlockedCats' in d) || (d.unlockedCats is list && d.unlockedCats.size() <= 100))
-          && (!('lastUpdated'  in d) || d.lastUpdated is number)
-          && (!('welcomeGemsGiven' in d) || d.welcomeGemsGiven is bool)
-          && (!('dailyBonusAt' in d) || (d.dailyBonusAt is number && d.dailyBonusAt >= 0))
-          && (!('adDayStart'   in d) || (d.adDayStart is number && d.adDayStart >= 0))
-          && (!('adDayCount'   in d) || (d.adDayCount is number && d.adDayCount >= 0 && d.adDayCount <= 50))
-          && (!('loginStreak'  in d) || (d.loginStreak is number && d.loginStreak >= 0 && d.loginStreak <= 100000))
-          && (!('srvPing'      in d) || d.srvPing is timestamp);
-      }
-    }
-
-    // ── بنوك الأسئلة ── قراءة للجميع، الإضافة فقط من الـ Console (أنت)
-    match /questions/{qId}    { allow read: if true; allow write: if false; }
-    match /iq_questions/{qId} { allow read: if true; allow write: if false; }
-
-    // ── إحصاء تقنين الـ IQ ──
-    // وثيقة واحدة فقط، والعداد يزيد +1 بكل كتابة — ما يمكن تصفيره أو نفخه دفعة وحدة
-    match /iq_stats/{docId} {
-      allow read: if true;
-      allow create: if docId == 'iq_normalization' && validNorm()
-                    && request.resource.data.count == 1;
-      allow update: if docId == 'iq_normalization' && validNorm()
-                    && request.resource.data.count == resource.data.count + 1;
-      allow delete: if false;
-
-      function validNorm() {
-        let d = request.resource.data;
-        return d.keys().hasOnly(['mean','sd','count','sumX','sumX2'])
-          && d.mean is number && d.sd is number && d.count is number
-          && d.sumX is number && d.sumX2 is number
-          && d.count >= 0 && d.count <= 100000000;
-      }
-    }
-
-    // ── اقتراحات الأسئلة ── إضافة فقط (حتى الضيوف)، محد يقرأ أو يعدل غيرك من الـ Console
-    match /suggested_questions/{sId} {
-      allow create: if request.resource.data.keys().hasOnly(
-                        ['cat','q','a','note','userId','username','timestamp','date','status'])
-                    && request.resource.data.q is string
-                    && request.resource.data.q.size() >= 10
-                    && request.resource.data.q.size() <= 500
-                    && request.resource.data.a is string
-                    && request.resource.data.a.size() <= 300
-                    && request.resource.data.note is string
-                    && request.resource.data.note.size() <= 300
-                    && request.resource.data.status == 'pending';
-      allow read, update, delete: if false;
-    }
-
-    // ── رسائل الدعم ── إضافة فقط، بحجم محدود
-    match /support_messages/{mId} {
-      allow create: if request.resource.data.keys().hasOnly(
-                        ['message','userId','username','timestamp','date'])
-                    && request.resource.data.message is string
-                    && request.resource.data.message.size() >= 1
-                    && request.resource.data.message.size() <= 1000;
-      allow read, update, delete: if false;
-    }
-
-    // ── أي شي ثاني: ممنوع ──
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
+⚠️ مزامنة إلزامية: قيم المكافآت والأسعار بالقواعد منسوخة حرفياً من هذا الكود
+   (AD_REWARD_GEMS، AD_DAILY_LIMIT، DAILY_BONUS_GEMS، CAT_GEM_PRICES،
+    IQ_UNLOCK_PRICE، giveWelcomeGems). أي تغيير بأحد الطرفين يكسر الطرف الثاني.
 */
 
 const firebaseConfig = {
@@ -8419,8 +8344,21 @@ async function confirmDeleteAccount() {
     const cred = firebase.auth.EmailAuthProvider.credential(user.email, pass);
     await user.reauthenticateWithCredential(cred);
 
-    // 2) حذف بيانات اللاعب من Firestore
-    try { await fbDb.collection('users').doc(user.uid).delete(); } catch(e) { console.warn('حذف الوثيقة:', e); }
+    // 2) مسح البيانات الشخصية من الوثيقة (بدل حذفها — الحذف صار ممنوعاً
+    //    بقواعد Firestore لأنه چان يفتح ثغرة: حذف الوثيقة ← إعادة إنشائها ←
+    //    هدية ترحيب جديدة، بلا نهاية. المسح يحقق نفس غرض سياسة Google Play:
+    //    الاسم والصورة والسجل والنقاط كلها تنمسح، وwelcomeGemsGiven يبقى
+    //    true فما تنعاد الهدية. لو فشل المسح نوقف قبل حذف حساب المصادقة
+    //    حتى ما تبقى بيانات شخصية يتيمة بلا صاحب يكدر يمسحها.
+    await fbDb.collection('users').doc(user.uid).set({
+      username: 'حساب محذوف',
+      avatar: '👻',
+      xp: 0, games: 0, wins: 0, correct: 0, wrong: 0,
+      history: [],
+      gems: 0,
+      loginStreak: 0,
+      lastUpdated: Date.now(),
+    }, { merge: true });
 
     // 3) حذف حساب المصادقة نفسه
     await user.delete();
@@ -8827,7 +8765,9 @@ function showGameOver() {
   const isTie = state.p1.score === state.p2.score;
   const winner = isTie ? null : (state.p1.score > state.p2.score ? state.p1 : state.p2);
   saveGameResult(winner, state.p1, state.p2, isTie);
-  awardWinGems(winner, isTie);
+  // (انشالت جائزة الفوز +20 جوهرة: قواعد Firestore الجديدة تمنع أي زيادة
+  //  جواهر غير قابلة للتحقق، وبلا Cloud Functions ما نكدر نثبت إن فوزاً
+  //  حقيقياً صار — چانت باب غش مفتوح بسكربت بسيط)
   if (isTie) {
     document.getElementById('winner-name').textContent = `🤝 تعادل!`;
     document.getElementById('winner-sub').textContent = `كلاكم رائعين بـ ${state.p1.score} نقطة!`;
@@ -9130,28 +9070,12 @@ async function loadGems() {
   refreshCatLocks();
 }
 
-async function saveGems() {
-  if (!currentUser || currentUser.isGuest || !currentUser.uid) return;
-
-  // ✅ حماية: تأكد إن الجواهر رقم منطقي قبل الحفظ
-  const gems = parseInt(currentUser.gems) || 0;
-  if (gems < 0 || gems > 99999 || !Number.isFinite(gems)) {
-    console.warn('⚠️ محاولة حفظ قيمة جواهر غير منطقية:', gems);
-    // أعد تحميل من السيرفر
-    await loadGems();
-    return;
-  }
-
-  try {
-    await fbDb.collection('users').doc(currentUser.uid).set({
-      gems: gems,
-      unlockedCats: currentUser.unlockedCats || [],
-      bundleType: currentUser.bundleType || null,
-      bundleExpiry: currentUser.bundleExpiry || null,
-      lastUpdated: Date.now(),
-    }, { merge: true });
-  } catch(e) { console.warn('saveGems error:', e); }
-}
+// ⚠️ (انشالت دالة saveGems نهائياً): چانت تكتب قيمة الجواهر المطلقة من
+// الذاكرة المحلية على Firebase — وهذا صار ممنوعاً بقواعد الأمان الجديدة:
+// أي زيادة جواهر لازم تصير بكتابة ذرية وحدة مربوطة بمصدرها (إعلان/يومية/
+// ترحيب/شراء) وبقيمة محسوبة من قراءة السيرفر، مو من currentUser.gems.
+// كل مسارات الجواهر الحالية (showRewardedAd، checkDailyBonus،
+// giveWelcomeGems، buyWithGems) تكتب بهالطريقة داخلها مباشرة.
 
 function updateGemsUI() {
   const gems = currentUser ? (currentUser.gems || 0) : 0;
@@ -9164,9 +9088,11 @@ function updateGemsUI() {
   try { if (typeof refreshEarnGemsBtn === 'function') refreshEarnGemsBtn(); } catch(e) {}
 }
 
-// (انشال نظام "+1 جوهرة لكل إجابة صحيحة" ويا الـ rate limit مالته —
-//  چان قابل للاستغلال. مصادر الجواهر الرسمية: فوز الگيم +20،
-//  الدخول اليومي، وإعلانات المكافأة — كلها محمية بوقت السيرفر)
+// (انشال نظام "+1 جوهرة لكل إجابة صحيحة" ويا الـ rate limit مالته،
+//  وبعدها انشالت جائزة الفوز +20 هم — الاثنين قابلين للاستغلال لأن
+//  السيرفر ما يكدر يتحقق منهن. مصادر الجواهر الرسمية الوحيدة:
+//  الدخول اليومي +20، إعلانات المكافأة +50، هدية الترحيب +50 —
+//  كلها مفروضة بقواعد Firestore نفسها مو بالكود بس)
 
 function showGemEarn(text) {
   const el = document.createElement('div');
@@ -9176,14 +9102,18 @@ function showGemEarn(text) {
   setTimeout(() => el.remove(), 1400);
 }
 
-// هدية الترحيب 50 جوهرة
+// هدية الترحيب 50 جوهرة — مرة وحدة بالعمر
+// القاعدة بـ Firestore: +50 بالضبط فوق قيمة السيرفر، مع قلب welcomeGemsGiven
+// لـ true بنفس الكتابة الذرية (وما يرجع false أبداً، وحذف الوثيقة ممنوع —
+// فما تنعاد الهدية لا بحذف الحساب ولا بأي طريقة ثانية)
 async function giveWelcomeGems() {
   if (!currentUser || currentUser.isGuest) return;
   try {
     const doc = await _fsTimed(fbDb.collection('users').doc(currentUser.uid).get());
     const data = doc.exists ? doc.data() : {};
     if (!data.welcomeGemsGiven) {
-      currentUser.gems = (currentUser.gems || 0) + 50;
+      // ✅ نحسب من قيمة السيرفر (مو المحلية) حتى تطابق شرط +50 بالضبط
+      currentUser.gems = (data.gems || 0) + 50;
       await fbDb.collection('users').doc(currentUser.uid).set({
         gems: currentUser.gems,
         welcomeGemsGiven: true,
@@ -9198,8 +9128,8 @@ async function giveWelcomeGems() {
 // ══   مصادر الجواهر: فوز الگيم + الدخول اليومي  ══
 // ══════════════════════════════════════════════
 
-const WIN_GEMS          = 20;                    // جائزة الفوز بگيم كامل
-const DAILY_BONUS_GEMS  = 20;                    // مكافأة الدخول اليومي (الـ50 هدية التسجيل لمرة وحدة — giveWelcomeGems)
+// (WIN_GEMS انشالت — شوف تعليق مصادر الجواهر فوگ)
+const DAILY_BONUS_GEMS  = 20;                    // مكافأة الدخول اليومي (⚠️ منسوخة بقاعدة isDailyBonus بـ firestore.rules)
 const DAY_MS            = 24 * 60 * 60 * 1000;   // 24 ساعة
 
 // ── وقت السيرفر الحقيقي من Firebase ──
@@ -9216,17 +9146,11 @@ async function getServerNow() {
   return Date.now();
 }
 
-// ── جائزة الفوز بالگيم: +20 جوهرة ──
-// تنمنح فقط إذا اسم الفائز يطابق اسم الحساب المسجل (حتى ما ياخذها
-// الخصم بوضع لاعبين على نفس الجهاز، وبوضع الفرق ما تنمنح أصلاً)
-function awardWinGems(winner, isTie) {
-  if (isTie || !winner || !currentUser || currentUser.isGuest) return;
-  if ((winner.name || '').trim() !== (currentUser.username || '').trim()) return;
-  currentUser.gems = (currentUser.gems || 0) + WIN_GEMS;
-  updateGemsUI();
-  showGemEarn(`🏆 فوز! +${WIN_GEMS} 💎`);
-  saveGems();
-}
+// ── (انشالت دالة awardWinGems — جائزة الفوز +20) ──
+// السبب: ما أكو أي طريقة يتحقق بيها السيرفر (بلا Cloud Functions) إن
+// فوزاً حقيقياً صار — أي قاعدة تسمح بـ+20 "للفوز" تنستغل بسكربت يكررها
+// بلا حدود. قواعد Firestore الجديدة تحصر زيادة الجواهر بالمسارات
+// القابلة للتحقق فقط: إعلان المكافأة، المكافأة اليومية، وهدية الترحيب.
 
 // ── مكافأة الدخول اليومي: +20 جوهرة كل 24 ساعة ──
 // (هدية التسجيل +50 تنمنح مرة وحدة بس عند ربط الحساب — giveWelcomeGems)
@@ -10069,6 +9993,12 @@ function switchLbTab(tab) {
 
 async function loadLeaderboard(sortBy = 'xp') {
   const el = document.getElementById('lb-list');
+  // 🔒 قراءة users صارت للمسجلين فقط بقواعد Firestore — الضيف ما يكدر
+  // يشوف الترتيب (وهاي فرصة نشجعه على التسجيل بدل ما نعرضله خطأ صرف)
+  if (!fbAuth || !fbAuth.currentUser) {
+    el.innerHTML = '<div class="lb-empty">🔒 لوحة الصدارة للمسجلين فقط<br>سجّل دخولك حتى تشوف ترتيبك وتنافس! 🚀</div>';
+    return;
+  }
   el.innerHTML = '<div class="lb-loading">⏳ جاري تحميل الترتيب...</div>';
   try {
     const fieldMap = { xp: 'xp', wins: 'wins', correct: 'correct' };
@@ -10450,6 +10380,11 @@ async function saveUserToFirestore(userData) {
   try {
     const data = Object.assign({}, userData);
     delete data.uid;
+    // ⚠️ إحصائيات وملف شخصي فقط — بلا gems/unlockedCats/bundle نهائياً:
+    // هاي الحقول محكومة بقواعد اقتصاد صارمة بـ Firestore (زيادة الجواهر
+    // مربوطة بمصدرها بنفس الكتابة)، ولو ضميناها هنا من القيم المحلية
+    // ممكن تكون متقادمة/مزادة فتنرفض الكتابة كلها وتضيع الإحصائيات وياها.
+    // كتابات الاقتصاد تصير حصراً بدوالها الذرية (شراء/إعلان/يومية/ترحيب).
     const safeData = {
       username: (data.username || '').slice(0, 30),
       avatar: data.avatar || '🦁',
@@ -10460,10 +10395,6 @@ async function saveUserToFirestore(userData) {
       wrong: Math.max(0, parseInt(data.wrong) || 0),
       joined: data.joined || new Date().toLocaleDateString('ar-IQ'),
       history: (data.history || []).slice(0, 15),
-      gems: Math.max(0, parseInt(data.gems) || 0),
-      unlockedCats: data.unlockedCats || [],
-      bundleType: data.bundleType || null,
-      bundleExpiry: data.bundleExpiry || null,
     };
     await fbDb.collection('users').doc(userData.uid).set(safeData, { merge: true });
   } catch(e) { console.warn('Firestore save error:', e); }
@@ -11561,15 +11492,14 @@ async function loadIQFromFirestore() {
     showToast('❌ لا يوجد اتصال بالإنترنت. يتطلب اختبار الذكاء الاتصال بالشبكة للمتابعة.');
     return [];
   }
-  // ملاحظة: ما ننتظر waitForFirebaseReady هنا وننسحب لو فشل — حتى لو
-  // النسخة المشتركة خربانة، النسخة المعزولة تشتغل بلا أي تهيئة مسبقة
-  // (القراءة عامة بالقواعد). _fsGetWithFallback يتكفل بالاثنين.
+  // ⚠️ قراءة iq_questions صارت مشروطة بقواعد Firestore: مستخدم مسجل
+  // وفاتح قسم IQ_TEST ضمن unlockedCats مالته. النسخة المعزولة
+  // (_fsGetWithFallback) بلا مصادقة فما تنفع هنا بعد — نقرأ حصراً
+  // بالنسخة المشتركة المسجّل بيها اللاعب.
   try {
     showToast('⏳ جارٍ تحميل الأسئلة...');
-    const snap = await _fsGetWithFallback(
-      db => db.collection('iq_questions').get(),
-      'IQ'
-    );
+    await waitForFirebaseReady(8000);
+    const snap = await _fsTimed(fbDb.collection('iq_questions').get(), 15000);
     snap.forEach(doc => IQ_QUESTION_POOL.push(doc.data()));
     _iqLoaded = true;
     _dbg('IQ: اكتمل التحميل — ' + IQ_QUESTION_POOL.length + ' سؤال');
@@ -11577,7 +11507,9 @@ async function loadIQFromFirestore() {
   } catch(e) {
     window._lastIQError = (e && (e.code || e.message)) || String(e);
     _dbg('IQ: فشل نهائي — ' + window._lastIQError);
-    if (e && e.message === 'TIMEOUT') {
+    if (e && e.code === 'permission-denied') {
+      showToast('🔒 أسئلة الذكاء متاحة فقط بعد تسجيل الدخول وفتح قسم IQ من المتجر.');
+    } else if (e && e.message === 'TIMEOUT') {
       showToast('❌ الاتصال بطيء جداً أو الإنترنت غير فعّال. تحقق من الشبكة وحاول مجدداً.');
     } else {
       showToast('❌ تعذّر تحميل الأسئلة. تحقق من الاتصال بالإنترنت.');
