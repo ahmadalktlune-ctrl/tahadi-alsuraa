@@ -1,0 +1,255 @@
+rules_version = '2';
+
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║          🛡 تحدي السرعة — قواعد أمان Firestore (النسخة المشدّدة)          ║
+// ║   انسخها إلى Firebase Console > Firestore Database > Rules > Publish     ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+//
+// الثوابت مستخرجة من كود اللعبة (gameSECURE_v26-1.html) — أي تغيير بالكود
+// لازم يقابله تغيير هنا وبالعكس:
+//   • مكافأة الإعلان     = 50 جوهرة   (AD_REWARD_GEMS)
+//   • حد الإعلانات/يوم   = 10          (AD_DAILY_LIMIT — نافذة 24 ساعة من adDayStart)
+//   • المكافأة اليومية    = 20 جوهرة   (DAILY_BONUS_GEMS — القاعدة تشترط مرور 20+ ساعة)
+//   • جواهر الترحيب      = 50 جوهرة   (giveWelcomeGems — مرة وحدة بالعمر)
+//   • أسعار الأقسام      = شوف catPrices() تحت
+//   • جائزة الفوز بالگيم انشالت نهائياً (ما تنفع بلا Cloud Functions — قابلة للتزوير)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══════════════════ حسابات اللاعبين ══════════════════
+    match /users/{userId} {
+
+      // ── أسعار فتح الأقسام (ثابتة — مصدرها CAT_GEM_PRICES و IQ_UNLOCK_PRICE بالكود) ──
+      function catPrices() {
+        return {
+          'IQ_TEST':       100,
+          'MESSI_RONALDO': 450,
+          'BEAUTY':        500,
+          'HISTORY':       550,
+          'ANIME':         600,
+          'CARS':          700,
+          'MOVIES':        750,
+          'SCIENCE':       800,
+          'BIG5_LEAGUES':  900
+        };
+      }
+
+      // ── اختصارات (الكتابات بالكود كلها merge — القواعد تشوف الوثيقة المدموجة) ──
+      function oldGems() { return resource.data.get('gems', 0); }
+      function newGems() { return request.resource.data.get('gems', 0); }
+      function oldCats() { return resource.data.get('unlockedCats', []); }
+      function newCats() { return request.resource.data.get('unlockedCats', []); }
+      function nowMs()   { return request.time.toMillis(); }
+
+      // عدادات الإعلانات ممنوع تتغير إلا بمسار مكافأة الإعلان حصراً —
+      // لولا هذا الشرط، يكدر الغشاش يرجّع adDayCount لـ0 ويعيد جمع المكافآت
+      function adFieldsUnchanged() {
+        return request.resource.data.get('adDayCount', 0) == resource.data.get('adDayCount', 0)
+            && request.resource.data.get('adDayStart', 0) == resource.data.get('adDayStart', 0);
+      }
+      // نفس المنطق لوقت المكافأة اليومية — إرجاعه للوراء = مكافآت لا نهائية
+      function bonusFieldUnchanged() {
+        return request.resource.data.get('dailyBonusAt', 0) == resource.data.get('dailyBonusAt', 0);
+      }
+
+      // ── مكافأة الإعلان: +50 بالضبط والعداد يتقدّم بنفس الكتابة الذرية ──
+      function isAdReward() {
+        return newGems() == oldGems() + 50
+          && bonusFieldUnchanged()
+          && (
+            // (أ) استمرار نفس نافذة الـ24 ساعة: البداية ثابتة والعداد +1 وبحد أقصى 10
+            ( resource.data.get('adDayStart', 0) > 0
+              && nowMs() - resource.data.get('adDayStart', 0) < 86400000
+              && request.resource.data.get('adDayStart', 0) == resource.data.get('adDayStart', 0)
+              && request.resource.data.get('adDayCount', 0) == resource.data.get('adDayCount', 0) + 1
+              && request.resource.data.get('adDayCount', 0) <= 10 )
+            ||
+            // (ب) نافذة جديدة (أول إعلان بالحياة، أو مرت 24 ساعة على القديمة):
+            //     العداد يبدأ من 1 والبداية لازم تكون "الآن" تقريباً
+            //     (سماحية 15 دقيقة للوراء لأن الكود ياخذ وقت السيرفر قبل تشغيل الإعلان)
+            ( ( resource.data.get('adDayStart', 0) == 0
+                || nowMs() - resource.data.get('adDayStart', 0) >= 86400000 )
+              && request.resource.data.get('adDayCount', 0) == 1
+              && request.resource.data.get('adDayStart', 0) >= nowMs() - 900000
+              && request.resource.data.get('adDayStart', 0) <= nowMs() + 120000 )
+          );
+      }
+
+      // ── المكافأة اليومية: +20 بالضبط بعد مرور 20+ ساعة على القيمة القديمة،
+      //    والقيمة الجديدة لازم تكون "الآن" تقريباً (حتى ما تنكتب بالمستقبل/الماضي) ──
+      function isDailyBonus() {
+        return newGems() == oldGems() + 20
+          && adFieldsUnchanged()
+          && nowMs() - resource.data.get('dailyBonusAt', 0) >= 72000000
+          && request.resource.data.get('dailyBonusAt', 0) >= nowMs() - 900000
+          && request.resource.data.get('dailyBonusAt', 0) <= nowMs() + 120000;
+      }
+
+      // ── جواهر الترحيب: +50 مرة وحدة بالعمر، بشرط قلب welcomeGemsGiven
+      //    من false إلى true بنفس الكتابة (والحذف ممنوع فما تنعاد أبداً) ──
+      function isWelcomeGift() {
+        return newGems() == oldGems() + 50
+          && resource.data.get('welcomeGemsGiven', false) == false
+          && request.resource.data.get('welcomeGemsGiven', false) == true
+          && adFieldsUnchanged()
+          && bonusFieldUnchanged();
+      }
+
+      // welcomeGemsGiven ما يرجع من true إلى false أبداً (ولا ينحذف من الوثيقة)
+      function welcomeNotRevoked() {
+        return resource.data.get('welcomeGemsGiven', false) == false
+            || request.resource.data.get('welcomeGemsGiven', false) == true;
+      }
+
+      // ── الجواهر: النقصان/الثبات حر (الشراء)، الزيادة فقط بالمسارات الثلاثة ──
+      function gemsChangeValid() {
+        return ( newGems() <= oldGems() && adFieldsUnchanged() && bonusFieldUnchanged() )
+            || isAdReward()
+            || isDailyBonus()
+            || isWelcomeGift();
+      }
+
+      // ── unlockedCats: بلا تغيير، أو إضافة قسم واحد معروف السعر
+      //    مع نقصان الجواهر بمقدار سعره بالضبط بنفس الكتابة الذرية ──
+      function catsChangeValid() {
+        let added = newCats().removeAll(oldCats());
+        return newCats() == oldCats()
+            || ( newCats().hasAll(oldCats())                  // ما ينحذف ولا يتبدل قسم
+                 && newCats().size() == oldCats().size() + 1  // إضافة عنصر واحد بس
+                 && added.size() == 1                         // بدون تكرار عناصر قديمة
+                 && added[0] in catPrices()                   // قسم معروف حصراً
+                 && oldGems() - newGems() == catPrices()[added[0]] );
+      }
+
+      // ── فحص الحقول والأنواع والحدود (نفس قائمة القواعد السابقة) ──
+      function validUser() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['username','avatar','xp','games','wins','correct',
+                                 'wrong','joined','history','gems','unlockedCats',
+                                 'bundleType','bundleExpiry','lastUpdated','welcomeGemsGiven',
+                                 'dailyBonusAt','adDayStart','adDayCount','srvPing','loginStreak'])
+          && (!('username' in d) || (d.username is string && d.username.size() <= 30))
+          && (!('avatar'   in d) || (d.avatar is string && d.avatar.size() <= 10))
+          && (!('joined'   in d) || (d.joined is string && d.joined.size() <= 30))
+          && (!('xp'       in d) || (d.xp is number && d.xp >= 0 && d.xp <= 100000000))
+          && (!('games'    in d) || (d.games is number && d.games >= 0 && d.games <= 1000000))
+          && (!('wins'     in d) || (d.wins is number && d.wins >= 0 && d.wins <= 1000000))
+          && (!('correct'  in d) || (d.correct is number && d.correct >= 0 && d.correct <= 10000000))
+          && (!('wrong'    in d) || (d.wrong is number && d.wrong >= 0 && d.wrong <= 10000000))
+          && (!('gems'     in d) || (d.gems is number && d.gems >= 0 && d.gems <= 1000000))
+          && (!('history'  in d) || (d.history is list && d.history.size() <= 30))
+          && (!('unlockedCats' in d) || (d.unlockedCats is list && d.unlockedCats.size() <= 100))
+          && (!('lastUpdated'  in d) || d.lastUpdated is number)
+          && (!('welcomeGemsGiven' in d) || d.welcomeGemsGiven is bool)
+          && (!('dailyBonusAt' in d) || (d.dailyBonusAt is number && d.dailyBonusAt >= 0))
+          && (!('adDayStart'   in d) || (d.adDayStart is number && d.adDayStart >= 0))
+          && (!('adDayCount'   in d) || (d.adDayCount is number && d.adDayCount >= 0 && d.adDayCount <= 50))
+          && (!('loginStreak'  in d) || (d.loginStreak is number && d.loginStreak >= 0 && d.loginStreak <= 100000))
+          && (!('srvPing'      in d) || d.srvPing is timestamp);
+      }
+
+      // ── إنشاء الوثيقة (مرة وحدة بالعمر — الحذف ممنوع): تبدأ بلا ثروة ──
+      function validCreate() {
+        let d = request.resource.data;
+        return ( ( d.get('gems', 0) == 0 && d.get('welcomeGemsGiven', false) == false )
+                 // حالة نادرة: فشل إنشاء وثيقة التسجيل، فأول كتابة توصل هي هدية الترحيب
+                 || ( d.get('gems', 0) == 50 && d.get('welcomeGemsGiven', false) == true ) )
+          && d.get('unlockedCats', []).size() == 0
+          && d.get('adDayCount', 0) == 0
+          && d.get('adDayStart', 0) == 0
+          && d.get('dailyBonusAt', 0) == 0;
+      }
+
+      // القراءة للمسجلين فقط (لوحة الترتيب تحتاج تسجيل دخول — الضيوف لا)
+      allow read: if request.auth != null;
+
+      // الإنشاء: صاحب الحساب فقط، وبقيم بداية نظيفة
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && validUser()
+                    && validCreate();
+
+      // التحديث: صاحب الحساب فقط، وضمن قواعد الاقتصاد أعلاه
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && validUser()
+                    && welcomeNotRevoked()
+                    && gemsChangeValid()
+                    && catsChangeValid();
+
+      // الحذف ممنوع نهائياً — يسد ثغرة (حذف ← إعادة إنشاء ← ترحيب لا نهائي).
+      // زر "حذف الحساب" بالتطبيق يمسح البيانات الشخصية من الوثيقة بدل حذفها.
+      allow delete: if false;
+    }
+
+    // ══ بنك الأسئلة العام ══ قراءة للجميع (حتى الضيوف)، الكتابة من الـ Console فقط
+    match /questions/{qId} { allow read: if true; allow write: if false; }
+
+    // ══ أسئلة الذكاء ══ القراءة فقط لمستخدم مسجل فاتح قسم IQ_TEST (اشتراه بـ100 جوهرة)
+    match /iq_questions/{qId} {
+      allow read: if request.auth != null
+                  && 'IQ_TEST' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('unlockedCats', []);
+      allow write: if false;
+    }
+
+    // ══ إحصاء تقنين الـ IQ ══ وثيقة واحدة، العداد +1 لكل كتابة،
+    // والمجاميع تزيد بحدود نتيجة لاعب واحد (الدرجة الخام محصورة 40..160 بالكود)
+    match /iq_stats/{docId} {
+      allow read: if true;
+      allow create: if docId == 'iq_normalization' && validNorm()
+                    && request.resource.data.count == 1
+                    && request.resource.data.sumX <= 200
+                    && request.resource.data.sumX2 <= 40000;
+      allow update: if docId == 'iq_normalization' && validNorm()
+                    && request.resource.data.count == resource.data.count + 1
+                    && ( !('sumX' in resource.data)  // توافق مع وثيقة قديمة بلا مجاميع
+                         || ( request.resource.data.sumX >= resource.data.sumX
+                              && request.resource.data.sumX <= resource.data.sumX + 200
+                              && request.resource.data.sumX2 >= resource.data.get('sumX2', 0)
+                              && request.resource.data.sumX2 <= resource.data.get('sumX2', 0) + 40000 ) );
+      allow delete: if false;
+
+      function validNorm() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['mean','sd','count','sumX','sumX2'])
+          && d.mean is number && d.sd is number && d.count is number
+          && d.sumX is number && d.sumX2 is number
+          && d.count >= 0 && d.count <= 100000000
+          && d.mean >= 0 && d.mean <= 250
+          && d.sd >= 0 && d.sd <= 250
+          && d.sumX >= 0 && d.sumX2 >= 0;
+      }
+    }
+
+    // ══ اقتراحات الأسئلة ══ إضافة فقط (حتى الضيوف)، محد يقرأ أو يعدل غير الـ Console
+    match /suggested_questions/{sId} {
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['cat','q','a','note','userId','username','timestamp','date','status'])
+                    && request.resource.data.q is string
+                    && request.resource.data.q.size() >= 10
+                    && request.resource.data.q.size() <= 500
+                    && request.resource.data.a is string
+                    && request.resource.data.a.size() <= 300
+                    && request.resource.data.note is string
+                    && request.resource.data.note.size() <= 300
+                    && request.resource.data.status == 'pending';
+      allow read, update, delete: if false;
+    }
+
+    // ══ رسائل الدعم ══ إضافة فقط، بحجم محدود
+    match /support_messages/{mId} {
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['message','userId','username','timestamp','date'])
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() >= 1
+                    && request.resource.data.message.size() <= 1000;
+      allow read, update, delete: if false;
+    }
+
+    // ══ أي شي ثاني: رفض افتراضي ══
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
